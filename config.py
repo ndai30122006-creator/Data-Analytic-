@@ -1,5 +1,5 @@
-"""Configuration constants for Data Analyst Pro"""
-from typing import Dict, Any
+"""Configuration constants for Data Analyst Pro v3.0 — Practical Statistics Edition"""
+from typing import Dict, Any, List
 
 # ── Validation Constants ────────────────────────────────────
 MIN_ROWS_VALIDATION = 10
@@ -15,10 +15,17 @@ MAX_DISPLAY_ROWS = 100
 
 # ── Model Constants ─────────────────────────────────────────
 DEFAULT_TEST_SIZE = 0.2
-DEFAULT_CV_FOLDS = 3
-DEFAULT_CONTAMINATION = 0.05
-DEFAULT_FORECAST_DAYS = 90
+DEFAULT_CV_FOLDS = 5
 RANDOM_STATE = 42
+
+# ── Bootstrap ───────────────────────────────────────────────
+BOOTSTRAP_DEFAULT_ITERATIONS = 1000
+BOOTSTRAP_DEFAULT_CONFIDENCE = 95
+
+# ── A/B Testing ─────────────────────────────────────────────
+AB_DEFAULT_ALPHA = 0.05
+AB_DEFAULT_POWER = 0.8
+AB_DEFAULT_EFFECT_SIZE = 0.2
 
 # ── AutoML Constants ────────────────────────────────────────
 AUTOML_DEFAULT_MODELS = ["Random Forest", "XGBoost"]
@@ -53,16 +60,12 @@ PARAM_GRIDS = {
     "Lasso": {
         'model__alpha': [0.001, 0.01, 0.1, 1.0, 10.0],
         'model__selection': ['cyclic', 'random']
+    },
+    "Logistic Regression": {
+        'model__C': [0.01, 0.1, 1.0, 10.0, 100.0],
+        'model__solver': ['lbfgs', 'liblinear'],
+        'model__max_iter': [100, 200, 500]
     }
-}
-
-# ── Model Constructors ──────────────────────────────────────
-MODEL_CONSTRUCTORS = {
-    "Random Forest": "RandomForestRegressor",
-    "XGBoost": "XGBRegressor",
-    "Gradient Boosting": "GradientBoostingRegressor",
-    "Ridge": "Ridge",
-    "Lasso": "Lasso"
 }
 
 # ── Chart Theme ─────────────────────────────────────────────
@@ -84,110 +87,48 @@ SPARKLINE_HEIGHT = 40
 SPARKLINE_COLOR = '#5b6bf7'
 KPI_COLUMNS = 4
 
-# ── Database Defaults ───────────────────────────────────────
-DEFAULT_DB_HOST = "localhost"
-DEFAULT_DB_PORT_MYSQL = "3306"
-DEFAULT_DB_PORT_POSTGRES = "5432"
-DEFAULT_DB_PATH = "database.db"
-
-# ── AI Chat Constants ───────────────────────────────────────
-GEMINI_MODEL = 'gemini-2.0-flash'
-AI_CHAT_INPUT_PLACEHOLDER = "💬 Ask about your data..."
-QUICK_PROMPTS = [
-    "What are the top trends?",
-    "Which column has most outliers?",
-    "Show me correlations",
-    "Summarize the dataset",
-    "What's the best chart for this data?"
-]
-
-# ── Prophet Constants ───────────────────────────────────────
-PROPHET_YEARLY_SEASONALITY = True
-PROPHET_WEEKLY_SEASONALITY = True
-PROPHET_DAILY_SEASONALITY = False
-
-# ── Anomaly Detection ───────────────────────────────────────
-ANOMALY_CONTAMINATION_RANGE = (0.01, 0.5)
-ANOMALY_CONTAMINATION_DEFAULT = 0.05
-ANOMALY_CONTAMINATION_STEP = 0.01
-
-# ── What-If Analysis ────────────────────────────────────────
-WHATIF_CHANGE_RANGE = (-50, 100)
-WHATIF_CHANGE_DEFAULT = 0
-WHATIF_CHANGE_STEP = 1
-
-# ── PDF Report ──────────────────────────────────────────────
-PDF_TITLE_DEFAULT = "Report — Data"
-PDF_MAX_COLUMNS = 15
-PDF_TOP_CORRELATIONS = 10
-
 # ── Session State Keys ──────────────────────────────────────
 SESSION_KEYS = {
     "df": None,
-    "filename": "",
     "cleaned_df": None,
-    "genai_chat": [],
-    "db_config": {},
-    "theme": "dark",
-    "genai_key": ""
 }
 
 # ── Tab Names ───────────────────────────────────────────────
 TAB_OVERVIEW = "📊 Overview"
-TAB_AI_ML = "🤖 AI & ML"
+TAB_STATISTICS = "📈 Statistics"
 TAB_ANALYTICS = "🔬 Analytics"
 TAB_DEEP_ANALYSIS = "🧠 Deep Analysis"
-TAB_MOLECULE = "⚛️ Molecule"
 
-MAIN_TABS = [TAB_OVERVIEW, TAB_AI_ML, TAB_ANALYTICS, TAB_DEEP_ANALYSIS, TAB_MOLECULE]
+MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_STATISTICS, TAB_ANALYTICS, TAB_DEEP_ANALYSIS]
 
-# ── AI Chat Sub-tabs ────────────────────────────────────────
-AI_TAB_CHAT = "🤖 AI Chat"
-AI_TAB_FORECAST = "📈 Forecast"
-AI_TAB_AUTOML = "🧠 AutoML"
+# ── Statistics Sub-tabs ─────────────────────────────────────
+STATS_TAB_HYPOTHESIS = "🔬 Hypothesis Testing"
+STATS_TAB_BOOTSTRAP = "🎲 Bootstrap"
+STATS_TAB_ABTESTING = "⚗️ A/B Testing"
+STATS_TAB_REGRESSION = "📈 Regression"
+STATS_TAB_LOGISTIC = "🔴 Logistic"
+STATS_TAB_NAIVEBAYES = "🧮 Naive Bayes"
+STATS_TAB_DIAGNOSTICS = "🔧 Diagnostics"
 
-AI_TABS = [AI_TAB_CHAT, AI_TAB_FORECAST, AI_TAB_AUTOML]
+STATISTICS_TABS: List[str] = [
+    STATS_TAB_HYPOTHESIS, STATS_TAB_BOOTSTRAP, STATS_TAB_ABTESTING,
+    STATS_TAB_REGRESSION, STATS_TAB_LOGISTIC, STATS_TAB_NAIVEBAYES, STATS_TAB_DIAGNOSTICS
+]
 
 # ── Analytics Sub-tabs ──────────────────────────────────────
 ANALYTICS_TAB_ANOMALY = "🔍 Anomaly"
 ANALYTICS_TAB_PROFILING = "📊 Profiling"
-ANALYTICS_TAB_WHATIF = "🎯 What-If"
-ANALYTICS_TAB_PDF = "📱 PDF"
 ANALYTICS_TAB_CLEANING = "🧹 Cleaning"
+ANALYTICS_TAB_CLASSIFICATION = "🎯 Classification"
 
-ANALYTICS_TABS = [ANALYTICS_TAB_ANOMALY, ANALYTICS_TAB_PROFILING, ANALYTICS_TAB_WHATIF, ANALYTICS_TAB_PDF, ANALYTICS_TAB_CLEANING]
+ANALYTICS_TABS: List[str] = [ANALYTICS_TAB_ANOMALY, ANALYTICS_TAB_PROFILING, ANALYTICS_TAB_CLEANING, ANALYTICS_TAB_CLASSIFICATION]
 
 # ── Profiler Sub-tabs ───────────────────────────────────────
 PROFILER_TAB_COLUMNS = "📋 Columns"
 PROFILER_TAB_DISTRIBUTIONS = "📊 Distributions"
 PROFILER_TAB_CORRELATIONS = "🔗 Correlations"
 
-PROFILER_TABS = [PROFILER_TAB_COLUMNS, PROFILER_TAB_DISTRIBUTIONS, PROFILER_TAB_CORRELATIONS]
-
-# ── File Upload ─────────────────────────────────────────────
-SUPPORTED_FILE_TYPES = ["csv", "xlsx", "xls"]
-FILE_UPLOADER_LABEL = "CSV / Excel"
-
-# ── Database Types ──────────────────────────────────────────
-DB_TYPES = ["MySQL", "PostgreSQL", "SQL Server", "SQLite"]
-
-# ── Theme ───────────────────────────────────────────────────
-THEME_DARK = "dark"
-THEME_LIGHT = "light"
-
-# ── Export Formats ──────────────────────────────────────────
-EXPORT_FORMAT_CSV = "CSV"
-EXPORT_FORMAT_EXCEL = "Excel"
-
-# ── AutoML Tuning Methods ───────────────────────────────────
-TUNING_GRIDSEARCH = "GridSearch"
-TUNING_RANDOMIZEDSEARCH = "RandomizedSearch"
-TUNING_NONE = "None"
-
-TUNING_METHODS = [TUNING_GRIDSEARCH, TUNING_RANDOMIZEDSEARCH, TUNING_NONE]
-
-# ── AutoML Models ───────────────────────────────────────────
-AUTOML_MODELS = ["Random Forest", "XGBoost", "Gradient Boosting", "Ridge", "Lasso"]
+PROFILER_TABS: List[str] = [PROFILER_TAB_COLUMNS, PROFILER_TAB_DISTRIBUTIONS, PROFILER_TAB_CORRELATIONS]
 
 # ── Data Quality Thresholds ─────────────────────────────────
 QUALITY_THRESHOLD_GOOD = 80

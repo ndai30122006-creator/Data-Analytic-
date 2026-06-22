@@ -1,4 +1,4 @@
-"""Data Analyst Pro v2.0 - Enterprise AI Data Platform"""
+"""Data Analyst Pro v3.0 — Practical Statistics for Data Scientists Edition"""
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,87 +37,35 @@ from config import (
     MIN_ROWS_VALIDATION, TOP_N_VALUES, TOP_N_CATEGORIES, TOP_N_DISTRIBUTION,
     SPARKLINE_SAMPLE_SIZE, DATA_PREVIEW_ROWS, MAX_DISPLAY_ROWS,
     DEFAULT_TEST_SIZE, DEFAULT_CV_FOLDS, DEFAULT_CONTAMINATION,
-    DEFAULT_FORECAST_DAYS, RANDOM_STATE, AUTOML_DEFAULT_MODELS,
+    RANDOM_STATE, AUTOML_DEFAULT_MODELS,
     AUTOML_DEFAULT_FEATURES, AUTOML_POLYNOMIAL_DEGREE, AUTOML_N_ITER_RANDOMIZED,
-    PARAM_GRIDS, CHART_THEME, SPARKLINE_HEIGHT, SPARKLINE_COLOR, KPI_COLUMNS,
-    DEFAULT_DB_HOST, DEFAULT_DB_PORT_MYSQL, DEFAULT_DB_PORT_POSTGRES, DEFAULT_DB_PATH,
-    GEMINI_MODEL, AI_CHAT_INPUT_PLACEHOLDER, QUICK_PROMPTS,
-    PROPHET_YEARLY_SEASONALITY, PROPHET_WEEKLY_SEASONALITY, PROPHET_DAILY_SEASONALITY,
-    ANOMALY_CONTAMINATION_RANGE, ANOMALY_CONTAMINATION_DEFAULT, ANOMALY_CONTAMINATION_STEP,
-    WHATIF_CHANGE_RANGE, WHATIF_CHANGE_DEFAULT, WHATIF_CHANGE_STEP,
-    PDF_TITLE_DEFAULT, PDF_MAX_COLUMNS, PDF_TOP_CORRELATIONS,
-    SESSION_KEYS, MAIN_TABS, AI_TABS, ANALYTICS_TABS, PROFILER_TABS,
-    SUPPORTED_FILE_TYPES, FILE_UPLOADER_LABEL, DB_TYPES,
-    THEME_DARK, THEME_LIGHT, EXPORT_FORMAT_CSV, EXPORT_FORMAT_EXCEL,
-    TUNING_METHODS, AUTOML_MODELS, QUALITY_THRESHOLD_GOOD, QUALITY_THRESHOLD_WARNING,
+    PARAM_GRIDS, CHART_THEME, SPARKLINE_HEIGHT, SPARKLINE_COLOR,
+    SESSION_KEYS, MAIN_TABS, STATISTICS_TABS, ANALYTICS_TABS, PROFILER_TABS,
     COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_ACCENT, COLOR_PRIMARY, COLOR_SECONDARY
 )
-
-# ── Optional Imports ────────────────────────────────────────
-try:
-    from prophet import Prophet
-    PROPHET_AVAIL = True
-except Exception: PROPHET_AVAIL = False
-
-try:
-    import xgboost as xgb
-    XGB_AVAIL = True
-except Exception: XGB_AVAIL = False
-
-try:
-    from sqlalchemy import create_engine
-    SQL_AVAIL = True
-except Exception: SQL_AVAIL = False
-
-try:
-    import google.generativeai as genai
-    GENAI_AVAIL = True
-except Exception: GENAI_AVAIL = False
-
-try:
-    from fpdf import FPDF
-    PDF_AVAIL = True
-except Exception: PDF_AVAIL = False
-
-try:
-    import gspread
-    GSHEET_AVAIL = True
-except Exception: GSHEET_AVAIL = False
-
-try:
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-    SKLEARN_AVAIL = True
-except Exception:
-    SKLEARN_AVAIL = False
-
-try:
-    from solar_system import render_solar_system_tab
-    SOLAR_SYSTEM_AVAIL = True
-except Exception:
-    SOLAR_SYSTEM_AVAIL = False
 
 try:
     from advanced_analytics import render_deep_analysis_tab
     DEEP_ANALYSIS_AVAIL = True
-except Exception:
+except Exception as e:
     DEEP_ANALYSIS_AVAIL = False
+    st.error(f"❌ Lỗi load advanced_analytics: {e}")
 
 # ── Session State Init ────────────────────────────────────
-for key, default in [
+SESSION_DEFAULTS = [
     ("df", None), ("filename", ""), ("cleaned_df", None),
-    ("genai_chat", []), ("db_config", {}), ("theme", "dark"),
-    ("genai_key", os.getenv("GEMINI_API_KEY", "")),
-]:
+    ("file_uploader_key", 0),
+]
+for key, default in SESSION_DEFAULTS:
     if key not in st.session_state: st.session_state[key] = default
 
-st.set_page_config(page_title="Data Analyst Pro", page_icon="📊", layout="wide",
+st.set_page_config(page_title="Data Analyst Pro v3.0", page_icon="📊", layout="wide",
                    initial_sidebar_state="expanded")
 
 # ═══════════════════════════════════════════════════════════
-# MODERN THEME — Linear/Vercel/Stripe inspired
+# MODERN THEME
 # ═══════════════════════════════════════════════════════════
-THEME_DARK = """
+THEME_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root {
     --bg: #0b0d11; --bg-soft: #111318; --bg-card: #181a20; --bg-hover: #1e2028;
@@ -147,7 +95,6 @@ section[data-testid="stSidebar"] { background: var(--bg-soft); border-right: 1px
 [data-testid="stMetric"] label { color: var(--fg-muted) !important; font-size: 0.6rem !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
 [data-testid="stMetric"] [data-testid="stMetricValue"] { color: var(--fg) !important; font-weight: 700; font-size: 1.2rem !important; letter-spacing: -0.3px; }
 .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: 0.85rem; }
-.stTextInput input:focus, .stTextArea textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,107,247,0.1); }
 .stSlider > div > div > div { background: var(--border); }
 .stSlider > div > div > div > div { background: var(--accent); }
 .stDataFrame { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
@@ -157,197 +104,12 @@ section[data-testid="stSidebar"] { background: var(--bg-soft); border-right: 1px
 .stAlert { border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; }
 .stSpinner > div > div { border-color: var(--accent) !important; }
 hr { border-color: var(--border); margin: 0.6rem 0; }
-.stChatMessage { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; }
-h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.3px; color: var(--fg); }
-.stMarkdown { font-size: 0.88rem; }
-div[data-baseweb="select"] > div { background: var(--bg-card) !important; }
-.stCheckbox label, .stRadio label { font-size: 0.85rem; }
-.st-bb { background: var(--bg-card); }
-
-/* ── WOW EFFECTS ──────────────────────────── */
-
-/* Animated gradient mesh background */
-@keyframes meshMove {
-    0% { transform: translate(0, 0) scale(1); }
-    25% { transform: translate(30px, -20px) scale(1.1); }
-    50% { transform: translate(-20px, 30px) scale(0.95); }
-    75% { transform: translate(10px, -30px) scale(1.05); }
-    100% { transform: translate(0, 0) scale(1); }
-}
-@keyframes meshMove2 {
-    0% { transform: translate(0, 0) scale(1); }
-    25% { transform: translate(-30px, 20px) scale(1.05); }
-    50% { transform: translate(20px, -30px) scale(0.9); }
-    75% { transform: translate(-10px, 30px) scale(1.1); }
-    100% { transform: translate(0, 0) scale(1); }
-}
-.hero-bg {
-    position: relative;
-    overflow: hidden;
-    border-radius: 16px;
-    padding: 2.5rem 1rem;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, rgba(91,107,247,0.05), rgba(167,139,250,0.05));
-    border: 1px solid var(--border);
-}
-.hero-bg::before, .hero-bg::after {
-    content: '';
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.3;
-    z-index: 0;
-    pointer-events: none;
-}
-.hero-bg::before {
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(91,107,247,0.3), transparent);
-    top: -80px; left: -80px;
-    animation: meshMove 8s ease-in-out infinite;
-}
-.hero-bg::after {
-    width: 350px; height: 350px;
-    background: radial-gradient(circle, rgba(167,139,250,0.25), transparent);
-    bottom: -100px; right: -100px;
-    animation: meshMove2 10s ease-in-out infinite;
-}
-
-/* Floating particles */
-@keyframes float1 { 0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; } 50% { transform: translateY(-40px) translateX(20px); opacity: 0.7; } }
-@keyframes float2 { 0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; } 50% { transform: translateY(30px) translateX(-30px); opacity: 0.6; } }
-@keyframes float3 { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.15; } 50% { transform: translateY(-50px) scale(1.5); opacity: 0.4; } }
-.particle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
-.particle-1 { width: 8px; height: 8px; background: #5b6bf7; top: 20%; left: 10%; animation: float1 6s ease-in-out infinite; }
-.particle-2 { width: 5px; height: 5px; background: #a78bfa; top: 60%; left: 85%; animation: float2 8s ease-in-out infinite; }
-.particle-3 { width: 12px; height: 12px; background: rgba(91,107,247,0.4); top: 40%; left: 50%; animation: float3 7s ease-in-out infinite; }
-.particle-4 { width: 6px; height: 6px; background: #34d399; top: 70%; left: 20%; animation: float1 9s ease-in-out infinite; }
-.particle-5 { width: 4px; height: 4px; background: #fbbf24; top: 15%; left: 70%; animation: float2 5s ease-in-out infinite; }
-
-/* Glow border cards */
-@keyframes glowBorder {
-    0%, 100% { border-color: var(--border); box-shadow: 0 0 0px rgba(91,107,247,0); }
-    50% { border-color: rgba(91,107,247,0.3); box-shadow: 0 0 20px rgba(91,107,247,0.1); }
-}
-.feature-card.glow { animation: glowBorder 3s ease-in-out infinite; }
-
-/* Typewriter effect */
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-@keyframes typewriter { from { width: 0; } to { width: 100%; } }
-.typewriter {
-    overflow: hidden;
-    white-space: nowrap;
-    animation: typewriter 2.5s steps(40) 0.5s forwards;
-    width: 0;
-    display: inline-block;
-}
-.typewriter-cursor::after {
-    content: '|';
-    animation: blink 0.8s step-end infinite;
-    color: var(--accent);
-    margin-left: 2px;
-}
-
-/* Glow pulse for hero title */
-@keyframes gradientPulse {
-    0%, 100% { background-size: 100% 100%; }
-    50% { background-size: 150% 150%; }
-}
-.hero h1 {
-    animation: gradientPulse 4s ease-in-out infinite;
-    position: relative;
-    z-index: 1;
-}
-.hero p { position: relative; z-index: 1; }
-
-/* Feature cards with glass + glow */
-.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin: 1rem 0; position: relative; z-index: 1; }
-.feature-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    text-align: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-}
-.feature-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    border-radius: var(--radius);
-    background: linear-gradient(135deg, rgba(91,107,247,0.1), transparent);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-.feature-card:hover::before { opacity: 1; }
-.feature-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 8px 30px rgba(91,107,247,0.15);
-}
-.feature-card .icon { font-size: 2rem; position: relative; z-index: 1; }
-.feature-card .title { font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem; position: relative; z-index: 1; }
-.feature-card .desc { font-size: 0.7rem; color: var(--fg-muted); position: relative; z-index: 1; }
-
-/* Skeleton loader */
-@keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
-.skeleton { background: var(--bg-card); border-radius: var(--radius); height: 60px; animation: shimmer 1.5s ease-in-out infinite; margin-bottom: 0.5rem; }
-.skeleton-sm { height: 40px; }
-.skeleton-lg { height: 200px; }
-
-/* Quick prompts */
-.quick-prompt { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.8rem; font-size: 0.78rem; color: var(--fg-muted); cursor: pointer; transition: all 0.15s; display: inline-block; margin: 0.15rem; }
-.quick-prompt:hover { border-color: var(--accent); color: var(--fg); }
-"""
-
-THEME_LIGHT = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-:root {
-    --bg: #fafbfc; --bg-soft: #f0f2f5; --bg-card: #ffffff; --bg-hover: #f6f7f9;
-    --fg: #1a1d23; --fg-muted: #6b7280; --accent: #5b6bf7;
-    --border: #e5e7eb; --success: #22c55e; --warning: #eab308; --danger: #ef4444;
-    --radius: 10px;
-}
-.stApp { background: var(--bg); color: var(--fg); font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; }
-section[data-testid="stSidebar"] { background: var(--bg-soft); border-right: 1px solid var(--border); padding: 0.75rem; }
-.main-header { font-size: 1.3rem; font-weight: 700; color: var(--fg); padding: 0.4rem 0; letter-spacing: -0.3px; }
-.insight-card, .kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem; margin-bottom: 0.4rem; color: var(--fg); transition: border-color 0.15s, background 0.15s; }
-.insight-card:hover, .kpi-card:hover { background: var(--bg-hover); }
-.insight-warning { border-left: 2px solid var(--warning); }
-.insight-good { border-left: 2px solid var(--success); }
-.insight-danger { border-left: 2px solid var(--danger); }
-.kpi-label { font-size: 0.6rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
-.kpi-value { font-size: 1.2rem; font-weight: 700; color: var(--fg); letter-spacing: -0.3px; }
-.stTabs [data-baseweb="tab-list"] { gap: 0; background: transparent; border-bottom: 1px solid var(--border); padding: 0; border-radius: 0; }
-.stTabs [data-baseweb="tab"] { padding: 6px 12px; color: var(--fg-muted); font-size: 0.78rem; font-weight: 450; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; }
-.stTabs [aria-selected="true"] { color: var(--fg); border-bottom: 2px solid var(--accent); }
-.stTabs [data-baseweb="tab"]:hover { color: var(--fg); }
-.stButton button { border-radius: 8px; font-weight: 500; font-size: 0.82rem; border: 1px solid var(--border); background: transparent; color: var(--fg); padding: 0.3rem 0.9rem; transition: all 0.15s; }
-.stButton button:hover { border-color: #c4c8cf; background: var(--bg-hover); }
-.stButton button[kind="primary"] { background: var(--accent); color: #fff; border: none; }
-.stButton button[kind="primary"]:hover { background: #4a5ae6; box-shadow: 0 0 0 2px rgba(91,107,247,0.15); }
-[data-testid="stMetric"] { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
-[data-testid="stMetric"] label { color: var(--fg-muted) !important; font-size: 0.6rem !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
-[data-testid="stMetric"] [data-testid="stMetricValue"] { color: var(--fg) !important; font-weight: 700; font-size: 1.2rem !important; letter-spacing: -0.3px; }
-.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: 0.85rem; }
-.stTextInput input:focus, .stTextArea textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,107,247,0.08); }
-.stSlider > div > div > div { background: var(--border); }
-.stSlider > div > div > div > div { background: var(--accent); }
-.stDataFrame { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
-.streamlit-expanderHeader { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; }
-[data-testid="stFileUploader"] section { border: 1px dashed var(--border); border-radius: var(--radius); padding: 1rem; }
-[data-testid="stFileUploader"] section:hover { border-color: var(--accent); }
-.stAlert { border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; }
-.stSpinner > div > div { border-color: var(--accent) !important; }
-hr { border-color: var(--border); margin: 0.6rem 0; }
-.stChatMessage { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; }
 h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.3px; color: var(--fg); }
 .stMarkdown { font-size: 0.88rem; }
 div[data-baseweb="select"] > div { background: var(--bg-card) !important; }
 .stCheckbox label, .stRadio label { font-size: 0.85rem; }
 
+.hero-bg { position: relative; overflow: hidden; border-radius: 16px; padding: 2.5rem 1rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, rgba(91,107,247,0.05), rgba(167,139,250,0.05)); border: 1px solid var(--border); }
 .hero { text-align: center; padding: 1.5rem 0; }
 .hero h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #5b6bf7, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .hero p { font-size: 1rem; color: var(--fg-muted); margin-top: 0.3rem; }
@@ -357,39 +119,43 @@ div[data-baseweb="select"] > div { background: var(--bg-card) !important; }
 .feature-card .icon { font-size: 1.8rem; }
 .feature-card .title { font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem; }
 .feature-card .desc { font-size: 0.7rem; color: var(--fg-muted); }
+.st-emotion-cache-1wivap2 { background: var(--bg-card); }
+.hero-bg::before, .hero-bg::after {
+    content: ''; position: absolute; border-radius: 50%;
+    filter: blur(60px); opacity: 0.3; z-index: 0; pointer-events: none;
+}
+.hero-bg::before {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(91,107,247,0.3), transparent);
+    top: -80px; left: -80px;
+    animation: meshMove1 8s ease-in-out infinite;
+}
+.hero-bg::after {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(167,139,250,0.25), transparent);
+    bottom: -100px; right: -100px;
+    animation: meshMove2 10s ease-in-out infinite;
+}
+@keyframes meshMove1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-20px) scale(1.1); } }
+@keyframes meshMove2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,20px) scale(1.05); } }
 @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
 .skeleton { background: var(--bg-card); border-radius: var(--radius); height: 60px; animation: shimmer 1.5s ease-in-out infinite; margin-bottom: 0.5rem; }
 .skeleton-sm { height: 40px; }
 .skeleton-lg { height: 200px; }
-.quick-prompt { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.8rem; font-size: 0.78rem; color: var(--fg-muted); cursor: pointer; transition: all 0.15s; display: inline-block; margin: 0.15rem; }
-.quick-prompt:hover { border-color: var(--accent); color: var(--fg); }
 """
-
-st.markdown(f"<style>{THEME_DARK if st.session_state.theme == 'dark' else THEME_LIGHT}</style>", unsafe_allow_html=True)
+st.markdown(f"<style>{THEME_CSS}</style>", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════
 # HELPERS
 # ═══════════════════════════════════════════════════════════
-
-
 def convert_df_to_csv(df):
     return df.to_csv(index=False).encode("utf-8")
 
-
-def show_skeleton(lines=3, large=False):
-    cls = "skeleton skeleton-lg" if large else "skeleton skeleton-sm"
-    for _ in range(lines):
-        st.markdown(f'<div class="{cls}"></div>', unsafe_allow_html=True)
-    st.rerun()
-
 def apply_theme(fig):
-    """Apply the chart theme from config to a plotly figure"""
     fig.update_layout(**CHART_THEME)
     return fig
 
-# ── Sparkline helper ───────────────────────────────────────
 def sparkline(series, color='#5b6bf7', height=40):
-    """Mini sparkline chart"""
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         y=series.values, mode='lines',
@@ -415,18 +181,11 @@ with st.sidebar:
     with col1: st.image("https://cdn-icons-png.flaticon.com/512/4727/4727496.png", width=50)
     with col2: st.markdown("### 📊 Data Analyst Pro")
     
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🌓", key="theme_t", use_container_width=True):
-            st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
-            st.rerun()
-    with c2:
-        st.caption(f"{'🌙' if st.session_state.theme=='dark' else '☀️'}")
-    
     st.markdown("---")
     
+    # File upload
     with st.expander("📂 Data Input", expanded=(st.session_state.df is None)):
-        uploaded = st.file_uploader(FILE_UPLOADER_LABEL, type=SUPPORTED_FILE_TYPES, key="fu")
+        uploaded = st.file_uploader("Upload CSV / Excel", type=["csv", "xlsx", "xls"], key=f"fu_{st.session_state.file_uploader_key}")
         if uploaded and (st.session_state.filename != uploaded.name or st.session_state.df is None):
             with st.spinner("Loading..."):
                 time.sleep(0.3)
@@ -438,102 +197,45 @@ with st.sidebar:
         
         if st.session_state.df is not None:
             st.caption(f"📄 {st.session_state.filename}")
-            if st.button("🗑 Clear", key="clr", use_container_width=True):
+            if st.button("🗑 Clear Data", key="clr", use_container_width=True):
                 st.session_state.df = None; st.session_state.filename = ""
+                st.session_state.file_uploader_key += 1
                 st.rerun()
-    
-    with st.expander("🔌 Connections", expanded=False):
-        tab_db, tab_gs = st.tabs(["🗄 DB", "☁️ Sheets"])
-        with tab_db:
-            if SQL_AVAIL:
-                db_type = st.selectbox("Type", DB_TYPES, key="dbt")
-                h = p = None  # Initialize to prevent NameError
-                if db_type != "SQLite":
-                    h = st.text_input("Host", "localhost", key="dbh")
-                    p = st.text_input("Port", "3306" if db_type=="MySQL" else "5432", key="dbp")
-                    st.text_input("DB", key="dbn"); st.text_input("User", key="dbu")
-                    st.text_input("Pass", type="password", key="dbpw")
-                else:
-                    p = st.text_input("Path", "database.db", key="dbpa")
-                if st.button("Connect", key="dbc", use_container_width=True):
-                    try:
-                        if db_type == "SQLite":
-                            cs = f"sqlite:///{st.session_state.dbpa}"
-                        elif db_type == "MySQL":
-                            cs = f"mysql+pymysql://{st.session_state.dbu}:{st.session_state.dbpw}@{h}:{p}/{st.session_state.dbn}"
-                        elif db_type == "PostgreSQL":
-                            cs = f"postgresql://{st.session_state.dbu}:{st.session_state.dbpw}@{h}:{p}/{st.session_state.dbn}"
-                        elif db_type == "SQL Server":
-                            cs = f"mssql+pyodbc://{st.session_state.dbu}:{st.session_state.dbpw}@{h}:{p}/{st.session_state.dbn}?driver=ODBC+Driver+17+for+SQL+Server"
-                        engine = create_engine(cs)
-                        with engine.connect() as conn:
-                            tables = pd.read_sql("SHOW TABLES" if db_type=="MySQL" else "SELECT table_name FROM information_schema.tables WHERE table_schema='public'", conn)
-                        st.success(f"✅ {len(tables)} tables")
-                        st.session_state.db_config = {"engine": engine, "tables": tables}
-                    except Exception as e:
-                        st.error(f"❌ Connection error: {str(e)}")
-            else: st.warning("pip install sqlalchemy pymysql")
-        with tab_gs:
-            if GSHEET_AVAIL:
-                gj = st.file_uploader("Service Account JSON", type=["json"], key="gsj")
-                st.text_input("Sheet URL/ID", key="gsu")
-                if st.button("Load", key="gsl", use_container_width=True) and gj:
-                    try:
-                        gc = gspread.service_account_from_dict(json.loads(gj.getvalue().decode()))
-                        sh = gc.open_by_url(st.session_state.gsu) if "http" in st.session_state.gsu else gc.open_by_key(st.session_state.gsu)
-                        ws = sh.sheet1; data = ws.get_all_values()
-                        st.session_state.df = pd.DataFrame(data[1:], columns=data[0])
-                        st.success(f"✅ {len(st.session_state.df)} rows")
-                    except Exception as e: st.error(f"❌ {e}")
-            else: st.warning("pip install gspread")
-    
-    with st.expander("⚙️ AI Setup", expanded=False):
-        st.text_input("Gemini API Key", type="password", key="genai_key",
-                     help="https://aistudio.google.com/apikey")
-        if st.session_state.genai_key: st.success("✅ Key ready")
-        else: st.warning("⚠️ Enter API key")
     
     if st.session_state.df is not None:
         st.markdown("---")
         render_sidebar_stats(st.session_state.df)
 
 # ═══════════════════════════════════════════════════════════
-# LANDING PAGE — Hero Section
+# LANDING PAGE
 # ═══════════════════════════════════════════════════════════
 if st.session_state.df is None:
     st.markdown("""
     <div class="hero-bg">
-        <div class="particle particle-1"></div>
-        <div class="particle particle-2"></div>
-        <div class="particle particle-3"></div>
-        <div class="particle particle-4"></div>
-        <div class="particle particle-5"></div>
         <div class="hero">
-            <h1 class="typewriter-cursor"><span class="typewriter">Data Analyst Pro</span></h1>
-            <p>Enterprise AI-powered data analysis platform</p>
+            <h1>Data Analyst Pro v3.0</h1>
+            <p>Practical Statistics for Data Scientists — Exploratory Data Analysis, Hypothesis Testing, Machine Learning</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
     <div class="feature-grid">
-        <div class="feature-card glow"><div class="icon">📂</div><div class="title">Upload</div><div class="desc">CSV, Excel, DB</div></div>
-        <div class="feature-card"><div class="icon">🤖</div><div class="title">AI Chat</div><div class="desc">Gemini-powered</div></div>
-        <div class="feature-card"><div class="icon">📈</div><div class="title">Forecast</div><div class="desc">Prophet</div></div>
-        <div class="feature-card"><div class="icon">🧠</div><div class="title">AutoML</div><div class="desc">XGBoost + RF</div></div>
-        <div class="feature-card"><div class="icon">🔍</div><div class="title">Anomaly</div><div class="desc">Detection</div></div>
-        <div class="feature-card"><div class="icon">⚛️</div><div class="title">Molecule</div><div class="desc">3D viz</div></div>
+        <div class="feature-card"><div class="icon">📂</div><div class="title">Upload</div><div class="desc">CSV & Excel</div></div>
+        <div class="feature-card"><div class="icon">🔬</div><div class="title">Statistics</div><div class="desc">Hypothesis Testing</div></div>
+        <div class="feature-card"><div class="icon">🎲</div><div class="title">Bootstrap</div><div class="desc">Confidence Intervals</div></div>
+        <div class="feature-card"><div class="icon">⚗️</div><div class="title">A/B Testing</div><div class="desc">Power Analysis</div></div>
+        <div class="feature-card"><div class="icon">🔴</div><div class="title">Logistic</div><div class="desc">ROC & AUC</div></div>
+        <div class="feature-card"><div class="icon">🔧</div><div class="title">Diagnostics</div><div class="desc">VIF, Autocorrelation</div></div>
     </div>
     """, unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns(3)
-    c1.info("**📂 Upload** — CSV, Excel, Google Sheets, or Databases")
-    c2.success("**🤖 AI Chat** — Natural language queries with Gemini")
-    c3.warning("**📈 Analytics** — Forecast, AutoML, Anomaly detection, Profiling")
+    c1.info("**📂 Upload** — CSV hoặc Excel từ sidebar")
+    c2.success("**📈 Statistics** — T-test, ANOVA, Bootstrap, A/B Testing")
+    c3.warning("**🧠 Deep Analysis** — 11 modules phân tích chuyên sâu")
     
-    st.caption("Upload data from the sidebar to get started →")
-    
-    # Quick start tutorial
+    st.caption("Upload dữ liệu từ sidebar để bắt đầu →")
     render_quick_start_tutorial()
 
 else:
@@ -543,7 +245,7 @@ else:
     dat = raw.select_dtypes(include=["datetime64", "datetime64[ns]"]).columns.tolist()
     df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-    main_tabs = st.tabs(MAIN_TABS)
+    main_tabs = st.tabs(MAIN_TABS)  # ["📊 Overview", "📈 Statistics", "🔬 Analytics", "🧠 Deep Analysis"]
 
     # ═══════════════ OVERVIEW ═══════════════
     with main_tabs[0]:
@@ -562,7 +264,7 @@ else:
             # Data Quality Report
             render_data_quality_report(df)
         
-        # Sparkline row (if numeric cols)
+        # Sparkline row
         if num:
             st.markdown("### 📈 Data Trends")
             spark_cols = st.columns(min(len(num), 4))
@@ -616,7 +318,7 @@ else:
         
         # Export
         with st.expander("📤 Export", expanded=False):
-            col1, col2, col3 = st.columns(3)
+            col1, col2 = st.columns(2)
             with col1:
                 fmt = st.radio("Format:", ["CSV", "Excel"])
                 if fmt == "CSV":
@@ -633,246 +335,385 @@ else:
                 if st.button("🔄 Reset Session", use_container_width=True):
                     for k in list(st.session_state.keys()): del st.session_state[k]
                     st.rerun()
-            with col3:
-                st.write(f"**{df.shape[0]:,}** rows × **{df.shape[1]:,}** cols")
-                st.write(f"**{len(num)}** numeric, **{len(cat)}** categorical")
 
-    # ═══════════════ AI & ML ═══════════════
+    # ═══════════════ STATISTICS ═══════════════
     with main_tabs[1]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")
         else:
-            ai_tabs = st.tabs(AI_TABS)
+            st.markdown("""
+            <div class="hero-bg" style="padding: 1.5rem 1rem; margin-bottom: 0.5rem;">
+                <div class="hero" style="text-align: center;">
+                    <h1 style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #5b6bf7, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    📈 Statistics for Data Scientists
+                    </h1>
+                    <p style="color: var(--fg-muted);">Hypothesis Testing · Bootstrap · A/B Testing · Logistic · Naive Bayes · Diagnostics</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # ── AI Chat ──
-            with ai_tabs[0]:
-                if GENAI_AVAIL and st.session_state.genai_key:
-                    try:
-                        genai.configure(api_key=st.session_state.genai_key)
-                        model = genai.GenerativeModel('gemini-2.0-flash')
-                        
-                        data_preview = df.head(20).to_string()
-                        data_info = f"Dataset: {len(df)} rows, {len(num)} numeric, {len(cat)} categorical"
-                        col_names = ", ".join(df.columns.tolist())
-                        context = f"""You are a data analyst assistant.
-Dataset: {data_info}
-Columns: {col_names}
-Sample data (first 20 rows):
-{data_preview}
-Answer in Vietnamese, provide insights from data."""
-                        
-                        # Welcome message
-                        if not st.session_state.genai_chat:
-                            st.info("💡 **Ask me anything about your data!**\n\nTry clicking a suggestion below:")
-                            
-                            # Quick prompts
-                            prompts = [
-                                "What are the top trends?",
-                                "Which column has most outliers?",
-                                "Show me correlations",
-                                "Summarize the dataset",
-                                "What's the best chart for this data?"
-                            ]
-                            cols = st.columns(len(prompts))
-                            for i, p in enumerate(prompts):
-                                with cols[i]:
-                                    if st.button(f"💬 {p}", key=f"qp_{i}", use_container_width=True):
-                                        st.session_state.genai_chat.append({"role": "user", "content": p})
-                                        st.rerun()
-                            st.markdown("---")
-                        
-                        for msg in st.session_state.genai_chat:
-                            with st.chat_message(msg["role"]): st.markdown(msg["content"])
-                        
-                        if prompt := st.chat_input("💬 Ask about your data..."):
-                            st.session_state.genai_chat.append({"role": "user", "content": prompt})
-                            with st.chat_message("user"): st.markdown(prompt)
-                            with st.chat_message("assistant"):
-                                with st.spinner("..."):
-                                    resp = model.generate_content(f"{context}\n\nQuestion: {prompt}")
-                                    st.markdown(resp.text)
-                                    st.session_state.genai_chat.append({"role": "assistant", "content": resp.text})
-                    except Exception as e:
-                        st.error(f"⚠️ {e}")
+            stats_tabs = st.tabs(STATISTICS_TABS)
+            
+            # ── Hypothesis Testing ──
+            with stats_tabs[0]:
+                if not num and not cat:
+                    st.warning("Cần dữ liệu numeric hoặc categorical")
                 else:
-                    st.info("""
-                ### 🤖 AI Chat with Gemini
-                
-                Ask questions about your data in natural language!
-                
-                **To get started:**
-                1. Go to sidebar → **AI Setup**
-                2. Enter your **Gemini API Key**
-                3. Come back here and start chatting!
-                
-                *Get a free key at [aistudio.google.com](https://aistudio.google.com/apikey)*
-                """)
-        
-        # ── Prophet Forecast ──
-        with ai_tabs[1]:
-            if PROPHET_AVAIL:
-                if dat and num:
-                    dc = st.selectbox("Date column:", dat, key="pd")
-                    vc = st.selectbox("Value column:", num, key="pv")
-                    per = st.slider("Forecast days:", 7, 365, DEFAULT_FORECAST_DAYS)
-                    if st.button("📈 Run Forecast", key="prun"):
-                        with st.spinner("Training Prophet..."):
-                            ts = df.groupby(df[dc].dt.date)[vc].sum().reset_index()
-                            ts.columns = ["ds", "y"]; ts["ds"] = pd.to_datetime(ts["ds"])
-                            m = Prophet(yearly_seasonality=PROPHET_YEARLY_SEASONALITY, weekly_seasonality=PROPHET_WEEKLY_SEASONALITY, daily_seasonality=PROPHET_DAILY_SEASONALITY)
-                            m.fit(ts)
-                            fut = m.make_future_dataframe(periods=per)
-                            fc = m.predict(fut)
-                            fig1 = m.plot(fc, figsize=(12, 5)); st.pyplot(fig1); plt.close()
-                            fig2 = m.plot_components(fc, figsize=(12, 6)); st.pyplot(fig2); plt.close()
-                            st.dataframe(fc[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(per + 5),
-                                        width='stretch', hide_index=True)
-                else: st.warning("Need 1 datetime + 1 numeric column")
-            else: st.warning("Install: pip install prophet")
-        
-        # ── AutoML (Automated ML Pipeline) ──
-        with ai_tabs[2]:
-            if XGB_AVAIL and SKLEARN_AVAIL:
-                from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
-                from sklearn.linear_model import Ridge, Lasso
-                from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-                
-                if len(num) >= 2:
-                    st.markdown("### 🚀 AutoML Pipeline")
-                    st.caption("Tự động tìm siêu tham số (Hyperparameter Tuning) & chọn mô hình tốt nhất")
+                    from scipy.stats import ttest_ind, ttest_1samp, ttest_rel, f_oneway, mannwhitneyu, kruskal, chi2_contingency
                     
-                    tg = st.selectbox("Target:", num, key="atg")
-                    feats = [c for c in num if c != tg]
-                    cols = st.multiselect("Features:", feats, default=feats[:min(4, len(feats))], key="atg_feats")
+                    test_type = st.selectbox("Test type:", [
+                        "T-test (2 independent samples)",
+                        "T-test (1 sample)",
+                        "T-test (paired)",
+                        "ANOVA",
+                        "Mann-Whitney U",
+                        "Kruskal-Wallis",
+                        "Chi-Square"
+                    ], key="ht_type")
                     
-                    if len(cols) >= 1:
-                        col1, col2, col3 = st.columns(3)
-                        with col1:
-                            tune_method = st.selectbox("Tuning method:", ["GridSearch", "RandomizedSearch", "None"], key="atg_tune")
-                        with col2:
-                            cv_folds = st.slider("CV folds:", 2, 10, 3, key="atg_cv")
-                        with col3:
-                            test_size = st.slider("Test size:", 0.1, 0.4, 0.2, 0.05, key="atg_ts")
+                    if "2 independent" in test_type:
+                        if len(num) >= 1 and len(cat) >= 1:
+                            val_col = st.selectbox("Value column:", num, key="ht_val")
+                            grp_col = st.selectbox("Group column:", cat, key="ht_grp")
+                            grps = df[grp_col].dropna().unique()[:5]
+                            if len(grps) >= 2:
+                                g1 = st.selectbox("Group 1:", grps, key="ht_g1")
+                                g2 = st.selectbox("Group 2:", [g for g in grps if g != g1], key="ht_g2")
+                                if st.button("🔬 Run", key="ht_run"):
+                                    s1 = df[df[grp_col] == g1][val_col].dropna()
+                                    s2 = df[df[grp_col] == g2][val_col].dropna()
+                                    if len(s1) > 1 and len(s2) > 1:
+                                        stat, p = ttest_ind(s1, s2, equal_var=False)
+                                        pooled_std = np.sqrt((s1.std()**2 + s2.std()**2) / 2)
+                                        cohens_d = (s1.mean() - s2.mean()) / pooled_std if pooled_std > 0 else 0
+                                        
+                                        c1, c2, c3, c4 = st.columns(4)
+                                        c1.metric("t-statistic", f"{stat:.4f}")
+                                        c2.metric("p-value", f"{p:.6f}")
+                                        c3.metric("Cohen's d", f"{abs(cohens_d):.4f}")
+                                        c4.metric("Conclusion", "Significant 🎯" if p < 0.05 else "Not significant ❌")
+                                        
+                                        fig = go.Figure()
+                                        fig.add_trace(go.Violin(y=s1, name=g1, box_visible=True, meanline_visible=True))
+                                        fig.add_trace(go.Violin(y=s2, name=g2, box_visible=True, meanline_visible=True))
+                                        fig.update_layout(title=f"{val_col}: {g1} vs {g2} (p={p:.4f}, d={abs(cohens_d):.3f})")
+                                        apply_theme(fig)
+                                        st.plotly_chart(fig, width='stretch')
+                                    else: st.error("Need ≥2 values per group")
+                            else: st.warning("Need ≥2 groups")
+                        else: st.warning("Need 1 numeric + 1 categorical column")
                     
-                        auto_engineer = st.checkbox("🔧 Auto Feature Engineering (Polynomial degree 2)", True, key="atg_poly")
-                        auto_scale = st.checkbox("📐 Auto Scaling (StandardScaler)", True, key="atg_scale")
-                        auto_models = st.multiselect("🤖 Models to tune:", 
-                            ["Random Forest", "XGBoost", "Gradient Boosting", "Ridge", "Lasso"],
-                            default=["Random Forest", "XGBoost"], key="atg_models")
+                    elif "1 sample" in test_type:
+                        if num:
+                            val_col = st.selectbox("Value column:", num, key="ht_1s")
+                            mu0 = st.number_input("Hypothesized mean (μ₀):", value=0.0, key="ht_mu")
+                            if st.button("🔬 Run", key="ht_1s_run"):
+                                s = df[val_col].dropna()
+                                stat, p = ttest_1samp(s, mu0)
+                                c1, c2 = st.columns(2)
+                                c1.metric("t-statistic", f"{stat:.4f}")
+                                c2.metric("p-value", f"{p:.6f}")
+                                insight = "Different from μ₀ 🎯" if p < 0.05 else "Not different from μ₀ ❌"
+                                st.info(f"**Conclusion:** {insight}")
+                        else: st.warning("Need numeric column")
                     
-                        if st.button("🚀 Run AutoML", key="atg_run") and auto_models:
-                            with st.spinner("⏳ AutoML đang chạy — tuning hyperparameters..."):
-                                X = df[cols].dropna()
-                                y = df.loc[X.index, tg]
-                                
-                                if len(X) < 10:
-                                    st.error("Cần ít nhất 10 mẫu")
-                                else:
-                                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
-                                    
-                                    # Use hyperparameter grids from config
-                                    param_grids = PARAM_GRIDS
-                                    
-                                    model_constructors = {
-                                        "Random Forest": RandomForestRegressor(random_state=42),
-                                        "XGBoost": xgb.XGBRegressor(random_state=42, verbosity=0),
-                                        "Gradient Boosting": GradientBoostingRegressor(random_state=42),
-                                        "Ridge": Ridge(),
-                                        "Lasso": Lasso(max_iter=5000)
-                                    }
-                                    
-                                    results = []
-                                    best_overall = {"name": "", "score": -999, "params": {}}
-                                    
-                                    progress_bar = st.progress(0)
-                                    for i, model_name in enumerate(auto_models):
-                                        base_model = model_constructors[model_name]
-                                        param_grid = param_grids[model_name]
-                                        
-                                        # Build pipeline
-                                        steps = []
-                                        if auto_scale:
-                                            steps.append(("scaler", StandardScaler()))
-                                        if auto_engineer:
-                                            steps.append(("poly", PolynomialFeatures(degree=2, include_bias=False)))
-                                        steps.append(("model", base_model))
-                                        
-                                        pipeline = Pipeline(steps)
-                                        
-                                        # Tuning
-                                        if tune_method == "GridSearch":
-                                            searcher = GridSearchCV(pipeline, param_grid, cv=cv_folds, 
-                                                                   scoring='r2', n_jobs=-1, verbose=0)
-                                        elif tune_method == "RandomizedSearch":
-                                            searcher = RandomizedSearchCV(pipeline, param_grid, n_iter=10, cv=cv_folds,
-                                                                         scoring='r2', n_jobs=-1, random_state=42, verbose=0)
-                                        else:
-                                            searcher = None
-                                        
-                                        if searcher:
-                                            searcher.fit(X_train, y_train)
-                                            best_model = searcher.best_estimator_
-                                            best_params = searcher.best_params_
-                                            cv_score = searcher.best_score_
-                                        else:
-                                            pipeline.fit(X_train, y_train)
-                                            best_model = pipeline
-                                            best_params = "Default"
-                                            cv_score = 0
-                                        
-                                        train_score = best_model.score(X_train, y_train)
-                                        test_score = best_model.score(X_test, y_test)
-                                        
-                                        results.append({
-                                            "Model": model_name,
-                                            "Train R²": round(train_score, 4),
-                                            "Test R²": round(test_score, 4),
-                                            "CV R²": round(cv_score, 4),
-                                            "Params": str(best_params)[:120]
-                                        })
-                                        
-                                        if test_score > best_overall["score"]:
-                                            best_overall = {"name": model_name, "score": test_score, "params": best_params}
-                                        
-                                        progress_bar.progress((i + 1) / len(auto_models))
-                                    
-                                    # Results
-                                    result_df = pd.DataFrame(results).sort_values("Test R²", ascending=False)
-                                    
-                                    st.markdown("#### 📊 Kết quả AutoML")
-                                    st.dataframe(result_df, width='stretch', hide_index=True)
-                                    
-                                    # Best model highlight
-                                    st.success(f"🏆 **Mô hình tốt nhất: {best_overall['name']}** — Test R² = {best_overall['score']:.4f}")
-                                    st.code(f"Best params: {best_overall['params']}", language="json")
-                                    
-                                    # Comparison chart
-                                    fig = go.Figure()
-                                    fig.add_trace(go.Bar(name="Train R²", x=result_df["Model"], y=result_df["Train R²"],
-                                                        marker_color="#818cf8"))
-                                    fig.add_trace(go.Bar(name="Test R²", x=result_df["Model"], y=result_df["Test R²"],
-                                                        marker_color="#34d399"))
-                                    fig.update_layout(title="AutoML: So sánh R² (Test vs Train)", barmode='group', height=350)
+                    elif "paired" in test_type:
+                        if len(num) >= 2:
+                            c1 = st.selectbox("Before:", num, key="ht_pa")
+                            c2 = st.selectbox("After:", [c for c in num if c != c1], key="ht_pb")
+                            if st.button("🔬 Run", key="ht_p_run"):
+                                s = df[[c1, c2]].dropna()
+                                stat, p = ttest_rel(s[c1], s[c2])
+                                c1, c2 = st.columns(2)
+                                c1.metric("t-statistic", f"{stat:.4f}")
+                                c2.metric("p-value", f"{p:.6f}")
+                                st.info(f"**Conclusion:** {'Significant difference 🎯' if p < 0.05 else 'Not significant ❌'}")
+                    
+                    elif "ANOVA" in test_type:
+                        if len(num) >= 1 and len(cat) >= 1:
+                            val_col = st.selectbox("Value:", num, key="ht_anova_val")
+                            grp_col = st.selectbox("Group:", cat, key="ht_anova_grp")
+                            if st.button("🔬 Run", key="ht_anova_run"):
+                                grps = df[grp_col].dropna().unique()
+                                groups = [df[df[grp_col] == g][val_col].dropna().values for g in grps if len(df[df[grp_col] == g]) > 1]
+                                if len(groups) >= 2:
+                                    stat, p = f_oneway(*groups)
+                                    c1, c2 = st.columns(2)
+                                    c1.metric("F-statistic", f"{stat:.4f}")
+                                    c2.metric("p-value", f"{p:.6f}")
+                                    st.info(f"**Conclusion:** {'Groups differ 🎯' if p < 0.05 else 'No difference ❌'}")
+                                    fig = px.box(df, x=grp_col, y=val_col, title=f"ANOVA: {val_col} by {grp_col}")
                                     apply_theme(fig)
                                     st.plotly_chart(fig, width='stretch')
-                                    
-                                    # Hyperparameter importance insight
-                                    if tune_method != "None" and len(auto_models) > 1:
-                                        best_result = results[np.argmax([r["Test R²"] for r in results])]
-                                        render_insight_card("💡", "Insight",
-                                            f"AutoML đã thử {len(auto_models)} mô hình với tuning. "
-                                            f"'{best_result['Model']}' đạt kết quả cao nhất (R²={best_result['Test R²']:.4f}). "
-                                            f"Feature engineering {'đã' if auto_engineer else 'không'} được áp dụng.",
-                                            "good")
-                    else:
-                        st.warning("Chọn ít nhất 1 feature")
+                    
+                    elif "Chi-Square" in test_type:
+                        if len(cat) >= 2:
+                            c1 = st.selectbox("Column 1:", cat, key="ht_cs1")
+                            c2 = st.selectbox("Column 2:", [c for c in cat if c != c1], key="ht_cs2")
+                            if st.button("🔬 Run", key="ht_cs_run"):
+                                ct = pd.crosstab(df[c1], df[c2])
+                                stat, p, dof, expected = chi2_contingency(ct)
+                                c1, c2, c3 = st.columns(3)
+                                c1.metric("χ²", f"{stat:.4f}")
+                                c2.metric("p-value", f"{p:.6f}")
+                                c3.metric("DoF", dof)
+                                st.info(f"**Conclusion:** {'Variables are related 🎯' if p < 0.05 else 'No relationship ❌'}")
+                                fig = px.imshow(ct, text_auto=True, title="Contingency Table",
+                                               color_continuous_scale="Viridis", aspect='auto')
+                                apply_theme(fig)
+                                st.plotly_chart(fig, width='stretch')
+                        else: st.warning("Need ≥2 categorical columns")
+            
+            # ── Bootstrap ──
+            with stats_tabs[1]:
+                if not num:
+                    st.warning("Need numeric column")
                 else:
-                    st.warning("Cần ít nhất 2 cột numeric")
-            else:
-                st.info("Install: pip install xgboost scikit-learn")
-                with st.expander("🔧 Install dependencies"):
-                    st.code("pip install xgboost scikit-learn")
+                    st.markdown("### 🎲 Bootstrap (Book Ch.2)")
+                    col = st.selectbox("Column:", num, key="boot_col")
+                    n_iter = st.slider("Iterations:", 100, 5000, 1000, 100, key="boot_iter")
+                    conf_level = st.slider("Confidence Level (%):", 80, 99, 95, 1, key="boot_conf")
+                    
+                    if st.button("🎲 Run Bootstrap", key="boot_run"):
+                        data = df[col].dropna().values
+                        n = len(data)
+                        original = np.mean(data)
+                        
+                        np.random.seed(42)
+                        boot_means = [np.mean(np.random.choice(data, size=n, replace=True)) for _ in range(n_iter)]
+                        
+                        alpha = (100 - conf_level) / 200
+                        ci_lower = np.percentile(boot_means, alpha * 100)
+                        ci_upper = np.percentile(boot_means, (1 - alpha) * 100)
+                        
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("Mean", f"{original:.4f}")
+                        c2.metric("Std Error", f"{np.std(boot_means):.4f}")
+                        c3.metric(f"{conf_level}% CI", f"[{ci_lower:.4f}, {ci_upper:.4f}]")
+                        
+                        fig = go.Figure()
+                        fig.add_trace(go.Histogram(x=boot_means, nbinsx=50, marker_color="#818cf8", opacity=0.7))
+                        fig.add_vline(x=original, line_dash="dash", line_color="#34d399",
+                                     annotation_text=f"Mean={original:.3f}")
+                        fig.add_vline(x=ci_lower, line_dash="dot", line_color="#f87171",
+                                     annotation_text=f"Lower={ci_lower:.3f}")
+                        fig.add_vline(x=ci_upper, line_dash="dot", line_color="#f87171",
+                                     annotation_text=f"Upper={ci_upper:.3f}")
+                        fig.update_layout(title=f"Bootstrap Distribution (n={n_iter})", height=400)
+                        apply_theme(fig)
+                        st.plotly_chart(fig, width='stretch')
+            
+            # ── A/B Testing ──
+            with stats_tabs[2]:
+                st.markdown("### ⚗️ A/B Testing (Book Ch.3)")
+                tabs_ab = st.tabs(["🔬 Two-Proportion Test", "📐 Sample Size", "📊 Power Curve"])
+                
+                with tabs_ab[0]:
+                    st.markdown("#### Two-Proportion Z-Test")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        g1_s = st.number_input("Successes A:", min_value=0, value=50, key="ab_s1")
+                        g1_t = st.number_input("Total A:", min_value=1, value=200, key="ab_t1")
+                    with col2:
+                        g2_s = st.number_input("Successes B:", min_value=0, value=60, key="ab_s2")
+                        g2_t = st.number_input("Total B:", min_value=1, value=200, key="ab_t2")
+                    
+                    if st.button("🔬 Run Test", key="ab_run"):
+                        from scipy.stats import norm
+                        p1, p2 = g1_s/g1_t, g2_s/g2_t
+                        p_pool = (g1_s+g2_s)/(g1_t+g2_t)
+                        se = np.sqrt(p_pool*(1-p_pool)*(1/g1_t+1/g2_t))
+                        z = (p1-p2)/se if se > 0 else 0
+                        p_val = 2*(1-norm.cdf(abs(z)))
+                        
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric("A Rate", f"{p1:.2%}")
+                        c2.metric("B Rate", f"{p2:.2%}")
+                        c3.metric("Z-stat", f"{z:.4f}")
+                        c4.metric("p-value", f"{p_val:.6f}")
+                        
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(x=["A", "B"], y=[p1, p2],
+                                            text=[f"{p1:.1%}", f"{p2:.1%}"],
+                                            textposition='outside',
+                                            marker_color=['#818cf8', '#34d399']))
+                        fig.update_layout(title="Conversion Rates", height=350)
+                        apply_theme(fig)
+                        st.plotly_chart(fig, width='stretch')
+                        
+                        st.info(f"**Conclusion:** {'Significant difference 🎯' if p_val < 0.05 else 'Not significant ❌'}")
+                
+                with tabs_ab[1]:
+                    baseline = st.slider("Baseline (%):", 1, 99, 10, 1, key="ab_base")
+                    effect = st.slider("Min effect (%):", 0.5, 30, 5.0, 0.5, key="ab_eff")
+                    if st.button("📐 Calculate Sample Size", key="ab_ss"):
+                        from scipy.stats import norm
+                        p1, p2 = baseline/100, (baseline+effect)/100
+                        z_a = norm.ppf(0.975)
+                        z_b = norm.ppf(0.80)
+                        n = ((z_a*np.sqrt(2*(p1+p2)/2*(1-(p1+p2)/2)) + z_b*np.sqrt(p1*(1-p1)+p2*(1-p2)))**2) / ((p2-p1)**2)
+                        n = int(np.ceil(n))
+                        st.success(f"### 📊 Need {n:,} per group (total: {n*2:,})")
+                
+                with tabs_ab[2]:
+                    from scipy.stats import norm
+                    n_per = st.slider("Sample size:", 10, 10000, 500, 10, key="ab_power_n")
+                    base_rate = st.slider("Baseline (%):", 1, 99, 10, 1, key="ab_power_base")
+                    if st.button("📊 Generate Power Curve", key="ab_power_run"):
+                        effects = np.linspace(0.01, 0.20, 50)
+                        p1 = base_rate / 100
+                        powers = []
+                        for eff in effects:
+                            p2 = p1 + eff
+                            if p2 > 1: continue
+                            try:
+                                z_b = (np.sqrt(n_per)*abs(p2-p1) - norm.ppf(0.975)*np.sqrt(2*(p1+p2)/2*(1-(p1+p2)/2))) / np.sqrt(p1*(1-p1)+p2*(1-p2))
+                                powers.append(norm.cdf(z_b))
+                            except: powers.append(0)
+                        
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=effects*100, y=powers, mode='lines',
+                                                line=dict(color="#818cf8", width=2)))
+                        fig.add_hline(y=0.8, line_dash="dash", line_color="#34d399",
+                                     annotation_text="Power=80%")
+                        fig.update_layout(title=f"Power Curve (n={n_per})", height=350,
+                                         xaxis_title="Effect Size (%)", yaxis_title="Power")
+                        apply_theme(fig)
+                        st.plotly_chart(fig, width='stretch')
+            
+            # ── Regression ──
+            with stats_tabs[3]:
+                if len(num) >= 2:
+                    from sklearn.linear_model import LinearRegression
+                    from sklearn.preprocessing import StandardScaler
+                    
+                    st.markdown("### 📈 Linear Regression (Book Ch.4)")
+                    target = st.selectbox("Target:", num, key="reg_target")
+                    features = st.multiselect("Features:", [c for c in num if c != target],
+                                            default=[c for c in num if c != target][:min(3, len(num)-1)], key="reg_feats")
+                    
+                    if len(features) >= 1 and st.button("📈 Run Regression", key="reg_run"):
+                        X = df[features].dropna()
+                        y = df.loc[X.index, target]
+                        
+                        if len(X) >= 10:
+                            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                            
+                            scaler = StandardScaler()
+                            X_train_s = scaler.fit_transform(X_train)
+                            X_test_s = scaler.transform(X_test)
+                            
+                            model = LinearRegression()
+                            model.fit(X_train_s, y_train)
+                            
+                            train_r2 = model.score(X_train_s, y_train)
+                            test_r2 = model.score(X_test_s, y_test)
+                            
+                            c1, c2, c3, c4 = st.columns(4)
+                            c1.metric("Train R²", f"{train_r2:.4f}")
+                            c2.metric("Test R²", f"{test_r2:.4f}")
+                            c3.metric("Intercept", f"{model.intercept_:.4f}")
+                            c4.metric("Features", f"{len(features)}")
+                            
+                            coef_df = pd.DataFrame({"Feature": features, "Coefficient": model.coef_})
+                            st.dataframe(coef_df, width='stretch', use_container_width=True)
+                            
+                            # Scatter: Actual vs Predicted
+                            y_pred = model.predict(X_test_s)
+                            fig = go.Figure()
+                            fig.add_trace(go.Scatter(x=y_test, y=y_pred, mode='markers',
+                                                    marker=dict(color="#818cf8", size=6, opacity=0.6)))
+                            fig.add_trace(go.Scatter(x=[y_test.min(), y_test.max()], y=[y_test.min(), y_test.max()],
+                                                    mode='lines', line=dict(color="#f87171", dash="dash"),
+                                                    name="Perfect Fit"))
+                            fig.update_layout(title=f"Actual vs Predicted (R²={test_r2:.4f})",
+                                             xaxis_title="Actual", yaxis_title="Predicted", height=350)
+                            apply_theme(fig)
+                            st.plotly_chart(fig, width='stretch')
+                        else: st.error("Need ≥10 samples")
+                else: st.warning("Need ≥2 numeric columns")
+            
+            # ── Logistic ──
+            with stats_tabs[4]:
+                if SKLEARN_ENSEMBLE_AVAIL and len(num) >= 2:
+                    from sklearn.linear_model import LogisticRegression
+                    from sklearn.preprocessing import StandardScaler
+                    from sklearn.metrics import confusion_matrix, roc_curve, auc
+                    
+                    st.markdown("### 🔴 Logistic Regression (Book Ch.5)")
+                    target_col = st.selectbox("Target:", num, key="log_target")
+                    threshold = st.slider("Threshold:", float(df[target_col].min()), float(df[target_col].max()),
+                                        float(df[target_col].median()), key="log_thresh")
+                    y = (df[target_col] > threshold).astype(int)
+                    
+                    features = st.multiselect("Features:", num, default=num[:min(4, len(num))], key="log_feats2")
+                    
+                    if len(features) >= 1 and st.button("🔴 Train", key="log_run2"):
+                        X = df[features].dropna()
+                        y_aligned = y.loc[X.index]
+                        
+                        if len(np.unique(y_aligned)) >= 2 and len(X) >= 10:
+                            X_train, X_test, y_train, y_test = train_test_split(X, y_aligned, test_size=0.3, random_state=42, stratify=y_aligned)
+                            
+                            scaler = StandardScaler()
+                            X_train_s = scaler.fit_transform(X_train)
+                            X_test_s = scaler.transform(X_test)
+                            
+                            model = LogisticRegression(random_state=42, max_iter=500)
+                            model.fit(X_train_s, y_train)
+                            y_pred = model.predict(X_test_s)
+                            y_prob = model.predict_proba(X_test_s)[:, 1]
+                            
+                            cm = confusion_matrix(y_test, y_pred)
+                            tn, fp, fn, tp = cm.ravel()
+                            accuracy = (tp+tn)/(tp+tn+fp+fn)
+                            precision = tp/(tp+fp) if (tp+fp) > 0 else 0
+                            recall = tp/(tp+fn) if (tp+fn) > 0 else 0
+                            f1 = 2*precision*recall/(precision+recall) if (precision+recall) > 0 else 0
+                            fpr, tpr, _ = roc_curve(y_test, y_prob)
+                            auc_score = auc(fpr, tpr)
+                            
+                            c1, c2, c3, c4, c5 = st.columns(5)
+                            c1.metric("Accuracy", f"{accuracy:.2%}")
+                            c2.metric("Precision", f"{precision:.2%}")
+                            c3.metric("Recall", f"{recall:.2%}")
+                            c4.metric("F1", f"{f1:.2%}")
+                            c5.metric("AUC", f"{auc_score:.3f}")
+                            
+                            fig_cm = px.imshow(cm, text_auto=True,
+                                              x=["Pred Neg", "Pred Pos"],
+                                              y=["Actual Neg", "Actual Pos"],
+                                              color_continuous_scale="Blues", aspect='auto')
+                            fig_cm.update_layout(height=300, title="Confusion Matrix")
+                            apply_theme(fig_cm)
+                            st.plotly_chart(fig_cm, width='stretch')
+                            
+                            fig_roc = go.Figure()
+                            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines',
+                                                        name=f'ROC (AUC={auc_score:.3f})',
+                                                        line=dict(color="#818cf8", width=2),
+                                                        fill='tozeroy'))
+                            fig_roc.add_trace(go.Scatter(x=[0,1], y=[0,1], mode='lines',
+                                                        name='Random', line=dict(color="#f87171", dash="dash")))
+                            fig_roc.update_layout(title="ROC Curve", height=300)
+                            apply_theme(fig_roc)
+                            st.plotly_chart(fig_roc, width='stretch')
+                else: st.warning("Need ≥2 numeric columns with sufficient data")
+            
+            # ── Naive Bayes ──
+            with stats_tabs[5]:
+                st.markdown("### 🧮 Naive Bayes (Book Ch.5)")
+                st.info("Naive Bayes is available in the Deep Analysis tab with full features.")
+                if st.button("🔗 Go to Naive Bayes in Deep Analysis", key="goto_nb"):
+                    pass
+            
+            # ── Diagnostics ──
+            with stats_tabs[6]:
+                st.markdown("### 🔧 Diagnostics (Book Ch.4)")
+                st.info("Regression Diagnostics (VIF, Heteroskedasticity, Durbin-Watson) are available in the Deep Analysis tab.")
+                if st.button("🔗 Go to Diagnostics in Deep Analysis", key="goto_diag"):
+                    pass
 
     # ═══════════════ ANALYTICS ═══════════════
     with main_tabs[2]:
@@ -882,6 +723,7 @@ Answer in Vietnamese, provide insights from data."""
         else:
             an_tabs = st.tabs(ANALYTICS_TABS)
             
+            # ── Anomaly Detection ──
             with an_tabs[0]:
                 if num:
                     ac = st.multiselect("Columns:", num, default=num[:min(3, len(num))], key="an")
@@ -898,349 +740,328 @@ Answer in Vietnamese, provide insights from data."""
                         if len(ac) >= 2:
                             X["A"] = p
                             fig = px.scatter(X, x=ac[0], y=ac[1], color=X["A"].map({1:"Normal", -1:"Anomaly"}),
-                                           title="Anomalies", color_discrete_map={"Normal":"#34d399","Anomaly":"#f87171"})
+                                           title="Anomalies")
                             apply_theme(fig); st.plotly_chart(fig, width='stretch')
-                        render_insight_card("🚨", f"{ac_} anomalies detected",
-                                    f"{ac_/(nc+ac_)*100:.1f}% of data — columns: {', '.join(ac)}",
-                                    "danger" if ac_ > 10 else "warning")
                 else: st.warning("Need numeric columns")
-        
-        with an_tabs[1]:
-            ni = df.select_dtypes(include=[np.number])
-            ci = df.select_dtypes(include=["object","str","category"])
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Rows", df.shape[0]); c2.metric("Columns", df.shape[1])
-            c3.metric("Numeric", len(ni.columns)); c4.metric("Categorical", len(ci.columns))
             
-            pt = st.tabs(PROFILER_TABS)
-            with pt[0]:
-                for c_ in df.columns:
-                    with st.expander(f"**{c_}** ({df[c_].dtype})"):
-                        a, b, c = st.columns(3)
-                        a.metric("Count", len(df[c_])); b.metric("Missing", df[c_].isnull().sum())
-                        c.metric("Unique", df[c_].nunique())
-                        if c_ in num:
-                            d, e, f = st.columns(3)
-                            d.metric("Min", f"{df[c_].min():,.4f}")
-                            e.metric("Mean", f"{df[c_].mean():,.4f}")
-                            f.metric("Max", f"{df[c_].max():,.4f}")
-                            fig = px.histogram(df, x=c_, nbins=30, title=f"Distribution")
-                            apply_theme(fig); st.plotly_chart(fig, width='stretch')
-                        else:
-                            vc = df[c_].value_counts().head(15)
-                            fig = px.bar(x=vc.index.astype(str), y=vc.values, title=f"Top 15",
-                                       color=vc.values, color_continuous_scale="Viridis")
-                            apply_theme(fig); st.plotly_chart(fig, width='stretch')
-            with pt[1]:
-                if num:
-                    sc = st.selectbox("Column:", num, key="pd_")
-                    fig = px.histogram(df, x=sc, nbins=50, marginal="box", title=f"Distribution of {sc}")
-                    apply_theme(fig); st.plotly_chart(fig, width='stretch')
-                    fig2 = px.box(df, y=sc, title=f"Box Plot — {sc}")
-                    apply_theme(fig2); st.plotly_chart(fig2, width='stretch')
-            with pt[2]:
-                if len(num) >= 2:
-                    corr = df[num].corr()
-                    fig = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
-                                  title="Correlation Matrix", aspect='auto')
-                    fig.update_layout(height=600)
-                    apply_theme(fig); st.plotly_chart(fig, width='stretch')
-        
-        with an_tabs[2]:
-            if num:
-                wc = st.selectbox("Variable:", num, key="wi")
-                cur_t, cur_m = df[wc].sum(), df[wc].mean()
-                pct = st.slider(f"Change {wc} (%):", -50, 100, 0, 1)
-                new_t = cur_t * (1 + pct / 100)
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Current", f"{cur_t:,.2f}")
-                c2.metric("Scenario", f"{new_t:,.2f}", delta=f"{pct:+.1f}%")
-                c3.metric("Avg", f"{cur_m:,.2f}")
-                fig = go.Figure()
-                fig.add_trace(go.Bar(x=["Current", "Scenario"], y=[cur_t, new_t],
-                                    text=[f"{cur_t:,.2f}", f"{new_t:,.2f}"], textposition='outside',
-                                    marker_color=['#818cf8', '#34d399' if pct >= 0 else '#f87171']))
-                fig.update_layout(title=f"What-If: {wc} ± {abs(pct):.1f}%", height=400)
-                st.plotly_chart(fig, width='stretch')
-            else: st.warning("Need numeric columns")
-        
-        with an_tabs[3]:
-            if PDF_AVAIL:
-                title = st.text_input("Title", f"Report — {st.session_state.filename or 'Data'}")
-                c1, c2 = st.columns(2)
-                with c1:
-                    inc_s = st.checkbox("Statistics", True)
-                    inc_c = st.checkbox("Charts", True)
-                with c2:
-                    inc_corr = st.checkbox("Correlation", True)
-                    inc_o = st.checkbox("Outliers", True)
-                if st.button("📄 Generate PDF", key="pdfg"):
-                    with st.spinner("Generating PDF..."):
-                        pdf = FPDF(); pdf.add_page()
-                        pdf.set_font("Helvetica", "B", 20); pdf.cell(0, 15, title, ln=True, align="C")
-                        pdf.set_font("Helvetica", "", 10)
-                        pdf.cell(0, 8, f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S}", ln=True, align="C")
-                        pdf.cell(0, 8, f"Dataset: {len(df)} rows x {len(df.columns)} cols", ln=True, align="C")
-                        pdf.ln(5)
-                        if inc_s:
-                            pdf.set_font("Helvetica", "B", 14); pdf.cell(0, 10, "Statistics", ln=True)
-                            pdf.set_font("Helvetica", "", 9)
-                            for c in df.columns[:15]:
-                                try:
-                                    if df[c].dtype in [np.float64, np.int64]:
-                                        pdf.cell(0, 5, f"{c}: Mean={df[c].mean():.2f}, Std={df[c].std():.2f}, Min={df[c].min():.2f}, Max={df[c].max():.2f}", ln=True)
-                                    else:
-                                        vc = df[c].value_counts()
-                                        pdf.cell(0, 5, f"{c}: {df[c].nunique()} unique values", ln=True)
-                                except Exception: pass
-                        if inc_corr and len(num) >= 2:
-                            pdf.set_font("Helvetica", "B", 14); pdf.cell(0, 10, "Top Correlations", ln=True)
-                            pdf.set_font("Helvetica", "", 9)
-                            corr = df[num].corr()
-                            pairs = []
-                            for i in range(len(num)):
-                                for j in range(i+1, len(num)):
-                                    pairs.append((num[i], num[j], corr.iloc[i, j]))
-                            for a, b, r in sorted(pairs, key=lambda x: abs(x[2]), reverse=True)[:10]:
-                                pdf.cell(0, 5, f"{a} vs {b}: r = {r:.3f}", ln=True)
-                        st.download_button("📥 Download", bytes(pdf.output(dest="S")),
-                                         f"report_{st.session_state.filename or 'data'}.pdf", "application/pdf")
-            else: st.warning("Install: pip install fpdf2")
-
-        # ── Data Cleaning ──
-        with an_tabs[4]:
-            st.markdown("### 🧹 Data Cleaning & Transformation")
-            st.caption("Xử lý missing values, duplicates, outliers, encoding và scaling")
+            # ── Profiling ──
+            with an_tabs[1]:
+                ni = df.select_dtypes(include=[np.number])
+                ci = df.select_dtypes(include=["object","str","category"])
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Rows", df.shape[0]); c2.metric("Columns", df.shape[1])
+                c3.metric("Numeric", len(ni.columns)); c4.metric("Categorical", len(ci.columns))
+                
+                pt = st.tabs(PROFILER_TABS)
+                with pt[0]:
+                    for c_ in df.columns:
+                        with st.expander(f"**{c_}** ({df[c_].dtype})"):
+                            a, b, c = st.columns(3)
+                            a.metric("Count", len(df[c_])); b.metric("Missing", df[c_].isnull().sum())
+                            c.metric("Unique", df[c_].nunique())
+                            if c_ in num:
+                                d, e, f = st.columns(3)
+                                d.metric("Min", f"{df[c_].min():,.4f}")
+                                e.metric("Mean", f"{df[c_].mean():,.4f}")
+                                f.metric("Max", f"{df[c_].max():,.4f}")
+                                fig = px.histogram(df, x=c_, nbins=30, title="Distribution")
+                                apply_theme(fig); st.plotly_chart(fig, width='stretch')
+                            else:
+                                vc = df[c_].value_counts().head(15)
+                                fig = px.bar(x=vc.index.astype(str), y=vc.values, title="Top 15",
+                                           color=vc.values, color_continuous_scale="Viridis")
+                                apply_theme(fig); st.plotly_chart(fig, width='stretch')
+                with pt[1]:
+                    if num:
+                        sc = st.selectbox("Column:", num, key="pd_")
+                        fig = px.histogram(df, x=sc, nbins=50, marginal="box", title=f"Distribution of {sc}")
+                        apply_theme(fig); st.plotly_chart(fig, width='stretch')
+                        fig2 = px.box(df, y=sc, title=f"Box Plot — {sc}")
+                        apply_theme(fig2); st.plotly_chart(fig2, width='stretch')
+                with pt[2]:
+                    if len(num) >= 2:
+                        corr = df[num].corr()
+                        fig = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu_r",
+                                       zmin=-1, zmax=1, title="Correlation Matrix", aspect='auto')
+                        fig.update_layout(height=600)
+                        apply_theme(fig); st.plotly_chart(fig, width='stretch')
             
-            # Initialize cleaned_df if not exists
-            if "cleaned_df" not in st.session_state or st.session_state.cleaned_df is None:
-                st.session_state.cleaned_df = df.copy()
-            
-            work_df = st.session_state.cleaned_df
-            changes = []
-            
-            # Section 1: Missing Values
-            st.markdown("#### 🔲 Missing Values")
-            missing_counts = work_df.isnull().sum()
-            missing_cols = missing_counts[missing_counts > 0]
-            
-            if len(missing_cols) > 0:
-                st.write(f"**{len(missing_cols)} cột có missing values:**")
-                missing_df = pd.DataFrame({
-                    "Column": missing_cols.index,
-                    "Missing": missing_cols.values,
-                    "Missing %": [f"{v/len(work_df)*100:.1f}%" for v in missing_cols.values]
-                })
-                st.dataframe(missing_df, width='stretch', hide_index=True)
+            # ── Data Cleaning ──
+            with an_tabs[2]:
+                st.markdown("### 🧹 Data Cleaning & Transformation")
+                
+                if "cleaned_df" not in st.session_state or st.session_state.cleaned_df is None:
+                    st.session_state.cleaned_df = df.copy()
+                
+                work_df = st.session_state.cleaned_df
+                
+                # Missing Values
+                st.markdown("#### 🔲 Missing Values")
+                missing_counts = work_df.isnull().sum()
+                missing_cols = missing_counts[missing_counts > 0]
+                
+                if len(missing_cols) > 0:
+                    st.write(f"**{len(missing_cols)} columns with missing values:**")
+                    missing_df = pd.DataFrame({
+                        "Column": missing_cols.index,
+                        "Missing": missing_cols.values,
+                        "Missing %": [f"{v/len(work_df)*100:.1f}%" for v in missing_cols.values]
+                    })
+                    st.dataframe(missing_df, width='stretch', hide_index=True)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        mv_action = st.selectbox("Action:", 
+                            ["Drop rows with any NaN", "Drop rows with all NaN", 
+                             "Fill with Mean", "Fill with Median", "Fill with Mode", "Fill with 0",
+                             "Forward Fill", "Backward Fill"], key="mv_action")
+                    with col2:
+                        mv_cols = st.multiselect("Apply to:", missing_cols.index.tolist(),
+                                                default=missing_cols.index.tolist(), key="mv_cols")
+                    
+                    if st.button("✨ Apply", key="mv_apply"):
+                        try:
+                            before = len(work_df)
+                            if mv_action == "Drop rows with any NaN":
+                                work_df = work_df.dropna(subset=mv_cols)
+                            elif mv_action == "Drop rows with all NaN":
+                                work_df = work_df.dropna(how='all', subset=mv_cols)
+                            elif mv_action == "Fill with Mean":
+                                for c in mv_cols:
+                                    if work_df[c].dtype in [np.float64, np.int64]:
+                                        work_df[c] = work_df[c].fillna(work_df[c].mean())
+                            elif mv_action == "Fill with Median":
+                                for c in mv_cols:
+                                    if work_df[c].dtype in [np.float64, np.int64]:
+                                        work_df[c] = work_df[c].fillna(work_df[c].median())
+                            elif mv_action == "Fill with Mode":
+                                for c in mv_cols:
+                                    mode_val = work_df[c].mode()
+                                    if len(mode_val) > 0:
+                                        work_df[c] = work_df[c].fillna(mode_val[0])
+                            elif mv_action == "Fill with 0":
+                                for c in mv_cols:
+                                    work_df[c] = work_df[c].fillna(0)
+                            elif mv_action == "Forward Fill":
+                                for c in mv_cols:
+                                    work_df[c] = work_df[c].ffill()
+                            elif mv_action == "Backward Fill":
+                                for c in mv_cols:
+                                    work_df[c] = work_df[c].bfill()
+                            
+                            st.session_state.cleaned_df = work_df
+                            st.success(f"✅ Applied: {mv_action}")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+                else:
+                    st.success("✅ No missing values")
+                
+                st.markdown("---")
+                
+                # Duplicates
+                st.markdown("#### 🔁 Duplicate Rows")
+                dup_count = work_df.duplicated().sum()
+                if dup_count > 0:
+                    st.warning(f"⚠️ **{dup_count}** duplicate rows ({dup_count/len(work_df)*100:.1f}%)")
+                    if st.button("🗑 Remove Duplicates", key="dup_remove"):
+                        work_df = work_df.drop_duplicates()
+                        st.session_state.cleaned_df = work_df
+                        st.success(f"✅ Removed {dup_count} duplicate rows")
+                        st.rerun()
+                else:
+                    st.success("✅ No duplicate rows")
+                
+                st.markdown("---")
+                
+                # Outliers
+                st.markdown("#### 📊 Outliers")
+                num_cols_clean = work_df.select_dtypes(include=[np.number]).columns.tolist()
+                if num_cols_clean:
+                    outlier_col = st.selectbox("Column:", num_cols_clean, key="outlier_col")
+                    q1, q3 = work_df[outlier_col].quantile(0.25), work_df[outlier_col].quantile(0.75)
+                    iqr = q3 - q1
+                    lower, upper = q1 - 1.5*iqr, q3 + 1.5*iqr
+                    outliers = work_df[(work_df[outlier_col] < lower) | (work_df[outlier_col] > upper)]
+                    st.write(f"**{len(outliers)} outliers detected**")
+                    
+                    if len(outliers) > 0:
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("✂️ Remove", key="out_remove"):
+                                work_df = work_df.drop(outliers.index)
+                                st.session_state.cleaned_df = work_df
+                                st.success(f"✅ Removed {len(outliers)} outliers")
+                                st.rerun()
+                        with col2:
+                            if st.button("🔒 Cap Outliers", key="out_cap"):
+                                work_df[outlier_col] = work_df[outlier_col].clip(lower, upper)
+                                st.session_state.cleaned_df = work_df
+                                st.success("✅ Capped outliers")
+                                st.rerun()
+                
+                st.markdown("---")
+                
+                # Encoding
+                st.markdown("#### 🔤 Encoding")
+                cat_cols_clean = work_df.select_dtypes(include=["object", "str", "category"]).columns.tolist()
+                if cat_cols_clean:
+                    enc_cols = st.multiselect("Categorical columns:", cat_cols_clean, key="enc_cols")
+                    enc_method = st.selectbox("Method:", ["One-Hot", "Label", "Frequency"], key="enc_method")
+                    if st.button("🔄 Apply") and enc_cols:
+                        try:
+                            if enc_method == "One-Hot":
+                                work_df = pd.get_dummies(work_df, columns=enc_cols)
+                            elif enc_method == "Label":
+                                for c in enc_cols:
+                                    work_df[c] = work_df[c].astype('category').cat.codes
+                            elif enc_method == "Frequency":
+                                for c in enc_cols:
+                                    freq = work_df[c].value_counts(normalize=True)
+                                    work_df[c] = work_df[c].map(freq)
+                            st.session_state.cleaned_df = work_df
+                            st.success("✅ Applied encoding")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ {e}")
+                
+                st.markdown("---")
+                
+                # Summary
+                col1, col2, col3 = st.columns(3)
+                with col1: st.metric("Original Rows", len(df))
+                with col2: st.metric("Current Rows", len(work_df))
+                with col3: st.metric("Current Cols", len(work_df.columns))
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    mv_action = st.selectbox("Hành động:", 
-                        ["Drop rows with any NaN", "Drop rows with all NaN", 
-                         "Fill with Mean", "Fill with Median", "Fill with Mode", "Fill with 0",
-                         "Forward Fill", "Backward Fill"], key="mv_action")
+                    if st.button("🔄 Reset to Original", use_container_width=True):
+                        st.session_state.cleaned_df = df.copy()
+                        st.success("✅ Reset")
+                        st.rerun()
                 with col2:
-                    mv_cols = st.multiselect("Áp dụng cho cột:", 
-                        missing_cols.index.tolist(), default=missing_cols.index.tolist(), key="mv_cols")
-                
-                if st.button("✨ Apply Missing Value Treatment", key="mv_apply"):
-                    try:
-                        if mv_action == "Drop rows with any NaN":
-                            before = len(work_df)
-                            work_df = work_df.dropna(subset=mv_cols)
-                            changes.append(f"Dropped {before - len(work_df)} rows with NaN in {len(mv_cols)} columns")
-                        elif mv_action == "Drop rows with all NaN":
-                            before = len(work_df)
-                            work_df = work_df.dropna(how='all', subset=mv_cols)
-                            changes.append(f"Dropped {before - len(work_df)} rows with all NaN")
-                        elif mv_action == "Fill with Mean":
-                            for c in mv_cols:
-                                if work_df[c].dtype in [np.float64, np.int64]:
-                                    work_df[c] = work_df[c].fillna(work_df[c].mean())
-                                    changes.append(f"Filled '{c}' with mean")
-                        elif mv_action == "Fill with Median":
-                            for c in mv_cols:
-                                if work_df[c].dtype in [np.float64, np.int64]:
-                                    work_df[c] = work_df[c].fillna(work_df[c].median())
-                                    changes.append(f"Filled '{c}' with median")
-                        elif mv_action == "Fill with Mode":
-                            for c in mv_cols:
-                                mode_val = work_df[c].mode()
-                                if len(mode_val) > 0:
-                                    work_df[c] = work_df[c].fillna(mode_val[0])
-                                    changes.append(f"Filled '{c}' with mode")
-                        elif mv_action == "Fill with 0":
-                            for c in mv_cols:
-                                work_df[c] = work_df[c].fillna(0)
-                                changes.append(f"Filled '{c}' with 0")
-                        elif mv_action == "Forward Fill":
-                            for c in mv_cols:
-                                work_df[c] = work_df[c].ffill()
-                                changes.append(f"Forward filled '{c}'")
-                        elif mv_action == "Backward Fill":
-                            for c in mv_cols:
-                                work_df[c] = work_df[c].bfill()
-                                changes.append(f"Backward filled '{c}'")
-                        
-                        st.session_state.cleaned_df = work_df
-                        st.success(f"✅ Applied: {mv_action}")
-                        if changes:
-                            st.info(f"📝 Changes: {'; '.join(changes[-3:])}")
+                    if st.button("💾 Save Cleaned Data", use_container_width=True):
+                        st.session_state.df = work_df.copy()
+                        st.success("✅ Saved")
                         st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
-            else:
-                st.success("✅ Không có missing values")
             
-            st.markdown("---")
-            
-            # Section 2: Duplicates
-            st.markdown("#### 🔁 Duplicate Rows")
-            dup_count = work_df.duplicated().sum()
-            if dup_count > 0:
-                st.warning(f"⚠️ **{dup_count}** duplicate rows found ({dup_count/len(work_df)*100:.1f}%)")
-                if st.button("🗑 Remove Duplicates", key="dup_remove"):
-                    before = len(work_df)
-                    work_df = work_df.drop_duplicates()
-                    st.session_state.cleaned_df = work_df
-                    st.success(f"✅ Removed {before - len(work_df)} duplicate rows")
-                    st.rerun()
-            else:
-                st.success("✅ Không có duplicate rows")
-            
-            st.markdown("---")
-            
-            # Section 3: Outliers
-            st.markdown("#### 📊 Outlier Detection & Treatment")
-            num_cols = work_df.select_dtypes(include=[np.number]).columns.tolist()
-            if num_cols:
-                outlier_col = st.selectbox("Chọn cột numeric:", num_cols, key="outlier_col")
-                outlier_method = st.selectbox("Phương pháp:", ["IQR (1.5x)", "Z-Score (3σ)"], key="outlier_method")
+            # ── AutoML ──
+            with an_tabs[3]:
+                try:
+                    import xgboost as xgb
+                    XGB_AVAIL = True
+                except: XGB_AVAIL = False
+                try:
+                    from sklearn.pipeline import Pipeline
+                    from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+                    SKLEARN_AVAIL = True
+                except: SKLEARN_AVAIL = False
                 
-                if outlier_method == "IQR (1.5x)":
-                    q1, q3 = work_df[outlier_col].quantile(0.25), work_df[outlier_col].quantile(0.75)
-                    iqr = q3 - q1
-                    lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
-                    outliers = work_df[(work_df[outlier_col] < lower) | (work_df[outlier_col] > upper)]
+                if XGB_AVAIL and SKLEARN_AVAIL:
+                    from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+                    from sklearn.linear_model import Ridge, Lasso
+                    from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+                    
+                    if len(num) >= 2:
+                        st.markdown("### 🚀 AutoML — Automated Model Selection")
+                        st.caption("Hyperparameter Tuning với 5 thuật toán")
+                        
+                        tg = st.selectbox("Target:", num, key="atg")
+                        feats = [c for c in num if c != tg]
+                        cols = st.multiselect("Features:", feats, default=feats[:min(4, len(feats))], key="atg_feats")
+                        
+                        if len(cols) >= 1:
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                tune_method = st.selectbox("Tuning:", ["GridSearch", "RandomizedSearch", "None"], key="atg_tune")
+                                test_size = st.slider("Test size:", 0.1, 0.4, 0.2, 0.05, key="atg_ts")
+                            with col2:
+                                cv_folds = st.slider("CV folds:", 2, 10, 3, key="atg_cv")
+                                auto_models = st.multiselect("Models:", 
+                                    ["Random Forest", "XGBoost", "Gradient Boosting", "Ridge", "Lasso"],
+                                    default=["Random Forest", "XGBoost"], key="atg_models")
+                            
+                            auto_scale = st.checkbox("📐 Auto Scaling", True, key="atg_scale")
+                            
+                            if st.button("🚀 Run AutoML", key="atg_run") and auto_models:
+                                with st.spinner("⏳ AutoML running..."):
+                                    X = df[cols].dropna()
+                                    y = df.loc[X.index, tg]
+                                    
+                                    if len(X) >= 10:
+                                        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+                                        
+                                        model_constructors = {
+                                            "Random Forest": RandomForestRegressor(random_state=42),
+                                            "XGBoost": xgb.XGBRegressor(random_state=42, verbosity=0),
+                                            "Gradient Boosting": GradientBoostingRegressor(random_state=42),
+                                            "Ridge": Ridge(),
+                                            "Lasso": Lasso(max_iter=5000)
+                                        }
+                                        
+                                        results = []
+                                        best_overall = {"name": "", "score": -999}
+                                        
+                                        progress_bar = st.progress(0)
+                                        for i, model_name in enumerate(auto_models):
+                                            base_model = model_constructors[model_name]
+                                            param_grid = PARAM_GRIDS[model_name]
+                                            
+                                            steps = []
+                                            if auto_scale:
+                                                steps.append(("scaler", StandardScaler()))
+                                            steps.append(("model", base_model))
+                                            pipeline = Pipeline(steps)
+                                            
+                                            if tune_method == "GridSearch":
+                                                searcher = GridSearchCV(pipeline, param_grid, cv=cv_folds, scoring='r2', n_jobs=-1)
+                                            elif tune_method == "RandomizedSearch":
+                                                searcher = RandomizedSearchCV(pipeline, param_grid, n_iter=10, cv=cv_folds, scoring='r2', n_jobs=-1, random_state=42)
+                                            else:
+                                                searcher = None
+                                            
+                                            if searcher:
+                                                searcher.fit(X_train, y_train)
+                                                best_model = searcher.best_estimator_
+                                                best_params = searcher.best_params_
+                                                cv_score = searcher.best_score_
+                                            else:
+                                                pipeline.fit(X_train, y_train)
+                                                best_model = pipeline
+                                                best_params = "Default"
+                                                cv_score = 0
+                                            
+                                            train_score = best_model.score(X_train, y_train)
+                                            test_score = best_model.score(X_test, y_test)
+                                            
+                                            results.append({
+                                                "Model": model_name,
+                                                "Train R²": round(train_score, 4),
+                                                "Test R²": round(test_score, 4),
+                                                "CV R²": round(cv_score, 4)
+                                            })
+                                            
+                                            if test_score > best_overall["score"]:
+                                                best_overall = {"name": model_name, "score": test_score, "params": best_params}
+                                            
+                                            progress_bar.progress((i + 1) / len(auto_models))
+                                        
+                                        result_df = pd.DataFrame(results).sort_values("Test R²", ascending=False)
+                                        st.dataframe(result_df, width='stretch', hide_index=True)
+                                        
+                                        st.success(f"🏆 **Best: {best_overall['name']}** — Test R² = {best_overall['score']:.4f}")
+                                        
+                                        fig = go.Figure()
+                                        fig.add_trace(go.Bar(name="Train", x=result_df["Model"], y=result_df["Train R²"], marker_color="#818cf8"))
+                                        fig.add_trace(go.Bar(name="Test", x=result_df["Model"], y=result_df["Test R²"], marker_color="#34d399"))
+                                        fig.update_layout(title="AutoML Results", barmode='group', height=350)
+                                        apply_theme(fig)
+                                        st.plotly_chart(fig, width='stretch')
+                                    else: st.error("Need ≥10 samples")
+                        else: st.warning("Select ≥1 feature")
+                    else: st.warning("Need ≥2 numeric columns")
                 else:
-                    z_scores = np.abs((work_df[outlier_col] - work_df[outlier_col].mean()) / work_df[outlier_col].std())
-                    outliers = work_df[z_scores > 3]
-                
-                st.write(f"**{len(outliers)} outliers detected** (range: {work_df[outlier_col].min():.2f} - {work_df[outlier_col].max():.2f})")
-                
-                if len(outliers) > 0:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if st.button("✂️ Remove Outliers", key="out_remove"):
-                            work_df = work_df.drop(outliers.index)
-                            st.session_state.cleaned_df = work_df
-                            st.success(f"✅ Removed {len(outliers)} outliers")
-                            st.rerun()
-                    with col2:
-                        if st.button("🔒 Cap Outliers (clip to bounds)", key="out_cap"):
-                            if outlier_method == "IQR (1.5x)":
-                                work_df[outlier_col] = work_df[outlier_col].clip(lower, upper)
-                            else:
-                                mean, std = work_df[outlier_col].mean(), work_df[outlier_col].std()
-                                work_df[outlier_col] = work_df[outlier_col].clip(mean - 3*std, mean + 3*std)
-                            st.session_state.cleaned_df = work_df
-                            st.success(f"✅ Capped {len(outliers)} outliers in '{outlier_col}'")
-                            st.rerun()
-            else:
-                st.info("Không có cột numeric để detect outliers")
-            
-            st.markdown("---")
-            
-            # Section 4: Categorical Encoding
-            st.markdown("#### 🔤 Categorical Encoding")
-            cat_cols = work_df.select_dtypes(include=["object", "str", "category"]).columns.tolist()
-            if cat_cols:
-                enc_cols = st.multiselect("Chọn cột categorical:", cat_cols, key="enc_cols")
-                enc_method = st.selectbox("Encoding method:", 
-                    ["One-Hot Encoding", "Label Encoding", "Frequency Encoding"], key="enc_method")
-                
-                if st.button("🔄 Apply Encoding", key="enc_apply") and enc_cols:
-                    try:
-                        if enc_method == "One-Hot Encoding":
-                            work_df = pd.get_dummies(work_df, columns=enc_cols, prefix=enc_cols)
-                            changes.append(f"One-Hot encoded: {', '.join(enc_cols)}")
-                        elif enc_method == "Label Encoding":
-                            for c in enc_cols:
-                                work_df[c] = work_df[c].astype('category').cat.codes
-                                changes.append(f"Label encoded '{c}'")
-                        elif enc_method == "Frequency Encoding":
-                            for c in enc_cols:
-                                freq = work_df[c].value_counts(normalize=True)
-                                work_df[c] = work_df[c].map(freq)
-                                changes.append(f"Frequency encoded '{c}'")
-                        
-                        st.session_state.cleaned_df = work_df
-                        st.success(f"✅ Applied {enc_method}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
-            else:
-                st.info("Không có cột categorical")
-            
-            st.markdown("---")
-            
-            # Section 5: Numeric Scaling
-            st.markdown("#### 📐 Numeric Scaling")
-            num_cols_now = work_df.select_dtypes(include=[np.number]).columns.tolist()
-            if num_cols_now:
-                scale_cols = st.multiselect("Chọn cột numeric:", num_cols_now, key="scale_cols")
-                scale_method = st.selectbox("Scaling method:", 
-                    ["StandardScaler (mean=0, std=1)", "MinMaxScaler (0-1)", "RobustScaler"], key="scale_method")
-                
-                if st.button("📏 Apply Scaling", key="scale_apply") and scale_cols:
-                    try:
-                        from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-                        
-                        if scale_method == "StandardScaler (mean=0, std=1)":
-                            scaler = StandardScaler()
-                        elif scale_method == "MinMaxScaler (0-1)":
-                            scaler = MinMaxScaler()
-                        else:
-                            scaler = RobustScaler()
-                        
-                        work_df[scale_cols] = scaler.fit_transform(work_df[scale_cols])
-                        st.session_state.cleaned_df = work_df
-                        st.success(f"✅ Applied {scale_method} to {len(scale_cols)} columns")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
-            else:
-                st.info("Không có cột numeric")
-            
-            st.markdown("---")
-            
-            # Section 6: Summary & Actions
-            st.markdown("#### 📋 Summary & Actions")
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.metric("Original Rows", len(df))
-            with c2:
-                st.metric("Current Rows", len(work_df))
-            with c3:
-                st.metric("Current Cols", len(work_df.columns))
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                if st.button("🔄 Reset to Original", use_container_width=True, key="clean_reset"):
-                    st.session_state.cleaned_df = df.copy()
-                    st.success("✅ Reset to original data")
-                    st.rerun()
-            with col2:
-                if st.button("💾 Save Cleaned Data", use_container_width=True, key="clean_save"):
-                    st.session_state.df = work_df.copy()
-                    st.success("✅ Cleaned data saved as main dataset")
-                    st.rerun()
-            with col3:
-                if st.button("📥 Export Cleaned", use_container_width=True, key="clean_export"):
-                    csv = work_df.to_csv(index=False).encode("utf-8")
-                    st.download_button("Download CSV", csv, 
-                        f"cleaned_{st.session_state.filename or 'data'}.csv", "text/csv",
-                        key="clean_dl")
+                    st.info("Install: pip install xgboost scikit-learn")
 
     # ═══════════════ DEEP ANALYSIS ═══════════════
     with main_tabs[3]:
@@ -1252,20 +1073,8 @@ Answer in Vietnamese, provide insights from data."""
         else:
             st.error("Advanced Analytics module unavailable. Check advanced_analytics.py")
             with st.expander("🔧 Install dependencies", expanded=True):
-                st.code("""
-pip install scipy scikit-learn statsmodels matplotlib seaborn
-                """)
+                st.code("pip install scipy scikit-learn statsmodels matplotlib seaborn")
                 if st.button("🔄 Refresh", key="da_refresh"):
                     st.rerun()
 
-    # ═══════════════ MOLECULE ═══════════════
-    with main_tabs[4]:
-        is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
-        if not is_valid:
-            st.error(f"❌ {msg}")
-        elif SOLAR_SYSTEM_AVAIL:
-            render_solar_system_tab(df, st.session_state.filename or "Dataset")
-        else:
-            st.warning("Solar System module unavailable")
-
-st.caption("📊 Data Analyst Pro v2.0 — Built with Streamlit, Gemini AI, Prophet, XGBoost & Plotly")
+st.caption("📊 Data Analyst Pro v3.0 — Practical Statistics for Data Scientists, 2nd Ed")
