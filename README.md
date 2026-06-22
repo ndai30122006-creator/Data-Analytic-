@@ -1,4 +1,4 @@
-# 📊 Data Analyst Pro v2.0
+# 📊 Data Analyst Pro v3.0
 
 **Enterprise AI-powered data analysis platform** — Phân tích dữ liệu chuyên sâu với AI, Machine Learning, và trực quan hóa chuyên nghiệp.
 
