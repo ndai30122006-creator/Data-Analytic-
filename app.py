@@ -36,7 +36,7 @@ from components import (
 from config import (
     MIN_ROWS_VALIDATION, TOP_N_VALUES, TOP_N_CATEGORIES, TOP_N_DISTRIBUTION,
     SPARKLINE_SAMPLE_SIZE, DATA_PREVIEW_ROWS, MAX_DISPLAY_ROWS,
-    DEFAULT_TEST_SIZE, DEFAULT_CV_FOLDS, DEFAULT_CONTAMINATION,
+    DEFAULT_TEST_SIZE, DEFAULT_CV_FOLDS,
     RANDOM_STATE, AUTOML_DEFAULT_MODELS,
     AUTOML_DEFAULT_FEATURES, AUTOML_POLYNOMIAL_DEGREE, AUTOML_N_ITER_RANDOMIZED,
     PARAM_GRIDS, CHART_THEME, SPARKLINE_HEIGHT, SPARKLINE_COLOR,
@@ -546,7 +546,7 @@ else:
                 
                 with tabs_ab[1]:
                     baseline = st.slider("Baseline (%):", 1, 99, 10, 1, key="ab_base")
-                    effect = st.slider("Min effect (%):", 0.5, 30, 5.0, 0.5, key="ab_eff")
+                    effect = st.slider("Min effect (%):", 0.5, 30.0, 5.0, 0.5, key="ab_eff")
                     if st.button("📐 Calculate Sample Size", key="ab_ss"):
                         from scipy.stats import norm
                         p1, p2 = baseline/100, (baseline+effect)/100

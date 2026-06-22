@@ -157,7 +157,7 @@ def render_bootstrap_tab(df, num):
             fig.update_layout(title=f"Bootstrap Distribution of {stat_choice} (n_iter={n_iter})",
                             height=400, xaxis_title=stat_choice, yaxis_title="Frequency")
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
             insight_card("💡", "Interpretation",
                         f"Với {conf_level}% confidence, {stat_choice.lower()} nằm trong khoảng "
@@ -704,24 +704,24 @@ def render_advanced_stats_tab(df, num, cat):
     # ── Hypothesis Testing ──
     with tabs[0]:
         test_type = st.selectbox("Loại kiểm định:", [
-            "T-test (2 mẫu độc lập)",
-            "T-test (1 mẫu)",
-            "T-test (bắt cặp)",
-            "ANOVA (nhiều mẫu)",
-            "Mann-Whitney U (phi tham số)",
-            "Kruskal-Wallis (phi tham số)",
-            "Chi-Square (độc lập)"
-        ], key="ht_type")
+        "T-test (2 mẫu độc lập)",
+        "T-test (1 mẫu)",
+        "T-test (bắt cặp)",
+        "ANOVA (nhiều mẫu)",
+        "Mann-Whitney U (phi tham số)",
+        "Kruskal-Wallis (phi tham số)",
+        "Chi-Square (độc lập)"
+    ], key="ht_type_adv")
 
         if "T-test (2 mẫu)" in test_type:
             if len(num) >= 1 and len(cat) >= 1:
-                val_col = st.selectbox("Cột giá trị:", num, key="ht_val")
-                grp_col = st.selectbox("Cột nhóm:", cat, key="ht_grp")
+                val_col = st.selectbox("Cột giá trị:", num, key="ht_val_adv")
+                grp_col = st.selectbox("Cột nhóm:", cat, key="ht_grp_adv")
                 grps = df[grp_col].dropna().unique()[:5]
                 if len(grps) >= 2:
-                    g1 = st.selectbox("Nhóm 1:", grps, key="ht_g1")
-                    g2 = st.selectbox("Nhóm 2:", [g for g in grps if g != g1], key="ht_g2")
-                    if st.button("🔬 Run", key="ht_run"):
+                    g1 = st.selectbox("Nhóm 1:", grps, key="ht_g1_adv")
+                    g2 = st.selectbox("Nhóm 2:", [g for g in grps if g != g1], key="ht_g2_adv")
+                    if st.button("🔬 Run", key="ht_run_adv"):
                         s1 = df[df[grp_col] == g1][val_col].dropna()
                         s2 = df[df[grp_col] == g2][val_col].dropna()
                         if len(s1) > 1 and len(s2) > 1:
@@ -750,9 +750,9 @@ def render_advanced_stats_tab(df, num, cat):
                         else: st.error("Cần ít nhất 2 giá trị mỗi nhóm")
         elif "1 mẫu" in test_type:
             if num:
-                val_col = st.selectbox("Cột giá trị:", num, key="ht_1s")
-                mu0 = st.number_input("Giá trị giả định (μ₀):", value=0.0, key="ht_mu")
-                if st.button("🔬 Run", key="ht_1s_run"):
+                val_col = st.selectbox("Cột giá trị:", num, key="ht_1s_adv")
+                mu0 = st.number_input("Giá trị giả định (μ₀):", value=0.0, key="ht_mu_adv")
+                if st.button("🔬 Run", key="ht_1s_run_adv"):
                     s = df[val_col].dropna()
                     stat, p = ttest_1samp(s, mu0)
                     cohens_d = (s.mean() - mu0) / s.std() if s.std() > 0 else 0
@@ -766,9 +766,9 @@ def render_advanced_stats_tab(df, num, cat):
 
         elif "bắt cặp" in test_type:
             if len(num) >= 2:
-                c1 = st.selectbox("Cột trước:", num, key="ht_pa")
-                c2 = st.selectbox("Cột sau:", [c for c in num if c != c1], key="ht_pb")
-                if st.button("🔬 Run", key="ht_p_run"):
+                c1 = st.selectbox("Cột trước:", num, key="ht_pa_adv")
+                c2 = st.selectbox("Cột sau:", [c for c in num if c != c1], key="ht_pb_adv")
+                if st.button("🔬 Run", key="ht_p_run_adv"):
                     s = df[[c1, c2]].dropna()
                     stat, p = ttest_rel(s[c1], s[c2])
                     cohens_d = (s[c1] - s[c2]).mean() / (s[c1] - s[c2]).std() if (s[c1] - s[c2]).std() > 0 else 0
@@ -781,9 +781,9 @@ def render_advanced_stats_tab(df, num, cat):
 
         elif "ANOVA" in test_type:
             if len(num) >= 1 and len(cat) >= 1:
-                val_col = st.selectbox("Cột giá trị:", num, key="ht_anova_val")
-                grp_col = st.selectbox("Cột nhóm:", cat, key="ht_anova_grp")
-                if st.button("🔬 Run", key="ht_anova_run"):
+                val_col = st.selectbox("Cột giá trị:", num, key="ht_anova_val_adv")
+                grp_col = st.selectbox("Cột nhóm:", cat, key="ht_anova_grp_adv")
+                if st.button("🔬 Run", key="ht_anova_run_adv"):
                     grps = df[grp_col].dropna().unique()
                     groups = [df[df[grp_col] == g][val_col].dropna().values for g in grps if len(df[df[grp_col] == g]) > 1]
                     if len(groups) >= 2:
@@ -809,13 +809,13 @@ def render_advanced_stats_tab(df, num, cat):
 
         elif "Mann-Whitney" in test_type:
             if len(num) >= 1 and len(cat) >= 1:
-                val_col = st.selectbox("Cột giá trị:", num, key="ht_mw_val")
-                grp_col = st.selectbox("Cột nhóm:", cat, key="ht_mw_grp")
+                val_col = st.selectbox("Cột giá trị:", num, key="ht_mw_val_adv")
+                grp_col = st.selectbox("Cột nhóm:", cat, key="ht_mw_grp_adv")
                 grps = df[grp_col].dropna().unique()[:5]
                 if len(grps) >= 2:
-                    g1 = st.selectbox("Nhóm 1:", grps, key="ht_mw_g1")
-                    g2 = st.selectbox("Nhóm 2:", [g for g in grps if g != g1], key="ht_mw_g2")
-                    if st.button("🔬 Run", key="ht_mw_run"):
+                    g1 = st.selectbox("Nhóm 1:", grps, key="ht_mw_g1_adv")
+                    g2 = st.selectbox("Nhóm 2:", [g for g in grps if g != g1], key="ht_mw_g2_adv")
+                    if st.button("🔬 Run", key="ht_mw_run_adv"):
                         s1 = df[df[grp_col] == g1][val_col].dropna()
                         s2 = df[df[grp_col] == g2][val_col].dropna()
                         if len(s1) > 1 and len(s2) > 1:
@@ -835,9 +835,9 @@ def render_advanced_stats_tab(df, num, cat):
 
         elif "Chi-Square" in test_type:
             if len(cat) >= 2:
-                c1 = st.selectbox("Cột 1:", cat, key="ht_cs1")
-                c2 = st.selectbox("Cột 2:", [c for c in cat if c != c1], key="ht_cs2")
-                if st.button("🔬 Run", key="ht_cs_run"):
+                c1 = st.selectbox("Cột 1:", cat, key="ht_cs1_adv")
+                c2 = st.selectbox("Cột 2:", [c for c in cat if c != c1], key="ht_cs2_adv")
+                if st.button("🔬 Run", key="ht_cs_run_adv"):
                     ct = pd.crosstab(df[c1], df[c2])
                     stat, p, dof, expected = chi2_contingency(ct)
                     # Cramer's V
