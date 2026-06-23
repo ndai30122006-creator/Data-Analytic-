@@ -315,13 +315,22 @@ with st.sidebar:
         if st.session_state.datasets:
             st.markdown("#### 📊 Datasets")
             dataset_names = list(st.session_state.datasets.keys())
-            selected_dataset = st.selectbox("Chọn dataset:", ["-- Chọn --"] + dataset_names, key="dataset_selector")
+            
+            # Auto-select first dataset if none selected
+            current_selection = st.session_state.get("dataset_selector", "-- Chọn --")
+            if current_selection == "-- Chọn --" and dataset_names:
+                current_selection = dataset_names[0]
+            
+            selected_dataset = st.selectbox("Chọn dataset:", ["-- Chọn --"] + dataset_names, 
+                                           index=(["-- Chọn --"] + dataset_names).index(current_selection) if current_selection in ["-- Chọn --"] + dataset_names else 0,
+                                           key="dataset_selector")
             
             if selected_dataset != "-- Chọn --":
-                st.session_state.df = st.session_state.datasets[selected_dataset]
-                st.session_state.filename = selected_dataset
-                st.session_state.cleaned_df = None
-                st.rerun()
+                if st.session_state.filename != selected_dataset:
+                    st.session_state.df = st.session_state.datasets[selected_dataset]
+                    st.session_state.filename = selected_dataset
+                    st.session_state.cleaned_df = None
+                    st.rerun()
             
             # Delete dataset button
             if selected_dataset != "-- Chọn --":
