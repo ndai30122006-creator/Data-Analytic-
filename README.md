@@ -12,7 +12,8 @@
 
 ### 🔐 User Authentication
 - Đăng nhập / Đăng xuất với session management
-- Quản lý người dùng
+- Đăng ký tài khoản mới
+- Quản lý người dùng với file storage
 - Demo accounts: admin/admin123, user/user123, teacher/teacher123
 
 ### 📂 Data Input
@@ -187,8 +188,9 @@ google-generativeai>=0.3.0
 
 ## 📖 Hướng dẫn sử dụng
 
-### 1. Đăng nhập
+### 1. Đăng nhập / Đăng ký
 - Mở ứng dụng và đăng nhập với tài khoản demo
+- Hoặc đăng ký tài khoản mới ở tab "Đăng ký"
 - Click "Đăng xuất" ở sidebar để thoát
 
 ### 2. Upload dữ liệu

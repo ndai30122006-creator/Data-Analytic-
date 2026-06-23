@@ -81,6 +81,20 @@ async def login(request: LoginRequest):
         username=request.username
     )
 
+@app.post("/auth/register")
+async def register(username: str, password: str):
+    """Register new user"""
+    if username in USERS:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # In production, save to database
+    USERS[username] = hash_password(password)
+    
+    return {"message": f"User {username} registered successfully"}
+
 @app.get("/auth/verify")
 async def verify_auth(token: str):
     """Verify token"""
