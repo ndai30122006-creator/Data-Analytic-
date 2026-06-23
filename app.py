@@ -40,6 +40,7 @@ from report_utils import (
     save_session_state, load_session_state, has_saved_session, get_session_info,
     generate_pdf_report
 )
+from auth import require_auth, login_page, logout
 
 try:
     from advanced_analytics import render_deep_analysis_tab
@@ -52,12 +53,16 @@ except Exception as e:
 SESSION_DEFAULTS = [
     ("df", None), ("filename", ""), ("cleaned_df", None),
     ("file_uploader_key", 0),
+    ("datasets", {}), ("compare_datasets", []),
 ]
 for key, default in SESSION_DEFAULTS:
     if key not in st.session_state: st.session_state[key] = default
 
 st.set_page_config(page_title="Learning Analytics Thống kê", page_icon="🎓", layout="wide",
                    initial_sidebar_state="expanded")
+
+# ── Authentication ────────────────────────────────────────
+require_auth()
 
 # ═══════════════════════════════════════════════════════════
 # MODERN THEME
@@ -290,26 +295,58 @@ with st.sidebar:
     with col1: st.image("https://cdn-icons-png.flaticon.com/512/4727/4727496.png", width=50)
     with col2: st.markdown("### 🎓 Learning Analytics")
     
+    # User info & logout
+    if 'username' in st.session_state:
+        st.caption(f"👤 {st.session_state.username}")
+        if st.button("🚪 Đăng xuất", use_container_width=True, key="logout_btn"):
+            logout()
+    
     st.markdown("---")
     
-    # File upload
+    # File upload - Multiple datasets
     with st.expander("📂 Data Input", expanded=(st.session_state.df is None)):
-        uploaded = st.file_uploader("Upload CSV / Excel", type=["csv", "xlsx", "xls"], key=f"fu_{st.session_state.file_uploader_key}")
-        if uploaded and (st.session_state.filename != uploaded.name or st.session_state.df is None):
-            with st.spinner("Loading..."):
-                time.sleep(0.3)
-                loaded_df = load_and_process_data(uploaded)
-                if loaded_df is not None:
-                    st.session_state.df = loaded_df
-                    st.session_state.filename = uploaded.name
-                    st.session_state.cleaned_df = None
-                    st.success(f"✅ {uploaded.name}")
+        uploaded = st.file_uploader("Upload CSV / Excel", type=["csv", "xlsx", "xls"], 
+                                    key=f"fu_{st.session_state.file_uploader_key}",
+                                    accept_multiple_files=True)
+        
+        if uploaded:
+            for file in uploaded:
+                if file.name not in st.session_state.datasets:
+                    with st.spinner(f"Loading {file.name}..."):
+                        time.sleep(0.3)
+                        loaded_df = load_and_process_data(file)
+                        if loaded_df is not None:
+                            st.session_state.datasets[file.name] = loaded_df
+                            st.success(f"✅ {file.name}")
+        
+        # Dataset selector
+        if st.session_state.datasets:
+            st.markdown("#### 📊 Datasets")
+            dataset_names = list(st.session_state.datasets.keys())
+            selected_dataset = st.selectbox("Chọn dataset:", ["-- Chọn --"] + dataset_names, key="dataset_selector")
+            
+            if selected_dataset != "-- Chọn --":
+                st.session_state.df = st.session_state.datasets[selected_dataset]
+                st.session_state.filename = selected_dataset
+                st.session_state.cleaned_df = None
+                st.rerun()
+            
+            # Delete dataset button
+            if selected_dataset != "-- Chọn --":
+                if st.button(f"🗑 Xóa {selected_dataset}", key="del_dataset", use_container_width=True):
+                    del st.session_state.datasets[selected_dataset]
+                    if st.session_state.filename == selected_dataset:
+                        st.session_state.df = None
+                        st.session_state.filename = ""
+                    st.rerun()
         
         if st.session_state.df is not None:
             st.caption(f"📄 {st.session_state.filename}")
-            if st.button("🗑 Clear Data", key="clr", use_container_width=True):
+            if st.button("🗑 Clear All", key="clr", use_container_width=True):
                 st.session_state.df = None
                 st.session_state.filename = ""
+                st.session_state.datasets = {}
+                st.session_state.cleaned_df = None
                 st.session_state.file_uploader_key += 1
                 st.rerun()
     
@@ -923,8 +960,112 @@ else:
                 if st.button("🔗 Go to Diagnostics in Deep Analysis", key="goto_diag"):
                     pass
 
-    # ═══════════════ ANALYTICS ═══════════════
+    # ═══════════════ COMPARE DATASETS ═══════════════
     with main_tabs[3]:
+        st.markdown("### ⚖️ So sánh Datasets")
+        st.caption("So sánh cấu trúc và thống kê giữa các datasets")
+        
+        if len(st.session_state.datasets) < 2:
+            st.warning("⚠️ Cần ít nhất 2 datasets để so sánh. Upload thêm datasets từ sidebar.")
+        else:
+            # Select datasets to compare
+            dataset_names = list(st.session_state.datasets.keys())
+            col1, col2 = st.columns(2)
+            with col1:
+                ds1 = st.selectbox("Dataset 1:", dataset_names, key="compare_ds1")
+            with col2:
+                ds2 = st.selectbox("Dataset 2:", [n for n in dataset_names if n != ds1], key="compare_ds2")
+            
+            if ds1 and ds2:
+                df1 = st.session_state.datasets[ds1]
+                df2 = st.session_state.datasets[ds2]
+                
+                # Basic comparison
+                st.markdown("#### 📊 So sánh cơ bản")
+                comp_data = {
+                    "Metric": ["Rows", "Columns", "Numeric Columns", "Categorical Columns", "Missing Values", "Memory Usage (MB)"],
+                    ds1: [
+                        len(df1),
+                        len(df1.columns),
+                        len(df1.select_dtypes(include=[np.number]).columns),
+                        len(df1.select_dtypes(include=["object", "category"]).columns),
+                        df1.isnull().sum().sum(),
+                        round(df1.memory_usage(deep=True).sum() / 1024 / 1024, 2)
+                    ],
+                    ds2: [
+                        len(df2),
+                        len(df2.columns),
+                        len(df2.select_dtypes(include=[np.number]).columns),
+                        len(df2.select_dtypes(include=["object", "category"]).columns),
+                        df2.isnull().sum().sum(),
+                        round(df2.memory_usage(deep=True).sum() / 1024 / 1024, 2)
+                    ]
+                }
+                comp_df = pd.DataFrame(comp_data)
+                st.dataframe(comp_df, width='stretch', hide_index=True)
+                
+                # Column comparison
+                st.markdown("#### 🔗 So sánh columns")
+                cols1 = set(df1.columns)
+                cols2 = set(df2.columns)
+                common_cols = cols1.intersection(cols2)
+                only_in_1 = cols1 - cols2
+                only_in_2 = cols2 - cols1
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Common Columns", len(common_cols))
+                    if common_cols:
+                        with st.expander("Xem danh sách"):
+                            st.write(", ".join(sorted(common_cols)))
+                with col2:
+                    st.metric(f"Only in {ds1}", len(only_in_1))
+                    if only_in_1:
+                        with st.expander("Xem danh sách"):
+                            st.write(", ".join(sorted(only_in_1)))
+                with col3:
+                    st.metric(f"Only in {ds2}", len(only_in_2))
+                    if only_in_2:
+                        with st.expander("Xem danh sách"):
+                            st.write(", ".join(sorted(only_in_2)))
+                
+                # Statistical comparison for common numeric columns
+                if common_cols:
+                    st.markdown("#### 📈 So sánh thống kê (các cột numeric chung)")
+                    common_num = [c for c in common_cols if c in df1.select_dtypes(include=[np.number]).columns 
+                                  and c in df2.select_dtypes(include=[np.number]).columns]
+                    
+                    if common_num:
+                        stat_comp = []
+                        for col in common_num[:10]:  # Limit to 10 columns
+                            s1 = df1[col].dropna()
+                            s2 = df2[col].dropna()
+                            if len(s1) > 0 and len(s2) > 0:
+                                stat_comp.append({
+                                    "Column": col,
+                                    f"{ds1} - Mean": round(s1.mean(), 4),
+                                    f"{ds2} - Mean": round(s2.mean(), 4),
+                                    "Diff": round(s1.mean() - s2.mean(), 4),
+                                    f"{ds1} - Std": round(s1.std(), 4),
+                                    f"{ds2} - Std": round(s2.std(), 4),
+                                })
+                        
+                        if stat_comp:
+                            stat_df = pd.DataFrame(stat_comp)
+                            st.dataframe(stat_df, width='stretch', hide_index=True)
+                            
+                            # Visualization
+                            if st.button("📊 Vẽ biểu đồ so sánh", key="plot_compare"):
+                                for col in common_num[:5]:
+                                    fig = go.Figure()
+                                    fig.add_trace(go.Box(y=df1[col].dropna(), name=ds1, marker_color="#818cf8"))
+                                    fig.add_trace(go.Box(y=df2[col].dropna(), name=ds2, marker_color="#34d399"))
+                                    fig.update_layout(title=f"Compare: {col}", height=300)
+                                    apply_theme(fig)
+                                    st.plotly_chart(fig, width='stretch')
+
+    # ═══════════════ ANALYTICS ═══════════════
+    with main_tabs[4]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")
@@ -1272,7 +1413,7 @@ else:
                     st.info("Install: pip install xgboost scikit-learn")
 
     # ═══════════════ DEEP ANALYSIS ═══════════════
-    with main_tabs[4]:
+    with main_tabs[5]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")

@@ -8,8 +8,14 @@
 
 ## ✨ Tính năng chính
 
+### 🔐 User Authentication
+- Đăng nhập / Đăng xuất
+- Quản lý người dùng với session
+- Demo accounts: admin/admin123, user/user123, teacher/teacher123
+
 ### 📂 Data Input
-- Upload CSV / Excel files
+- Upload nhiều CSV / Excel files cùng lúc
+- Quản lý datasets: chọn, xóa, thay đổi dataset active
 - Xử lý tự động: parse dates, normalize columns
 - Data validation & quality checks
 
@@ -19,6 +25,12 @@
 - Auto-generated charts (bar, histogram, box plot)
 - Data dictionary & column profiler
 - Export CSV / Excel
+
+### ⚖️ Compare Datasets
+- So sánh cấu trúc: rows, columns, memory usage
+- So sánh columns: common, only in dataset 1, only in dataset 2
+- So sánh thống kê: mean, std của các cột numeric chung
+- Trực quan hóa: box plot so sánh
 
 ### 🎓 Learning Analytics
 - Phân tích điểm số, tỷ lệ đạt, nhóm rủi ro
@@ -80,42 +92,80 @@ streamlit run app.py
 
 Mở trình duyệt tại `http://localhost:8501`
 
+### Đăng nhập
+Sử dụng một trong các tài khoản demo:
+- **admin** / admin123
+- **user** / user123
+- **teacher** / teacher123
+
 ## 📋 Requirements
 
 ```
 streamlit>=1.29.0
-pandas>=2.0.0
+pandas>=2.1.0
 numpy>=1.24.0
-plotly>=5.17.0
 matplotlib>=3.7.0
-scikit-learn>=1.3.0
-scipy>=1.11.0
-statsmodels>=0.14.0
+seaborn>=0.12.0
+plotly>=5.17.0
 openpyxl>=3.1.0
-xgboost>=2.0.0
-fpdf2>=2.7.0
+
+# Advanced Analytics
+scipy>=1.10.0
+scikit-learn>=1.3.0
+statsmodels>=0.14.0
+
+# Time Series
+prophet>=1.1.0
+
+# ML
+xgboost>=1.7.0
+
+# Database
+sqlalchemy>=2.0.0
+pymysql>=1.0.0
+
+# Google
+google-generativeai>=0.3.0
+gspread>=5.0.0
+google-auth>=2.0.0
+
+# PDF
+fpdf2>=2.5.0
 ```
 
 ## 📖 Hướng dẫn sử dụng
 
-### 1. Upload dữ liệu
-- Upload file CSV/Excel từ sidebar
+### 1. Đăng nhập
+- Mở ứng dụng và đăng nhập với tài khoản demo
+- Click "Đăng xuất" ở sidebar để thoát
+
+### 2. Upload dữ liệu
+- Upload nhiều file CSV/Excel cùng lúc từ sidebar
+- Chọn dataset từ dropdown để active
+- Xóa dataset không cần thiết
 - Hệ thống tự động parse dates và validate data
 
-### 2. Overview
+### 3. Overview
 - Xem KPI tổng quan (Rows, Columns, Quality, Missing)
 - Sparkline trends cho các cột numeric
 - Biểu đồ tự động: phân phối, top categories
 - Data dictionary & column profiler
 - Export CSV / Excel
 
-### 3. Learning Analytics
+### 4. Compare Datasets
+- Tab **⚖️ Compare Datasets** cho phép so sánh 2 datasets
+- So sánh cấu trúc: rows, columns, memory
+- So sánh columns: common, only in each dataset
+- So sánh thống kê: mean, std của các cột numeric chung
+- Trực quan hóa: box plot so sánh
+
+### 5. Learning Analytics
 - Chọn cột điểm/kết quả và cột phân nhóm (lớp, môn...)
 - Xem phân phối điểm, tỷ lệ đạt, nhóm rủi ro
 - So sánh giữa các nhóm với box plot
 - Gợi ý đọc kết quả tự động
 
-### 4. Statistics
+### 6. Statistics
 Tab **📈 Statistics** cung cấp 7 module:
 
 | Module | Mô tả |
@@ -128,7 +178,7 @@ Tab **📈 Statistics** cung cấp 7 module:
 | 🧮 Naive Bayes | Gaussian & Categorical NB |
 | 🔧 Diagnostics | VIF, heteroskedasticity, Durbin-Watson |
 
-### 5. Analytics
+### 7. Analytics
 Tab **🔬 Analytics** cung cấp 4 module:
 
 | Module | Mô tả |
@@ -138,7 +188,7 @@ Tab **🔬 Analytics** cung cấp 4 module:
 | 🧹 Cleaning | Xử lý missing, duplicates, outliers, encoding |
 | 🚀 AutoML | Tự động chọn mô hình, hyperparameter tuning |
 
-### 6. Deep Analysis
+### 8. Deep Analysis
 Tab **🧠 Deep Analysis** cung cấp 10 module chuyên sâu:
 
 | Module | Mô tả |
@@ -189,6 +239,7 @@ pip install xgboost
 project1/
 ├── app.py                  # Main application
 ├── advanced_analytics.py   # Deep analysis module (10 modules)
+├── auth.py                 # Authentication module
 ├── components.py           # Reusable UI components
 ├── config.py               # Configuration constants
 ├── utils.py                # Utility functions
