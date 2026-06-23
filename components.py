@@ -58,13 +58,14 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
         
         if selected_col in num_cols:
             st.markdown("#### 📊 Numeric Statistics")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Min", f"{stats['min']:,.4f}")
-            c2.metric("Max", f"{stats['max']:,.4f}")
-            c1.metric("Mean", f"{stats['mean']:,.4f}")
-            c2.metric("Median", f"{stats['median']:,.4f}")
-            c3.metric("Std", f"{stats['std']:,.4f}")
-            c3.metric("IQR", f"{stats['iqr']:,.4f}")
+            r1c1, r1c2, r1c3 = st.columns(3)
+            r1c1.metric("Min", f"{stats['min']:,.4f}")
+            r1c2.metric("Max", f"{stats['max']:,.4f}")
+            r1c3.metric("Mean", f"{stats['mean']:,.4f}")
+            r2c1, r2c2, r2c3 = st.columns(3)
+            r2c1.metric("Median", f"{stats['median']:,.4f}")
+            r2c2.metric("Std", f"{stats['std']:,.4f}")
+            r2c3.metric("IQR", f"{stats['iqr']:,.4f}")
             
             fig = px.histogram(df, x=selected_col, nbins=50, 
                              title=f"Distribution of {selected_col}",
@@ -180,7 +181,7 @@ def render_sidebar_stats(df: pd.DataFrame) -> None:
         st.markdown("---")
         with st.expander("📊 Dataset Stats", expanded=False):
             n = df.select_dtypes(include=[np.number]).columns.tolist()
-            c = df.select_dtypes(include=["object", "str", "category"]).columns.tolist()
+            c = df.select_dtypes(include=["object", "category"]).columns.tolist()
             st.metric("Rows", f"{len(df):,}")
             st.metric("Columns", len(df.columns))
             st.metric("Numeric", len(n))

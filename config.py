@@ -99,7 +99,8 @@ TAB_STATISTICS = "📈 Statistics"
 TAB_ANALYTICS = "🔬 Analytics"
 TAB_DEEP_ANALYSIS = "🧠 Deep Analysis"
 
-MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_STATISTICS, TAB_ANALYTICS, TAB_DEEP_ANALYSIS]
+TAB_LEARNING_ANALYTICS = "🎓 Learning Analytics"
+MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_LEARNING_ANALYTICS, TAB_STATISTICS, TAB_ANALYTICS, TAB_DEEP_ANALYSIS]
 
 # ── Statistics Sub-tabs ─────────────────────────────────────
 STATS_TAB_HYPOTHESIS = "🔬 Hypothesis Testing"

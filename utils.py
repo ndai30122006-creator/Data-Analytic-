@@ -57,7 +57,7 @@ def get_column_stats(df: pd.DataFrame, col: str) -> dict:
         "dtype": str(df[col].dtype)
     }
     
-    if df[col].dtype in [np.float64, np.int64]:
+    if pd.api.types.is_numeric_dtype(df[col].dtype):
         stats.update({
             "min": df[col].min(),
             "max": df[col].max(),
@@ -142,7 +142,7 @@ def generate_data_dictionary(df: pd.DataFrame) -> pd.DataFrame:
     """
     dict_data = []
     for col in df.columns:
-        col_type = "Numeric" if df[col].dtype in [np.float64, np.int64] else "Categorical"
+        col_type = "Numeric" if pd.api.types.is_numeric_dtype(df[col].dtype) else "Categorical"
         if "date" in col.lower() or "time" in col.lower():
             col_type = "DateTime"
         

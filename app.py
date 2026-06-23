@@ -4,13 +4,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from io import BytesIO
-import warnings, json, os, time
+import warnings, time
 from datetime import datetime
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.model_selection import train_test_split
@@ -25,23 +24,17 @@ warnings.filterwarnings("ignore")
 
 # ── Custom Modules ────────────────────────────────────────
 from utils import (
-    load_and_process_data, get_column_stats, compute_data_quality_score,
-    generate_data_dictionary, validate_dataframe, safe_execute
+    load_and_process_data, validate_dataframe
 )
 from components import (
-    render_kpi_card, render_insight_card, render_data_dictionary,
+    render_kpi_card, render_data_dictionary,
     render_column_profiler, render_data_quality_report,
     render_quick_start_tutorial, render_sidebar_stats
 )
 from config import (
-    MIN_ROWS_VALIDATION, TOP_N_VALUES, TOP_N_CATEGORIES, TOP_N_DISTRIBUTION,
-    SPARKLINE_SAMPLE_SIZE, DATA_PREVIEW_ROWS, MAX_DISPLAY_ROWS,
-    DEFAULT_TEST_SIZE, DEFAULT_CV_FOLDS,
-    RANDOM_STATE, AUTOML_DEFAULT_MODELS,
-    AUTOML_DEFAULT_FEATURES, AUTOML_POLYNOMIAL_DEGREE, AUTOML_N_ITER_RANDOMIZED,
-    PARAM_GRIDS, CHART_THEME, SPARKLINE_HEIGHT, SPARKLINE_COLOR,
-    SESSION_KEYS, MAIN_TABS, STATISTICS_TABS, ANALYTICS_TABS, PROFILER_TABS,
-    COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_ACCENT, COLOR_PRIMARY, COLOR_SECONDARY
+    MIN_ROWS_VALIDATION, MAX_DISPLAY_ROWS,
+    PARAM_GRIDS, CHART_THEME,
+    MAIN_TABS, STATISTICS_TABS, ANALYTICS_TABS, PROFILER_TABS,
 )
 
 try:
@@ -59,7 +52,7 @@ SESSION_DEFAULTS = [
 for key, default in SESSION_DEFAULTS:
     if key not in st.session_state: st.session_state[key] = default
 
-st.set_page_config(page_title="Data Analyst Pro v3.0", page_icon="📊", layout="wide",
+st.set_page_config(page_title="Learning Analytics Thống kê", page_icon="🎓", layout="wide",
                    initial_sidebar_state="expanded")
 
 # ═══════════════════════════════════════════════════════════
@@ -173,13 +166,125 @@ def sparkline(series, color='#5b6bf7', height=40):
     )
     return fig
 
+def guess_learning_column(columns, keywords):
+    normalized = {c: str(c).lower().replace(" ", "_") for c in columns}
+    for col, name in normalized.items():
+        if any(keyword in name for keyword in keywords):
+            return col
+    return None
+
+def render_learning_analytics_tab(df, num_cols, cat_cols):
+    st.markdown("### 🎓 Phân tích dữ liệu học tập ngành Thống kê")
+    st.caption("Phân tích điểm số, nhóm học tập, tỷ lệ đạt và dấu hiệu cần hỗ trợ sớm.")
+
+    if not num_cols:
+        st.warning("Cần ít nhất một cột số, ví dụ: điểm giữa kỳ, điểm cuối kỳ, điểm tổng kết.")
+        return
+
+    score_guess = guess_learning_column(
+        num_cols,
+        ["score", "grade", "mark", "point", "diem", "gpa", "final", "tong_ket", "cuoi_ky"]
+    )
+    student_guess = guess_learning_column(
+        df.columns,
+        ["student", "learner", "mssv", "ma_sv", "masv", "sinh_vien", "id"]
+    )
+    group_guess = guess_learning_column(
+        cat_cols,
+        ["class", "lop", "course", "mon", "subject", "major", "nganh", "group", "nhom", "gender", "gioi_tinh"]
+    )
+
+    score_default = num_cols.index(score_guess) if score_guess in num_cols else 0
+    group_default = cat_cols.index(group_guess) + 1 if group_guess in cat_cols else 0
+
+    control_cols = st.columns([2, 2, 1, 1])
+    with control_cols[0]:
+        score_col = st.selectbox("Cột điểm/kết quả", num_cols, index=score_default, key="la_score_col")
+    with control_cols[1]:
+        group_options = ["Không phân nhóm"] + cat_cols
+        group_col = st.selectbox("Phân tích theo nhóm", group_options, index=group_default, key="la_group_col")
+    with control_cols[2]:
+        pass_mark = st.number_input("Ngưỡng đạt", value=5.0, step=0.5, key="la_pass_mark")
+    with control_cols[3]:
+        risk_mark = st.number_input("Ngưỡng rủi ro", value=4.0, step=0.5, key="la_risk_mark")
+
+    analysis_df = df[[score_col] + ([group_col] if group_col != "Không phân nhóm" else [])].copy()
+    analysis_df[score_col] = pd.to_numeric(analysis_df[score_col], errors="coerce")
+    analysis_df = analysis_df.dropna(subset=[score_col])
+
+    if analysis_df.empty:
+        st.warning("Cột điểm đã chọn không có giá trị số hợp lệ.")
+        return
+
+    score = analysis_df[score_col]
+    pass_rate = (score >= pass_mark).mean() * 100
+    risk_rate = (score < risk_mark).mean() * 100
+
+    kpis = st.columns(5)
+    render_kpi_card(kpis[0], "Số quan sát", f"{len(analysis_df):,}")
+    render_kpi_card(kpis[1], "Điểm TB", f"{score.mean():.2f}")
+    render_kpi_card(kpis[2], "Trung vi", f"{score.median():.2f}")
+    render_kpi_card(kpis[3], "Tỷ lệ đạt", f"{pass_rate:.1f}%")
+    render_kpi_card(kpis[4], "Nhóm rủi ro", f"{risk_rate:.1f}%")
+
+    chart_cols = st.columns(2)
+    with chart_cols[0]:
+        fig = px.histogram(
+            analysis_df, x=score_col, nbins=30, marginal="box",
+            title=f"Phân phối {score_col}", color_discrete_sequence=["#34d399"]
+        )
+        fig.add_vline(x=pass_mark, line_dash="dash", line_color="#22c55e", annotation_text="Đạt")
+        fig.add_vline(x=risk_mark, line_dash="dash", line_color="#ef4444", annotation_text="Rủi ro")
+        apply_theme(fig)
+        st.plotly_chart(fig, width="stretch")
+
+    with chart_cols[1]:
+        categories = pd.cut(
+            score,
+            bins=[-np.inf, risk_mark, pass_mark, np.inf],
+            labels=["Cần hỗ trợ", "Cần theo dõi", "Đạt"]
+        )
+        status_counts = categories.value_counts().reindex(["Cần hỗ trợ", "Cần theo dõi", "Đạt"]).fillna(0)
+        fig = px.bar(
+            x=status_counts.index.astype(str), y=status_counts.values,
+            title="Phân loại kết quả học tập",
+            color=status_counts.index.astype(str),
+            color_discrete_map={"Cần hỗ trợ": "#ef4444", "Cần theo dõi": "#eab308", "Đạt": "#22c55e"}
+        )
+        fig.update_layout(showlegend=False, xaxis_title="", yaxis_title="Số lượng")
+        apply_theme(fig)
+        st.plotly_chart(fig, width="stretch")
+
+    if group_col != "Không phân nhóm":
+        st.markdown("#### So sánh theo nhóm")
+        summary = analysis_df.groupby(group_col, dropna=False)[score_col].agg(["count", "mean", "median", "std"]).reset_index()
+        summary["pass_rate"] = analysis_df.groupby(group_col, dropna=False)[score_col].apply(lambda s: (s >= pass_mark).mean() * 100).values
+        summary["risk_rate"] = analysis_df.groupby(group_col, dropna=False)[score_col].apply(lambda s: (s < risk_mark).mean() * 100).values
+        summary = summary.sort_values("mean", ascending=False)
+        st.dataframe(summary.round(2), width="stretch", hide_index=True)
+
+        fig = px.box(analysis_df, x=group_col, y=score_col, points="outliers", title=f"{score_col} theo {group_col}")
+        apply_theme(fig)
+        st.plotly_chart(fig, width="stretch")
+
+    st.markdown("#### Gợi ý đọc kết quả")
+    if risk_rate >= 25:
+        st.warning("Tỷ lệ nhóm rủi ro đang cao. Nên xem lại phân bố điểm, độ khó học phần, và các nhóm/lớp có điểm trung bình thấp.")
+    elif pass_rate >= 80:
+        st.success("Tỷ lệ đạt khá tốt. Có thể tiếp tục xem nhóm xuất sắc và các yếu tố liên quan đến kết quả cao.")
+    else:
+        st.info("Kết quả ở mức cần theo dõi. Nên kết hợp thêm cột chuyên cần, bài tập, LMS hoặc điểm thành phần để phân tích sâu hơn.")
+
+    if student_guess:
+        st.caption(f"Đã phát hiện cột định danh sinh viên có thể dùng cho phân tích cá nhân hóa: {student_guess}")
+
 # ═══════════════════════════════════════════════════════════
 # SIDEBAR
 # ═══════════════════════════════════════════════════════════
 with st.sidebar:
     col1, col2 = st.columns([1, 3])
     with col1: st.image("https://cdn-icons-png.flaticon.com/512/4727/4727496.png", width=50)
-    with col2: st.markdown("### 📊 Data Analyst Pro")
+    with col2: st.markdown("### 🎓 Learning Analytics")
     
     st.markdown("---")
     
@@ -189,16 +294,18 @@ with st.sidebar:
         if uploaded and (st.session_state.filename != uploaded.name or st.session_state.df is None):
             with st.spinner("Loading..."):
                 time.sleep(0.3)
-                df = load_and_process_data(uploaded)
-                if df is not None:
-                    st.session_state.df = df; st.session_state.filename = uploaded.name
+                loaded_df = load_and_process_data(uploaded)
+                if loaded_df is not None:
+                    st.session_state.df = loaded_df
+                    st.session_state.filename = uploaded.name
                     st.session_state.cleaned_df = None
                     st.success(f"✅ {uploaded.name}")
         
         if st.session_state.df is not None:
             st.caption(f"📄 {st.session_state.filename}")
             if st.button("🗑 Clear Data", key="clr", use_container_width=True):
-                st.session_state.df = None; st.session_state.filename = ""
+                st.session_state.df = None
+                st.session_state.filename = ""
                 st.session_state.file_uploader_key += 1
                 st.rerun()
     
@@ -213,8 +320,8 @@ if st.session_state.df is None:
     st.markdown("""
     <div class="hero-bg">
         <div class="hero">
-            <h1>Data Analyst Pro v3.0</h1>
-            <p>Practical Statistics for Data Scientists — Exploratory Data Analysis, Hypothesis Testing, Machine Learning</p>
+            <h1>Learning Analytics Thống kê</h1>
+            <p>Phân tích dữ liệu học tập, điểm số, nhóm rủi ro và kiểm định thống kê cho sinh viên ngành Thống kê</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -222,17 +329,17 @@ if st.session_state.df is None:
     st.markdown("""
     <div class="feature-grid">
         <div class="feature-card"><div class="icon">📂</div><div class="title">Upload</div><div class="desc">CSV & Excel</div></div>
+        <div class="feature-card"><div class="icon">🎓</div><div class="title">Learning</div><div class="desc">Điểm & rủi ro</div></div>
         <div class="feature-card"><div class="icon">🔬</div><div class="title">Statistics</div><div class="desc">Hypothesis Testing</div></div>
         <div class="feature-card"><div class="icon">🎲</div><div class="title">Bootstrap</div><div class="desc">Confidence Intervals</div></div>
         <div class="feature-card"><div class="icon">⚗️</div><div class="title">A/B Testing</div><div class="desc">Power Analysis</div></div>
         <div class="feature-card"><div class="icon">🔴</div><div class="title">Logistic</div><div class="desc">ROC & AUC</div></div>
-        <div class="feature-card"><div class="icon">🔧</div><div class="title">Diagnostics</div><div class="desc">VIF, Autocorrelation</div></div>
     </div>
     """, unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns(3)
     c1.info("**📂 Upload** — CSV hoặc Excel từ sidebar")
-    c2.success("**📈 Statistics** — T-test, ANOVA, Bootstrap, A/B Testing")
+    c2.success("**🎓 Learning Analytics** — điểm số, tỷ lệ đạt, nhóm rủi ro")
     c3.warning("**🧠 Deep Analysis** — 11 modules phân tích chuyên sâu")
     
     st.caption("Upload dữ liệu từ sidebar để bắt đầu →")
@@ -241,11 +348,11 @@ if st.session_state.df is None:
 else:
     raw = st.session_state.df
     num = raw.select_dtypes(include=[np.number]).columns.tolist()
-    cat = raw.select_dtypes(include=["object","str","category"]).columns.tolist()
+    cat = raw.select_dtypes(include=["object", "category"]).columns.tolist()
     dat = raw.select_dtypes(include=["datetime64", "datetime64[ns]"]).columns.tolist()
     df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-    main_tabs = st.tabs(MAIN_TABS)  # ["📊 Overview", "📈 Statistics", "🔬 Analytics", "🧠 Deep Analysis"]
+    main_tabs = st.tabs(MAIN_TABS)
 
     # ═══════════════ OVERVIEW ═══════════════
     with main_tabs[0]:
@@ -303,14 +410,14 @@ else:
         with st.expander("📋 Data Preview", expanded=False):
             col_config = {}
             for c in df.columns:
-                if df[c].dtype in [np.float64, np.int64]:
+                if pd.api.types.is_numeric_dtype(df[c].dtype):
                     col_config[c] = st.column_config.NumberColumn(c)
                 elif "date" in c.lower() or "time" in c.lower():
                     col_config[c] = st.column_config.DatetimeColumn(c)
                 else:
                     col_config[c] = st.column_config.TextColumn(c)
             st.dataframe(
-                df.head(100),
+                df.head(MAX_DISPLAY_ROWS),
                 width='stretch',
                 column_config=col_config,
                 use_container_width=True
@@ -336,8 +443,16 @@ else:
                     for k in list(st.session_state.keys()): del st.session_state[k]
                     st.rerun()
 
-    # ═══════════════ STATISTICS ═══════════════
+    # Learning Analytics
     with main_tabs[1]:
+        is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
+        if not is_valid:
+            st.error(f"❌ {msg}")
+        else:
+            render_learning_analytics_tab(df, num, cat)
+
+    # ═══════════════ STATISTICS ═══════════════
+    with main_tabs[2]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")
@@ -372,6 +487,8 @@ else:
                         "Chi-Square"
                     ], key="ht_type")
                     
+                    SIGNIFICANCE_LEVEL = 0.05
+                    
                     if "2 independent" in test_type:
                         if len(num) >= 1 and len(cat) >= 1:
                             val_col = st.selectbox("Value column:", num, key="ht_val")
@@ -392,7 +509,7 @@ else:
                                         c1.metric("t-statistic", f"{stat:.4f}")
                                         c2.metric("p-value", f"{p:.6f}")
                                         c3.metric("Cohen's d", f"{abs(cohens_d):.4f}")
-                                        c4.metric("Conclusion", "Significant 🎯" if p < 0.05 else "Not significant ❌")
+                                        c4.metric("Conclusion", "Significant 🎯" if p < SIGNIFICANCE_LEVEL else "Not significant ❌")
                                         
                                         fig = go.Figure()
                                         fig.add_trace(go.Violin(y=s1, name=g1, box_visible=True, meanline_visible=True))
@@ -414,7 +531,7 @@ else:
                                 c1, c2 = st.columns(2)
                                 c1.metric("t-statistic", f"{stat:.4f}")
                                 c2.metric("p-value", f"{p:.6f}")
-                                insight = "Different from μ₀ 🎯" if p < 0.05 else "Not different from μ₀ ❌"
+                                insight = "Different from μ₀ 🎯" if p < SIGNIFICANCE_LEVEL else "Not different from μ₀ ❌"
                                 st.info(f"**Conclusion:** {insight}")
                         else: st.warning("Need numeric column")
                     
@@ -428,7 +545,7 @@ else:
                                 c1, c2 = st.columns(2)
                                 c1.metric("t-statistic", f"{stat:.4f}")
                                 c2.metric("p-value", f"{p:.6f}")
-                                st.info(f"**Conclusion:** {'Significant difference 🎯' if p < 0.05 else 'Not significant ❌'}")
+                                st.info(f"**Conclusion:** {'Significant difference 🎯' if p < SIGNIFICANCE_LEVEL else 'Not significant ❌'}")
                     
                     elif "ANOVA" in test_type:
                         if len(num) >= 1 and len(cat) >= 1:
@@ -442,8 +559,45 @@ else:
                                     c1, c2 = st.columns(2)
                                     c1.metric("F-statistic", f"{stat:.4f}")
                                     c2.metric("p-value", f"{p:.6f}")
-                                    st.info(f"**Conclusion:** {'Groups differ 🎯' if p < 0.05 else 'No difference ❌'}")
+                                    st.info(f"**Conclusion:** {'Groups differ 🎯' if p < SIGNIFICANCE_LEVEL else 'No difference ❌'}")
                                     fig = px.box(df, x=grp_col, y=val_col, title=f"ANOVA: {val_col} by {grp_col}")
+                                    apply_theme(fig)
+                                    st.plotly_chart(fig, width='stretch')
+
+                    elif "Mann-Whitney" in test_type:
+                        if len(num) >= 1 and len(cat) >= 1:
+                            val_col = st.selectbox("Value column:", num, key="mw_val")
+                            grp_col = st.selectbox("Group column:", cat, key="mw_grp")
+                            grps = df[grp_col].dropna().unique()[:5]
+                            if len(grps) >= 2:
+                                g1 = st.selectbox("Group 1:", grps, key="mw_g1")
+                                g2 = st.selectbox("Group 2:", [g for g in grps if g != g1], key="mw_g2")
+                                if st.button("🔬 Run", key="mw_run"):
+                                    s1 = df[df[grp_col] == g1][val_col].dropna()
+                                    s2 = df[df[grp_col] == g2][val_col].dropna()
+                                    if len(s1) > 1 and len(s2) > 1:
+                                        stat, p = mannwhitneyu(s1, s2, alternative='two-sided')
+                                        c1, c2, c3 = st.columns(3)
+                                        c1.metric("U-statistic", f"{stat:.4f}")
+                                        c2.metric("p-value", f"{p:.6f}")
+                                        c3.metric("Conclusion", "Significant 🎯" if p < SIGNIFICANCE_LEVEL else "Not significant ❌")
+                                else: st.warning("Need ≥2 groups")
+                        else: st.warning("Need 1 numeric + 1 categorical column")
+
+                    elif "Kruskal-Wallis" in test_type:
+                        if len(num) >= 1 and len(cat) >= 1:
+                            val_col = st.selectbox("Value:", num, key="kw_val")
+                            grp_col = st.selectbox("Group:", cat, key="kw_grp")
+                            if st.button("🔬 Run", key="kw_run"):
+                                grps = df[grp_col].dropna().unique()
+                                groups = [df[df[grp_col] == g][val_col].dropna().values for g in grps if len(df[df[grp_col] == g]) > 1]
+                                if len(groups) >= 2:
+                                    stat, p = kruskal(*groups)
+                                    c1, c2 = st.columns(2)
+                                    c1.metric("H-statistic", f"{stat:.4f}")
+                                    c2.metric("p-value", f"{p:.6f}")
+                                    st.info(f"**Conclusion:** {'Groups differ 🎯' if p < SIGNIFICANCE_LEVEL else 'No difference ❌'}")
+                                    fig = px.box(df, x=grp_col, y=val_col, title=f"Kruskal-Wallis: {val_col} by {grp_col}")
                                     apply_theme(fig)
                                     st.plotly_chart(fig, width='stretch')
                     
@@ -458,7 +612,7 @@ else:
                                 c1.metric("χ²", f"{stat:.4f}")
                                 c2.metric("p-value", f"{p:.6f}")
                                 c3.metric("DoF", dof)
-                                st.info(f"**Conclusion:** {'Variables are related 🎯' if p < 0.05 else 'No relationship ❌'}")
+                                st.info(f"**Conclusion:** {'Variables are related 🎯' if p < SIGNIFICANCE_LEVEL else 'No relationship ❌'}")
                                 fig = px.imshow(ct, text_auto=True, title="Contingency Table",
                                                color_continuous_scale="Viridis", aspect='auto')
                                 apply_theme(fig)
@@ -716,7 +870,7 @@ else:
                     pass
 
     # ═══════════════ ANALYTICS ═══════════════
-    with main_tabs[2]:
+    with main_tabs[3]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")
@@ -747,7 +901,7 @@ else:
             # ── Profiling ──
             with an_tabs[1]:
                 ni = df.select_dtypes(include=[np.number])
-                ci = df.select_dtypes(include=["object","str","category"])
+                ci = df.select_dtypes(include=["object", "category"])
                 c1, c2, c3, c4 = st.columns(4)
                 c1.metric("Rows", df.shape[0]); c2.metric("Columns", df.shape[1])
                 c3.metric("Numeric", len(ni.columns)); c4.metric("Categorical", len(ci.columns))
@@ -828,11 +982,11 @@ else:
                                 work_df = work_df.dropna(how='all', subset=mv_cols)
                             elif mv_action == "Fill with Mean":
                                 for c in mv_cols:
-                                    if work_df[c].dtype in [np.float64, np.int64]:
+                                    if pd.api.types.is_numeric_dtype(work_df[c].dtype):
                                         work_df[c] = work_df[c].fillna(work_df[c].mean())
                             elif mv_action == "Fill with Median":
                                 for c in mv_cols:
-                                    if work_df[c].dtype in [np.float64, np.int64]:
+                                    if pd.api.types.is_numeric_dtype(work_df[c].dtype):
                                         work_df[c] = work_df[c].fillna(work_df[c].median())
                             elif mv_action == "Fill with Mode":
                                 for c in mv_cols:
@@ -904,7 +1058,7 @@ else:
                 
                 # Encoding
                 st.markdown("#### 🔤 Encoding")
-                cat_cols_clean = work_df.select_dtypes(include=["object", "str", "category"]).columns.tolist()
+                cat_cols_clean = work_df.select_dtypes(include=["object", "category"]).columns.tolist()
                 if cat_cols_clean:
                     enc_cols = st.multiselect("Categorical columns:", cat_cols_clean, key="enc_cols")
                     enc_method = st.selectbox("Method:", ["One-Hot", "Label", "Frequency"], key="enc_method")
@@ -981,7 +1135,7 @@ else:
                                     ["Random Forest", "XGBoost", "Gradient Boosting", "Ridge", "Lasso"],
                                     default=["Random Forest", "XGBoost"], key="atg_models")
                             
-                            auto_scale = st.checkbox("📐 Auto Scaling", True, key="atg_scale")
+                            auto_scale = st.checkbox("📐 Auto Scaling", value=True, key="atg_scale")
                             
                             if st.button("🚀 Run AutoML", key="atg_run") and auto_models:
                                 with st.spinner("⏳ AutoML running..."):
@@ -1064,7 +1218,7 @@ else:
                     st.info("Install: pip install xgboost scikit-learn")
 
     # ═══════════════ DEEP ANALYSIS ═══════════════
-    with main_tabs[3]:
+    with main_tabs[4]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")

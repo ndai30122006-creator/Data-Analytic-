@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# ── Optional Imports ────────────────────────────────────────
+# ── Optional Imports ──────────────────────────────────────────────────────────
 try:
     from scipy import stats as scipy_stats
     from scipy.stats import (
@@ -59,7 +59,7 @@ except Exception:
 
 warnings.filterwarnings("ignore")
 
-# ── Chart Theme ─────────────────────────────────────────────
+# ── Chart Theme ───────────────────────────────────────────────────────────────
 CHART_THEME = dict(
     plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
     font=dict(family="Inter, -apple-system, sans-serif", size=13, color="#e2e8f0"),
@@ -81,9 +81,9 @@ def insight_card(icon, title, msg, type="info"):
                 unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # HELPER: Validate dataframe
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def validate_df(df, num, cat=None, min_rows=5, min_numeric=1):
     if df is None or len(df) == 0:
         st.error("❌ Dataset rỗng")
@@ -97,9 +97,9 @@ def validate_df(df, num, cat=None, min_rows=5, min_numeric=1):
     return True
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 1. BOOTSTRAP & CONFIDENCE INTERVALS (Book Ch.2)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_bootstrap_tab(df, num):
     if not SCIPY_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scipy")
@@ -112,14 +112,14 @@ def render_bootstrap_tab(df, num):
         st.warning("Cần cột numeric")
         return
 
-    col = st.selectbox("Chọn cột:", num, key="boot_col")
-    n_iter = st.slider("Số lần resampling:", 100, 5000, 1000, 100, key="boot_iter")
-    conf_level = st.slider("Confidence Level (%):", 80, 99, 95, 1, key="boot_conf")
+    col = st.selectbox("Chọn cột:", num, key="da_boot_col")
+    n_iter = st.slider("Số lần resampling:", 100, 5000, 1000, 100, key="da_boot_iter")
+    conf_level = st.slider("Confidence Level (%):", 80, 99, 95, 1, key="da_boot_conf")
 
-    stat_choice = st.selectbox("Thống kê:", ["Mean", "Median", "Std"], key="boot_stat")
+    stat_choice = st.selectbox("Thống kê:", ["Mean", "Median", "Std"], key="da_boot_stat")
     stat_map = {"Mean": np.mean, "Median": np.median, "Std": np.std}
 
-    if st.button("🎲 Run Bootstrap", key="boot_run"):
+    if st.button("🎲 Run Bootstrap", key="da_boot_run"):
         with st.spinner("Đang resampling..."):
             data = df[col].dropna().values
             n = len(data)
@@ -166,9 +166,9 @@ def render_bootstrap_tab(df, num):
                         "good")
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 2. A/B TESTING (Book Ch.3)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_ab_testing_tab(df, num, cat):
     if not SCIPY_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scipy")
@@ -183,20 +183,20 @@ def render_ab_testing_tab(df, num, cat):
     with tabs[0]:
         st.markdown("#### 🔬 Two-Proportion Z-Test")
         if len(cat) >= 1:
-            grp_col = st.selectbox("Cột nhóm (2 groups):", cat, key="ab_grp")
+            grp_col = st.selectbox("Cột nhóm (2 groups):", cat, key="da_ab_grp")
             grps = df[grp_col].dropna().unique()[:5]
             if len(grps) >= 2:
                 col1, col2 = st.columns(2)
                 with col1:
-                    g1 = st.selectbox("Group A:", grps, key="ab_g1")
-                    g1_success = st.number_input("Successes A:", min_value=0, value=50, key="ab_s1")
-                    g1_total = st.number_input("Total A:", min_value=1, value=200, key="ab_t1")
+                    g1 = st.selectbox("Group A:", grps, key="da_ab_g1")
+                    g1_success = st.number_input("Successes A:", min_value=0, value=50, key="da_ab_s1")
+                    g1_total = st.number_input("Total A:", min_value=1, value=200, key="da_ab_t1")
                 with col2:
-                    g2 = st.selectbox("Group B:", [g for g in grps if g != g1], key="ab_g2")
-                    g2_success = st.number_input("Successes B:", min_value=0, value=60, key="ab_s2")
-                    g2_total = st.number_input("Total B:", min_value=1, value=200, key="ab_t2")
+                    _g2 = st.selectbox("Group B:", [g for g in grps if g != g1], key="da_ab_g2")
+                    g2_success = st.number_input("Successes B:", min_value=0, value=60, key="da_ab_s2")
+                    g2_total = st.number_input("Total B:", min_value=1, value=200, key="da_ab_t2")
                 
-                if st.button("🔬 Run A/B Test", key="ab_run"):
+                if st.button("🔬 Run A/B Test", key="da_ab_run"):
                     p1 = g1_success / g1_total
                     p2 = g2_success / g2_total
                     p_pool = (g1_success + g2_success) / (g1_total + g2_total)
@@ -237,10 +237,10 @@ def render_ab_testing_tab(df, num, cat):
     # ── Sample Size Calculator ──
     with tabs[1]:
         st.markdown("#### 📐 Sample Size Calculator (Power Analysis)")
-        baseline = st.slider("Baseline conversion rate (%):", 1, 99, 10, 1, key="ab_base")
-        min_effect = st.slider("Minimum detectable effect (%):", 0.5, 30, 5.0, 0.5, key="ab_effect")
-        alpha = st.selectbox("Significance level (α):", [0.01, 0.05, 0.10], index=1, key="ab_alpha")
-        power = st.selectbox("Statistical power (1-β):", [0.80, 0.85, 0.90, 0.95], index=0, key="ab_power")
+        baseline = st.slider("Baseline conversion rate (%):", 1, 99, 10, 1, key="da_ab_base")
+        min_effect = st.slider("Minimum detectable effect (%):", 0.5, 30.0, 5.0, 0.5, key="ab_effect")
+        alpha = st.selectbox("Significance level (α):", [0.01, 0.05, 0.10], index=1, key="da_ab_alpha")
+        power = st.selectbox("Statistical power (1-β):", [0.80, 0.85, 0.90, 0.95], index=0, key="da_ab_power")
         
         if st.button("📐 Calculate", key="ab_sample_run"):
             # Using normal approximation
@@ -269,11 +269,11 @@ def render_ab_testing_tab(df, num, cat):
     # ── Power Analysis ──
     with tabs[2]:
         st.markdown("#### 📊 Power Analysis Curve")
-        p_base = st.slider("Baseline rate (%):", 1, 99, 10, 1, key="ab_power_base", 
+        p_base = st.slider("Baseline rate (%):", 1, 99, 10, 1, key="da_ab_power_base", 
                           help="Tỷ lệ chuyển đổi hiện tại")
-        n_per_group = st.slider("Sample size per group:", 10, 10000, 500, 10, key="ab_power_n")
+        n_per_group = st.slider("Sample size per group:", 10, 10000, 500, 10, key="da_ab_power_n")
         
-        if st.button("📊 Generate Power Curve", key="ab_power_run"):
+        if st.button("📊 Generate Power Curve", key="da_ab_power_run"):
             effects = np.linspace(0.01, 0.20, 50)
             p1 = p_base / 100
             z_alpha = scipy_stats.norm.ppf(1 - 0.05 / 2)
@@ -307,9 +307,9 @@ def render_ab_testing_tab(df, num, cat):
             st.plotly_chart(fig, width='stretch')
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 3. LOGISTIC REGRESSION & CLASSIFICATION (Book Ch.5)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_logistic_tab(df, num, cat):
     if not SKLEARN_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scikit-learn")
@@ -322,13 +322,13 @@ def render_logistic_tab(df, num, cat):
 
     # Create binary target
     target_options = num + cat
-    target_col = st.selectbox("Chọn biến mục tiêu (binary):", target_options, key="log_target")
+    target_col = st.selectbox("Chọn biến mục tiêu (binary):", target_options, key="da_log_target")
     
     # Binarize if needed
     if target_col in num:
         threshold = st.slider("Threshold để tạo binary:", 
                             float(df[target_col].min()), float(df[target_col].max()),
-                            float(df[target_col].median()), key="log_thresh")
+                            float(df[target_col].median()), key="da_log_thresh")
         y = (df[target_col] > threshold).astype(int)
         target_name = f"{target_col} > {threshold:.2f}"
     else:
@@ -427,9 +427,9 @@ def render_logistic_tab(df, num, cat):
                         "good" if auc_score > 0.7 else "warning")
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 4. NAIVE BAYES (Book Ch.5)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_naive_bayes_tab(df, num, cat):
     if not SKLEARN_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scikit-learn")
@@ -519,9 +519,9 @@ def render_naive_bayes_tab(df, num, cat):
             st.dataframe(priors, width='stretch', use_container_width=True)
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 5. REGRESSION DIAGNOSTICS (Book Ch.4)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_diagnostics_tab(df, num):
     if not STATSMODELS_AVAIL or not SKLEARN_AVAIL:
         st.warning("⚠️ Cài đặt: pip install statsmodels scikit-learn")
@@ -668,7 +668,7 @@ def render_diagnostics_tab(df, num):
                 fig = make_subplots(rows=1, cols=2, 
                                    subplot_titles=("Q-Q Plot (Normality)", "Residuals vs Fitted"))
                 
-                (osm, osr), (slope, intercept, r) = probplot(residuals, dist="norm")
+                (osm, osr), (slope, intercept, _r) = probplot(residuals, dist="norm")
                 fig.add_trace(go.Scatter(x=osm, y=osr, mode='markers',
                                         marker=dict(color="#818cf8", size=4),
                                         showlegend=False), row=1, col=1)
@@ -686,9 +686,9 @@ def render_diagnostics_tab(df, num):
                 st.plotly_chart(fig, width='stretch')
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 6. ADVANCED STATISTICS — Hypothesis Testing, Normality (Book Ch.2-3)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_advanced_stats_tab(df, num, cat):
     if not SCIPY_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scipy")
@@ -839,7 +839,7 @@ def render_advanced_stats_tab(df, num, cat):
                 c2 = st.selectbox("Cột 2:", [c for c in cat if c != c1], key="ht_cs2_adv")
                 if st.button("🔬 Run", key="ht_cs_run_adv"):
                     ct = pd.crosstab(df[c1], df[c2])
-                    stat, p, dof, expected = chi2_contingency(ct)
+                    stat, p, dof, _expected = chi2_contingency(ct)
                     # Cramer's V
                     n = ct.sum().sum()
                     cramer_v = np.sqrt(stat / (n * min(ct.shape[0]-1, ct.shape[1]-1))) if n > 0 else 0
@@ -894,7 +894,7 @@ def render_advanced_stats_tab(df, num, cat):
                                    subplot_titles=("Histogram", "Q-Q Plot", "Box Plot"),
                                    specs=[[{"type": "xy"}, {"type": "xy"}, {"type": "xy"}]])
                 fig.add_trace(go.Histogram(x=s, nbinsx=40, marker_color="#818cf8", opacity=0.7), row=1, col=1)
-                (osm, osr), (slope, intercept, r) = probplot(s, dist="norm")
+                (osm, osr), (slope, intercept, _r) = probplot(s, dist="norm")
                 fig.add_trace(go.Scatter(x=osm, y=osr, mode='markers', marker=dict(color="#818cf8", size=4)), row=1, col=2)
                 fig.add_trace(go.Scatter(x=osm, y=slope * osm + intercept, mode='lines',
                                         line=dict(color="#f87171", dash="dash")), row=1, col=2)
@@ -935,9 +935,9 @@ def render_advanced_stats_tab(df, num, cat):
             st.info("Cần ít nhất 2 cột numeric")
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 7. CLUSTERING (Book Ch.6)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_clustering_tab(df, num):
     if not SKLEARN_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scikit-learn")
@@ -1050,9 +1050,9 @@ def render_clustering_tab(df, num):
             plt.close()
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 8. PCA & DIMENSIONALITY REDUCTION (Book Ch.6)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_pca_tab(df, num):
     if not SKLEARN_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scikit-learn")
@@ -1085,7 +1085,7 @@ def render_pca_tab(df, num):
         with st.spinner("..."):
             if method in ["PCA", "Both"]:
                 pca = PCA()
-                X_pca = pca.fit_transform(X_scaled)
+                _X_pca = pca.fit_transform(X_scaled)
                 cum_var = np.cumsum(pca.explained_variance_ratio_)
                 
                 fig = make_subplots(rows=1, cols=2,
@@ -1136,9 +1136,9 @@ def render_pca_tab(df, num):
                 st.plotly_chart(fig, width='stretch')
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 9. FEATURE ENGINEERING (Book Ch.6)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_feature_engineering_tab(df, num, cat):
     st.markdown("### 🔧 Feature Engineering (Book Ch.6)")
     st.caption("Tạo đặc trưng, Scaling, Selection")
@@ -1217,7 +1217,7 @@ def render_feature_engineering_tab(df, num, cat):
                 y = df.loc[X.index, target]
                 score_func = f_regression if method == "f_regression" else mutual_info_regression
                 selector = SelectKBest(score_func=score_func, k=k)
-                X_selected = selector.fit_transform(X, y)
+                _X_selected = selector.fit_transform(X, y)
                 
                 result = pd.DataFrame({"Feature": features, "Score": selector.scores_})
                 result = result.sort_values("Score", ascending=True)
@@ -1234,9 +1234,9 @@ def render_feature_engineering_tab(df, num, cat):
             st.warning("Cần ít nhất 3 cột numeric")
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 10. MODEL COMPARISON (Book Ch.6)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_model_comparison_tab(df, num):
     if not SKLEARN_AVAIL:
         st.warning("⚠️ Cài đặt: pip install scikit-learn")
@@ -1342,9 +1342,9 @@ def render_model_comparison_tab(df, num):
                         "good")
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # 11. DATA QUALITY ADVANCED (Book Ch.1)
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_data_quality_tab(df, num, cat):
     st.markdown("### ✅ Data Quality (Book Ch.1)")
     st.caption("Chất lượng dữ liệu, trùng lặp, schema validation, drift")
@@ -1436,9 +1436,9 @@ def render_data_quality_tab(df, num, cat):
                         insight_card("✅", "No drift detected", "Data is stable", "good")
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 # MAIN RENDER FUNCTION
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
 def render_deep_analysis_tab(df, num, cat, dat):
     """Main entry point for Deep Analysis tab"""
     
