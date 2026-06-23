@@ -36,6 +36,10 @@ from config import (
     PARAM_GRIDS, CHART_THEME,
     MAIN_TABS, STATISTICS_TABS, ANALYTICS_TABS, PROFILER_TABS,
 )
+from report_utils import (
+    save_session_state, load_session_state, has_saved_session, get_session_info,
+    generate_pdf_report
+)
 
 try:
     from advanced_analytics import render_deep_analysis_tab
@@ -312,6 +316,56 @@ with st.sidebar:
     if st.session_state.df is not None:
         st.markdown("---")
         render_sidebar_stats(st.session_state.df)
+        
+        # Get current data for PDF and session
+        raw_sidebar = st.session_state.df
+        num_sidebar = raw_sidebar.select_dtypes(include=[np.number]).columns.tolist()
+        cat_sidebar = raw_sidebar.select_dtypes(include=["object", "category"]).columns.tolist()
+        
+        # Session Management
+        with st.expander("💾 Session Management", expanded=False):
+            sess_col1, sess_col2 = st.columns(2)
+            with sess_col1:
+                if st.button("💾 Save Session", use_container_width=True, key="save_sess"):
+                    ok, msg = save_session_state()
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
+            with sess_col2:
+                if st.button("📂 Load Session", use_container_width=True, key="load_sess"):
+                    ok, msg = load_session_state()
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.warning(msg)
+            
+            if has_saved_session():
+                info = get_session_info()
+                if info:
+                    st.caption(f"📁 Last: {info['filename']} ({info['rows']} × {info['cols']})")
+        
+        # PDF Report
+        with st.expander("📄 Export PDF Report", expanded=False):
+            st.caption("Generate a beautiful PDF report of your analysis")
+            if st.button("📄 Generate PDF Report", use_container_width=True, key="gen_pdf"):
+                with st.spinner("⏳ Generating PDF report..."):
+                    try:
+                        pdf_bytes = generate_pdf_report(
+                            raw_sidebar, num_sidebar, cat_sidebar,
+                            filename=st.session_state.get("filename", "dataset")
+                        )
+                        st.download_button(
+                            "📥 Download PDF Report",
+                            pdf_bytes,
+                            f"report_{datetime.now():%Y%m%d_%H%M}.pdf",
+                            "application/pdf",
+                            key="dl_pdf"
+                        )
+                        st.success("✅ PDF Report generated!")
+                    except Exception as e:
+                        st.error(f"❌ PDF generation error: {str(e)}")
 
 # ═══════════════════════════════════════════════════════════
 # LANDING PAGE

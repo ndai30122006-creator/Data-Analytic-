@@ -425,6 +425,63 @@ def render_logistic_tab(df, num, cat):
                         f"Mô hình Logistic đạt Accuracy={accuracy:.1%}, AUC={auc_score:.3f}. "
                         f"Precision={precision:.1%}, Recall={recall:.1%}, F1={f1:.1%}",
                         "good" if auc_score > 0.7 else "warning")
+            
+            # ── SHAP Explainability ──
+            st.markdown("#### 🔮 SHAP Explainability")
+            st.caption("SHAP values show how each feature contributes to predictions")
+            try:
+                import shap
+                SHAP_AVAIL = True
+            except:
+                SHAP_AVAIL = False
+            
+            if SHAP_AVAIL:
+                show_shap = st.checkbox("🔮 Show SHAP Explanation", value=False, key="log_shap")
+                if show_shap:
+                    with st.spinner("⏳ Computing SHAP values..."):
+                        try:
+                            # Use a subset of test data for speed
+                            sample_size = min(100, len(X_test_scaled))
+                            X_sample = X_test_scaled[:sample_size]
+                            
+                            # Create SHAP explainer
+                            explainer = shap.Explainer(model, X_train_scaled)
+                            shap_values = explainer(X_sample)
+                            
+                            # SHAP summary plot (bar)
+                            fig, ax = plt.subplots(figsize=(8, 4))
+                            shap.summary_plot(shap_values, X_sample, feature_names=features,
+                                            plot_type="bar", show=False)
+                            ax.set_title("SHAP Feature Importance (Bar)", fontsize=12)
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                            plt.close()
+                            
+                            # SHAP summary plot (dot)
+                            fig, ax = plt.subplots(figsize=(8, 5))
+                            shap.summary_plot(shap_values, X_sample, feature_names=features,
+                                            show=False)
+                            ax.set_title("SHAP Summary (Dot)", fontsize=12)
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                            plt.close()
+                            
+                            # SHAP waterfall for first prediction
+                            st.markdown("##### 📊 SHAP Waterfall (First Prediction)")
+                            fig, ax = plt.subplots(figsize=(8, 4))
+                            shap.plots.waterfall(shap_values[0], max_display=10, show=False)
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                            plt.close()
+                            
+                            insight_card("🔮", "SHAP Insights",
+                                        f"Top features: {', '.join(features[:3])}. "
+                                        f"SHAP explains how each feature pushes prediction away from baseline.",
+                                        "good")
+                        except Exception as e:
+                            st.warning(f"SHAP visualization error: {str(e)}")
+            else:
+                st.info("Install SHAP: pip install shap")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
