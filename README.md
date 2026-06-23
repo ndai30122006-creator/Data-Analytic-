@@ -4,13 +4,15 @@
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.29%2B-red)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-green)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## ✨ Tính năng chính
 
 ### 🔐 User Authentication
-- Đăng nhập / Đăng xuất
-- Quản lý người dùng với session
+- Đăng nhập / Đăng xuất với session management
+- Quản lý người dùng
 - Demo accounts: admin/admin123, user/user123, teacher/teacher123
 
 ### 📂 Data Input
@@ -31,6 +33,13 @@
 - So sánh columns: common, only in dataset 1, only in dataset 2
 - So sánh thống kê: mean, std của các cột numeric chung
 - Trực quan hóa: box plot so sánh
+
+### 🤖 AI Auto Insights
+- Phân tích tự động bằng AI
+- Tạo báo cáo insights tự động
+- Phát hiện chất lượng dữ liệu, xu hướng, correlation
+- Khuyến nghị hành động
+- Export báo cáo Markdown
 
 ### 🎓 Learning Analytics
 - Phân tích điểm số, tỷ lệ đạt, nhóm rủi ro
@@ -85,7 +94,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 4. Chạy ứng dụng
+### 4. Chạy ứng dụng (Development)
 ```bash
 streamlit run app.py
 ```
@@ -97,6 +106,39 @@ Sử dụng một trong các tài khoản demo:
 - **admin** / admin123
 - **user** / user123
 - **teacher** / teacher123
+
+## 🐳 Deploy với Docker (Production)
+
+### Prerequisites
+- Docker >= 20.10
+- Docker Compose >= 2.0
+
+### 1. Build và Start
+```bash
+# Development mode (không có Nginx)
+docker-compose up --build
+
+# Production mode (với Nginx reverse proxy)
+docker-compose --profile production up --build -d
+```
+
+### 2. Truy cập
+- **Frontend:** http://localhost:8501
+- **Backend API:** http://localhost:8000
+- **API Docs:** http://localhost:8000/docs
+- **Health Check:** http://localhost:8000/health
+
+### 3. Dừng services
+```bash
+docker-compose down
+```
+
+### 4. Xem logs
+```bash
+docker-compose logs -f
+docker-compose logs -f frontend
+docker-compose logs -f backend
+```
 
 ## 📋 Requirements
 
@@ -131,6 +173,16 @@ google-auth>=2.0.0
 
 # PDF
 fpdf2>=2.5.0
+
+# API Backend
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# AI/LLM (optional)
+openai>=1.0.0
+google-generativeai>=0.3.0
 ```
 
 ## 📖 Hướng dẫn sử dụng
@@ -159,13 +211,19 @@ fpdf2>=2.5.0
 - So sánh thống kê: mean, std của các cột numeric chung
 - Trực quan hóa: box plot so sánh
 
-### 5. Learning Analytics
+### 5. AI Insights
+- Tab **🤖 AI Insights** phân tích tự động bằng AI
+- Chọn loại phân tích: Tổng quan hoặc Học tập
+- Tự động phát hiện chất lượng dữ liệu, insights, khuyến nghị
+- Export báo cáo Markdown
+
+### 6. Learning Analytics
 - Chọn cột điểm/kết quả và cột phân nhóm (lớp, môn...)
 - Xem phân phối điểm, tỷ lệ đạt, nhóm rủi ro
 - So sánh giữa các nhóm với box plot
 - Gợi ý đọc kết quả tự động
 
-### 6. Statistics
+### 7. Statistics
 Tab **📈 Statistics** cung cấp 7 module:
 
 | Module | Mô tả |
@@ -178,7 +236,7 @@ Tab **📈 Statistics** cung cấp 7 module:
 | 🧮 Naive Bayes | Gaussian & Categorical NB |
 | 🔧 Diagnostics | VIF, heteroskedasticity, Durbin-Watson |
 
-### 7. Analytics
+### 8. Analytics
 Tab **🔬 Analytics** cung cấp 4 module:
 
 | Module | Mô tả |
@@ -188,7 +246,7 @@ Tab **🔬 Analytics** cung cấp 4 module:
 | 🧹 Cleaning | Xử lý missing, duplicates, outliers, encoding |
 | 🚀 AutoML | Tự động chọn mô hình, hyperparameter tuning |
 
-### 8. Deep Analysis
+### 9. Deep Analysis
 Tab **🧠 Deep Analysis** cung cấp 10 module chuyên sâu:
 
 | Module | Mô tả |
@@ -233,22 +291,56 @@ pip install statsmodels
 pip install xgboost
 ```
 
+### Docker issues
+```bash
+# Rebuild images
+docker-compose build --no-cache
+
+# Check logs
+docker-compose logs
+
+# Restart services
+docker-compose restart
+```
+
 ## 🏗️ Cấu trúc dự án
 
 ```
 project1/
-├── app.py                  # Main application
+├── app.py                  # Main Streamlit application
 ├── advanced_analytics.py   # Deep analysis module (10 modules)
+├── ai_insights.py          # AI-powered insights & reporting
+├── api.py                  # FastAPI backend
 ├── auth.py                 # Authentication module
 ├── components.py           # Reusable UI components
 ├── config.py               # Configuration constants
 ├── utils.py                # Utility functions
 ├── report_utils.py         # PDF report generation
-├── requirements.txt        # Dependencies
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Multi-stage Docker build
+├── docker-compose.yml      # Docker Compose configuration
+├── nginx.conf              # Nginx reverse proxy config
 ├── .streamlit/
 │   └── config.toml         # Streamlit configuration
 └── README.md               # Documentation
 ```
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /auth/login` - Login với username/password
+- `GET /auth/verify` - Verify token
+
+### Analysis
+- `GET /datasets` - List datasets
+- `POST /analysis/run` - Run analysis
+
+### Health
+- `GET /health` - Health check
+
+### Interactive Docs
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
 ## 🤝 Contributing
 
@@ -262,11 +354,13 @@ MIT License — feel free to use this project for personal or commercial purpose
 
 Built with:
 - [Streamlit](https://streamlit.io/) — Web framework
+- [FastAPI](https://fastapi.tiangolo.com/) — API backend
 - [Plotly](https://plotly.com/) — Interactive charts
 - [scikit-learn](https://scikit-learn.org/) — Machine Learning
 - [scipy](https://scipy.org/) — Scientific computing
 - [statsmodels](https://www.statsmodels.org/) — Statistical models
 - [pandas](https://pandas.pydata.org/) — Data manipulation
+- [Docker](https://www.docker.com/) — Containerization
 
 ---
 

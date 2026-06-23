@@ -41,6 +41,7 @@ from report_utils import (
     generate_pdf_report
 )
 from auth import require_auth, login_page, logout
+from ai_insights import render_ai_insights_tab
 
 try:
     from advanced_analytics import render_deep_analysis_tab
@@ -54,6 +55,7 @@ SESSION_DEFAULTS = [
     ("df", None), ("filename", ""), ("cleaned_df", None),
     ("file_uploader_key", 0),
     ("datasets", {}), ("compare_datasets", []),
+    ("ai_report", None),
 ]
 for key, default in SESSION_DEFAULTS:
     if key not in st.session_state: st.session_state[key] = default
@@ -1412,8 +1414,16 @@ else:
                 else:
                     st.info("Install: pip install xgboost scikit-learn")
 
+    # ═══════════════ AI INSIGHTS ═══════════════
+    with main_tabs[4]:
+        is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
+        if not is_valid:
+            st.error(f"❌ {msg}")
+        else:
+            render_ai_insights_tab(df, num, cat)
+
     # ═══════════════ DEEP ANALYSIS ═══════════════
-    with main_tabs[5]:
+    with main_tabs[6]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")
