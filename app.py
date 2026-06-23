@@ -40,7 +40,6 @@ from report_utils import (
     save_session_state, load_session_state, has_saved_session, get_session_info,
     generate_pdf_report
 )
-from auth import require_auth, login_page, logout
 from ai_insights import render_ai_insights_tab
 
 try:
@@ -62,9 +61,6 @@ for key, default in SESSION_DEFAULTS:
 
 st.set_page_config(page_title="Learning Analytics Thống kê", page_icon="🎓", layout="wide",
                    initial_sidebar_state="expanded")
-
-# ── Authentication ────────────────────────────────────────
-require_auth()
 
 # ═══════════════════════════════════════════════════════════
 # MODERN THEME
@@ -296,12 +292,6 @@ with st.sidebar:
     col1, col2 = st.columns([1, 3])
     with col1: st.image("https://cdn-icons-png.flaticon.com/512/4727/4727496.png", width=50)
     with col2: st.markdown("### 🎓 Learning Analytics")
-    
-    # User info & logout
-    if 'username' in st.session_state:
-        st.caption(f"👤 {st.session_state.username}")
-        if st.button("🚪 Đăng xuất", use_container_width=True, key="logout_btn"):
-            logout()
     
     st.markdown("---")
     
