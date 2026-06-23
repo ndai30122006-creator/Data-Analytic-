@@ -1,6 +1,6 @@
-# 📊 Data Analyst Pro v3.0
+# 🎓 Learning Analytics Thống kê
 
-**Enterprise AI-powered data analysis platform** — Phân tích dữ liệu chuyên sâu với AI, Machine Learning, và trực quan hóa chuyên nghiệp.
+**Nền tảng phân tích dữ liệu học tập** — Phân tích điểm số, nhóm rủi ro, kiểm định thống kê và học máy cho sinh viên ngành Thống kê.
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.29%2B-red)
@@ -10,38 +10,48 @@
 
 ### 📂 Data Input
 - Upload CSV / Excel files
-- Kết nối Database (MySQL, PostgreSQL, SQL Server, SQLite)
-- Google Sheets integration
+- Xử lý tự động: parse dates, normalize columns
+- Data validation & quality checks
 
 ### 📊 Overview
 - KPI dashboard (Rows, Columns, Quality, Missing)
-- Sparkline trends
+- Sparkline trends cho các cột numeric
 - Auto-generated charts (bar, histogram, box plot)
-- Data preview với smart column types
+- Data dictionary & column profiler
 - Export CSV / Excel
 
-### 🤖 AI & ML
-- **AI Chat** — Hỏi đáp dữ liệu bằng ngôn ngữ tự nhiên (Gemini AI)
-- **Forecast** — Dự báo chuỗi thời gian với Prophet
-- **AutoML** — Tự động chọn mô hình & hyperparameter tuning (Random Forest, XGBoost, Gradient Boosting, Ridge, Lasso)
+### 🎓 Learning Analytics
+- Phân tích điểm số, tỷ lệ đạt, nhóm rủi ro
+- Phân loại kết quả: Cần hỗ trợ / Cần theo dõi / Đạt
+- So sánh theo nhóm (lớp, môn học, giới tính...)
+- Gợi ý đọc kết quả tự động
+
+### 📈 Statistics (Practical Statistics for Data Scientists)
+- **Hypothesis Testing** — T-test, ANOVA, Mann-Whitney, Kruskal-Wallis, Chi-Square
+- **Bootstrap** — Confidence intervals, resampling (Book Ch.2)
+- **A/B Testing** — Two-proportion Z-test, Sample Size Calculator, Power Analysis (Book Ch.3)
+- **Regression** — Linear Regression với diagnostics (Book Ch.4)
+- **Logistic Regression** — Binary classification, ROC/AUC, Confusion Matrix (Book Ch.5)
+- **Naive Bayes** — Gaussian & Categorical NB
+- **Diagnostics** — VIF, Heteroskedasticity, Durbin-Watson
 
 ### 🔬 Analytics
 - **Anomaly Detection** — Phát hiện bất thường với Isolation Forest
 - **Profiling** — Phân tích chi tiết từng cột, phân phối, tương quan
-- **What-If Analysis** — Mô phỏng kịch bản thay đổi biến
-- **PDF Report** — Xuất báo cáo PDF tự động
+- **Data Cleaning** — Missing values, duplicates, outliers, encoding
+- **AutoML** — Tự động chọn mô hình & hyperparameter tuning (5 thuật toán)
 
 ### 🧠 Deep Analysis (Advanced Analytics)
-- **Thống kê nâng cao** — T-test, ANOVA, Mann-Whitney, Chi-Square, Kiểm định phân phối chuẩn
-- **Chuỗi thời gian** — ADF/KPSS stationarity test, Seasonal Decompose, ACF/PACF, Dự báo
-- **Phân cụm** — K-Means, DBSCAN, Hierarchical Clustering với đánh giá Silhouette/Calinski-Harabasz
+- **Bootstrap & CI** — Resampling, confidence intervals
+- **A/B Testing** — Thiết kế thử nghiệm, power analysis
+- **Logistic Regression** — Phân loại nhị phân, SHAP explainability
+- **Naive Bayes** — Gaussian & Categorical classification
+- **Time Series** — ADF/KPSS stationarity, Seasonal Decompose, ACF/PACF
+- **Clustering** — K-Means, DBSCAN, Hierarchical với đánh giá Silhouette/Calinski-Harabasz
 - **PCA & t-SNE** — Giảm chiều dữ liệu, trực quan hóa 2D/3D
-- **Feature Engineering** — Tạo đặc trưng mới, Scaling, Encoding, Feature Selection
-- **So sánh mô hình** — Cross-validation, so sánh 11+ thuật toán
-- **Chất lượng dữ liệu** — Data Quality Score, phát hiện trùng lặp, schema validation, drift detection
-
-### ⚛️ Molecule (3D Visualization)
-- Trực quan hóa cấu trúc phân tử 3D tương tác với dữ liệu
+- **Feature Engineering** — Scaling, Encoding, Feature Selection
+- **Model Comparison** — Cross-validation, so sánh 11+ thuật toán
+- **Regression Diagnostics** — VIF, Heteroskedasticity, Durbin-Watson, Residuals
 
 ## 🚀 Cài đặt
 
@@ -83,55 +93,73 @@ scipy>=1.11.0
 statsmodels>=0.14.0
 openpyxl>=3.1.0
 xgboost>=2.0.0
-prophet>=1.1.0
 fpdf2>=2.7.0
-gspread>=6.0.0
-google-generativeai>=0.3.0
-sqlalchemy>=2.0.0
-pymysql>=1.1.0
 ```
 
 ## 📖 Hướng dẫn sử dụng
 
 ### 1. Upload dữ liệu
-- **Cách 1:** Upload file CSV/Excel từ sidebar
-- **Cách 2:** Kết nối Database hoặc Google Sheets
+- Upload file CSV/Excel từ sidebar
+- Hệ thống tự động parse dates và validate data
 
-### 2. Khám phá dữ liệu (Tab Overview)
-- Xem KPI tổng quan
+### 2. Overview
+- Xem KPI tổng quan (Rows, Columns, Quality, Missing)
 - Sparkline trends cho các cột numeric
 - Biểu đồ tự động: phân phối, top categories
-- Data preview & export
+- Data dictionary & column profiler
+- Export CSV / Excel
 
-### 3. AI Chat
-- Vào sidebar → **AI Setup** → nhập Gemini API Key
-- Hỏi đáp bằng tiếng Việt: *"Xu hướng dữ liệu như thế nào?"*, *"Có bao nhiêu giá trị bất thường?"*
+### 3. Learning Analytics
+- Chọn cột điểm/kết quả và cột phân nhóm (lớp, môn...)
+- Xem phân phối điểm, tỷ lệ đạt, nhóm rủi ro
+- So sánh giữa các nhóm với box plot
+- Gợi ý đọc kết quả tự động
 
-### 4. Deep Analysis
-Tab **🧠 Deep Analysis** cung cấp 7 module chuyên sâu:
+### 4. Statistics
+Tab **📈 Statistics** cung cấp 7 module:
 
 | Module | Mô tả |
 |--------|-------|
-| 📊 Thống kê nâng cao | Kiểm định giả thuyết, phân phối chuẩn, tương quan nâng cao |
-| 📈 Chuỗi thời gian | ADF/KPSS, phân rã mùa vụ, ACF/PACF, dự báo |
-| 🧬 Phân cụm | K-Means, DBSCAN, Hierarchical |
-| 🎯 PCA & t-SNE | Giảm chiều, trực quan hóa |
-| 🔧 Feature Engineering | Tạo đặc trưng, scaling, encoding, selection |
-| 🏆 So sánh mô hình | 11+ thuật toán, cross-validation |
-| ✅ Chất lượng dữ liệu | Data Quality Score, drift detection |
+| 🔬 Hypothesis Testing | T-test, ANOVA, Mann-Whitney, Chi-Square |
+| 🎲 Bootstrap | Confidence intervals, resampling |
+| ⚗️ A/B Testing | Two-proportion test, power analysis |
+| 📈 Regression | Linear regression, diagnostics |
+| 🔴 Logistic | Binary classification, ROC/AUC |
+| 🧮 Naive Bayes | Gaussian & Categorical NB |
+| 🔧 Diagnostics | VIF, heteroskedasticity, Durbin-Watson |
 
-### 5. AutoML
-- Tab **🤖 AI & ML** → **🧠 AutoML**
-- Chọn target, features
-- Chọn phương pháp tuning: GridSearch, RandomizedSearch, hoặc None
-- Chọn models: Random Forest, XGBoost, Gradient Boosting, Ridge, Lasso
-- Xem kết quả: R², CV scores, best params
+### 5. Analytics
+Tab **🔬 Analytics** cung cấp 4 module:
+
+| Module | Mô tả |
+|--------|-------|
+| 🔍 Anomaly | Phát hiện bất thường với Isolation Forest |
+| 📊 Profiling | Phân tích chi tiết cột, correlation matrix |
+| 🧹 Cleaning | Xử lý missing, duplicates, outliers, encoding |
+| 🚀 AutoML | Tự động chọn mô hình, hyperparameter tuning |
+
+### 6. Deep Analysis
+Tab **🧠 Deep Analysis** cung cấp 10 module chuyên sâu:
+
+| Module | Mô tả |
+|--------|-------|
+| 🎲 Bootstrap | Resampling, confidence intervals |
+| ⚗️ A/B Testing | Thiết kế thử nghiệm, power analysis |
+| 🔴 Logistic | Phân loại, SHAP explainability |
+| 🧮 Naive Bayes | Gaussian & Categorical NB |
+| 📈 Time Series | Stationarity, decompose, ACF/PACF |
+| 🧬 Clustering | K-Means, DBSCAN, Hierarchical |
+| 🎯 PCA & t-SNE | Giảm chiều, trực quan hóa |
+| 🔧 Feature Engineering | Scaling, encoding, selection |
+| 🏆 Model Comparison | 11+ thuật toán, cross-validation |
+| ✅ Diagnostics | VIF, heteroskedasticity, residuals |
 
 ## 🎨 Theme
 
-Ứng dụng hỗ trợ 2 theme:
-- **Dark mode** (mặc định) — Linear/Vercel/Stripe inspired
-- **Light mode** — Click nút 🌓 trong sidebar để chuyển đổi
+Ứng dụng hỗ trợ dark mode mặc định với theme hiện đại:
+- **Dark mode** — Linear/Vercel/Stripe inspired
+- Font Inter, màu sắc chuyên nghiệp
+- Responsive design
 
 ## 🔧 Troubleshooting
 
@@ -140,18 +168,17 @@ Tab **🧠 Deep Analysis** cung cấp 7 module chuyên sâu:
 pip install <module-name>
 ```
 
-### Lỗi Gemini API
-- Kiểm tra API key tại sidebar → AI Setup
-- Lấy key miễn phí tại [aistudio.google.com](https://aistudio.google.com/apikey)
-
-### Lỗi Prophet
+### Lỗi scipy / scikit-learn
 ```bash
-pip install prophet
-# hoặc
-pip install pystan==2.19.1.1
+pip install scipy scikit-learn
 ```
 
-### Lỗi XGBoost
+### Lỗi statsmodels
+```bash
+pip install statsmodels
+```
+
+### Lỗi xgboost
 ```bash
 pip install xgboost
 ```
@@ -161,11 +188,11 @@ pip install xgboost
 ```
 project1/
 ├── app.py                  # Main application
-├── advanced_analytics.py   # Deep analysis module (7 modules)
+├── advanced_analytics.py   # Deep analysis module (10 modules)
 ├── components.py           # Reusable UI components
 ├── config.py               # Configuration constants
-├── solar_system.py         # 3D molecule visualization
 ├── utils.py                # Utility functions
+├── report_utils.py         # PDF report generation
 ├── requirements.txt        # Dependencies
 ├── .streamlit/
 │   └── config.toml         # Streamlit configuration
@@ -186,10 +213,10 @@ Built with:
 - [Streamlit](https://streamlit.io/) — Web framework
 - [Plotly](https://plotly.com/) — Interactive charts
 - [scikit-learn](https://scikit-learn.org/) — Machine Learning
-- [Prophet](https://facebook.github.io/prophet/) — Time series forecasting
-- [XGBoost](https://xgboost.readthedocs.io/) — Gradient boosting
-- [Gemini AI](https://ai.google.dev/) — Natural language processing
+- [scipy](https://scipy.org/) — Scientific computing
+- [statsmodels](https://www.statsmodels.org/) — Statistical models
+- [pandas](https://pandas.pydata.org/) — Data manipulation
 
 ---
 
-**📊 Data Analyst Pro v2.0** — Enterprise AI Data Platform
+**🎓 Learning Analytics Thống kê** — Practical Statistics for Data Scientists Edition
