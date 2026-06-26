@@ -95,12 +95,14 @@ SESSION_KEYS = {
 
 # ── Tab Names ───────────────────────────────────────────────
 TAB_OVERVIEW = "📊 Overview"
+TAB_LEARNING_ANALYTICS = "🎓 Learning Analytics"
 TAB_STATISTICS = "📈 Statistics"
+TAB_COMPARE = "⚖️ Compare"
 TAB_ANALYTICS = "🔬 Analytics"
+TAB_AI_INSIGHTS = "🤖 AI Insights"
 TAB_DEEP_ANALYSIS = "🧠 Deep Analysis"
 
-TAB_LEARNING_ANALYTICS = "🎓 Learning Analytics"
-MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_LEARNING_ANALYTICS, TAB_STATISTICS, TAB_ANALYTICS, TAB_DEEP_ANALYSIS]
+MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_LEARNING_ANALYTICS, TAB_STATISTICS, TAB_COMPARE, TAB_ANALYTICS, TAB_AI_INSIGHTS, TAB_DEEP_ANALYSIS]
 
 # ── Statistics Sub-tabs ─────────────────────────────────────
 STATS_TAB_HYPOTHESIS = "🔬 Hypothesis Testing"

@@ -264,7 +264,7 @@ def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List
                 group_col = None
     
     # Generate button
-    if st.button("🤖 Generate AI Insights", type="primary", use_container_width=True, key="gen_ai_insights"):
+    if st.button("🤖 Generate AI Insights", type="primary", width="stretch", key="gen_ai_insights"):
         with st.spinner("Đang phân tích và tạo insights..."):
             report = generate_ai_report(df, analysis_type, score_col, group_col)
             
@@ -272,7 +272,7 @@ def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List
             st.session_state.ai_report = report
     
     # Display report
-    if 'ai_report' in st.session_state:
+    if 'ai_report' in st.session_state and st.session_state.ai_report is not None:
         report = st.session_state.ai_report
         
         st.markdown("---")

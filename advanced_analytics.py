@@ -157,7 +157,7 @@ def render_bootstrap_tab(df, num):
             fig.update_layout(title=f"Bootstrap Distribution of {stat_choice} (n_iter={n_iter})",
                             height=400, xaxis_title=stat_choice, yaxis_title="Frequency")
             apply_theme(fig)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
             insight_card("💡", "Interpretation",
                         f"Với {conf_level}% confidence, {stat_choice.lower()} nằm trong khoảng "
@@ -419,7 +419,7 @@ def render_logistic_tab(df, num, cat):
                 "Coefficient": model.coef_[0],
                 "Odds Ratio": np.exp(model.coef_[0])
             })
-            st.dataframe(coef_df, width='stretch', use_container_width=True)
+            st.dataframe(coef_df, width="stretch")
             
             insight_card("💡", "Interpretation",
                         f"Mô hình Logistic đạt Accuracy={accuracy:.1%}, AUC={auc_score:.3f}. "
@@ -573,7 +573,7 @@ def render_naive_bayes_tab(df, num, cat):
                 "Theta (mean)": [gnb.theta_[0, 0] if gnb.theta_.shape[1] > 0 else 0,
                                 gnb.theta_[1, 0] if gnb.theta_.shape[1] > 0 else 0]
             })
-            st.dataframe(priors, width='stretch', use_container_width=True)
+            st.dataframe(priors, width="stretch")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -624,7 +624,7 @@ def render_diagnostics_tab(df, num):
                 vif_data["Moderate? (VIF>5)"] = vif_data["VIF"].apply(lambda x: "⚠️ Yes" if x > 5 else "✅ No")
                 
                 st.dataframe(vif_data.style.highlight_max(axis=0, color='#f8717140'), 
-                            width='stretch', use_container_width=True)
+                            width="stretch")
                 
                 max_vif = vif_data["VIF"].max()
                 if max_vif > 10:
@@ -719,7 +719,7 @@ def render_diagnostics_tab(df, num):
                     "Feature": ["Intercept"] + features,
                     "Coefficient": [model.intercept_] + list(model.coef_)
                 })
-                st.dataframe(coef_df, width='stretch', use_container_width=True)
+                st.dataframe(coef_df, width="stretch")
                 
                 # Q-Q Plot
                 fig = make_subplots(rows=1, cols=2, 
@@ -1055,7 +1055,7 @@ def render_clustering_tab(df, num):
                     st.plotly_chart(fig, width='stretch')
                 
                 profile = X.groupby("Cluster")[cols].agg(["mean", "std", "count"]).round(2)
-                st.dataframe(profile, width='stretch', use_container_width=True)
+                st.dataframe(profile, width="stretch")
 
     elif method == "DBSCAN":
         eps = st.slider("Epsilon:", 0.1, 5.0, 0.5, 0.1, key="cl_eps")
@@ -1178,7 +1178,7 @@ def render_pca_tab(df, num):
                                        columns=[f"PC{i+1}" for i in range(min(4, len(cols)))],
                                        index=cols)
                 st.markdown("#### 📋 Loadings")
-                st.dataframe(loadings, width='stretch', use_container_width=True)
+                st.dataframe(loadings, width="stretch")
 
             if method in ["t-SNE", "Both"]:
                 perplexity = st.slider("Perplexity:", 5, min(50, len(X)-1), min(30, len(X)//2), key="tsne_perp")
@@ -1217,7 +1217,7 @@ def render_feature_engineering_tab(df, num, cat):
                        "+": lambda a, b: a + b, "-": lambda a, b: a - b}
                 df[new_name] = ops[op](df[c1], df[c2])
                 st.success(f"✅ Created '{new_name}'")
-                st.dataframe(df[[c1, c2, new_name]].head(10), width='stretch', use_container_width=True)
+                st.dataframe(df[[c1, c2, new_name]].head(10), width="stretch")
 
         elif feat_type == "Polynomial" and num:
             c = st.selectbox("Col:", num, key="fe_pc")
@@ -1379,7 +1379,7 @@ def render_model_comparison_tab(df, num):
                 })
 
             results_df = pd.DataFrame(results).sort_values("Test R²", ascending=False)
-            st.dataframe(results_df, width='stretch', use_container_width=True)
+            st.dataframe(results_df, width="stretch")
 
             # Bar chart
             fig = go.Figure()
@@ -1458,7 +1458,7 @@ def render_data_quality_tab(df, num, cat):
             "Null%": (df.isnull().sum().values / len(df) * 100).round(1).astype(str) + "%",
             "Unique": df.nunique().values
         })
-        st.dataframe(schema, width='stretch', use_container_width=True)
+        st.dataframe(schema, width="stretch")
 
     with tabs[3]:
         if len(num) >= 1:

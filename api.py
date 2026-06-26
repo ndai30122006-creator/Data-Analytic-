@@ -1,10 +1,9 @@
 """FastAPI Backend for Learning Analytics SaaS"""
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import hashlib
-import json
 
 app = FastAPI(title="Learning Analytics API", version="1.0.0")
 
@@ -26,13 +25,6 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str
     username: str
-
-class DatasetInfo(BaseModel):
-    filename: str
-    rows: int
-    columns: int
-    numeric_cols: int
-    categorical_cols: int
 
 class AnalysisRequest(BaseModel):
     dataset_name: str
@@ -60,6 +52,24 @@ def verify_token(token: str) -> Optional[str]:
             return username
     return None
 
+async def get_current_user(authorization: str = Header(...)) -> str:
+    """Dependency that extracts and verifies the Bearer token from the Authorization header."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization[len("Bearer "):]
+    username = verify_token(token)
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return username
+
 # ── Endpoints ──────────────────────────────────────────────
 @app.get("/")
 async def root():
@@ -69,11 +79,17 @@ async def root():
 async def login(request: LoginRequest):
     """Login endpoint"""
     if request.username not in USERS:
-        raise HTTPException(status_code=401, detail="Invalid username")
-    
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username",
+        )
+
     if hash_password(request.password) != USERS[request.username]:
-        raise HTTPException(status_code=401, detail="Invalid password")
-    
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid password",
+        )
+
     token = create_token(request.username)
     return LoginResponse(
         access_token=token,
@@ -85,44 +101,43 @@ async def login(request: LoginRequest):
 async def register(username: str, password: str):
     """Register new user"""
     if username in USERS:
-        raise HTTPException(status_code=400, detail="Username already exists")
-    
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists",
+        )
+
     if len(password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
-    
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters",
+        )
+
     # In production, save to database
     USERS[username] = hash_password(password)
-    
+
     return {"message": f"User {username} registered successfully"}
 
 @app.get("/auth/verify")
-async def verify_auth(token: str):
-    """Verify token"""
-    username = verify_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
+async def verify_auth(username: str = Depends(get_current_user)):
+    """Verify token — also serves as a auth self-check via the dependency."""
     return {"username": username, "valid": True}
 
 @app.get("/datasets")
-async def list_datasets(token: str):
+async def list_datasets(username: str = Depends(get_current_user)):
     """List available datasets"""
-    username = verify_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
     # In production, fetch from database
-    return {"datasets": [], "message": "No datasets in demo mode"}
+    return {"datasets": [], "username": username, "message": "No datasets in demo mode"}
 
 @app.post("/analysis/run")
-async def run_analysis(request: AnalysisRequest, token: str):
+async def run_analysis(
+    request: AnalysisRequest,
+    username: str = Depends(get_current_user),
+):
     """Run analysis on dataset"""
-    username = verify_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
     # In production, this would trigger actual analysis
     return {
         "status": "success",
+        "username": username,
         "dataset": request.dataset_name,
         "analysis_type": request.analysis_type,
         "results": {

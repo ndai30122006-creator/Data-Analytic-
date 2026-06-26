@@ -334,7 +334,7 @@ with st.sidebar:
             
             # Delete dataset button
             if selected_dataset != "-- Chọn --":
-                if st.button(f"🗑 Xóa {selected_dataset}", key="del_dataset", use_container_width=True):
+                if st.button(f"🗑 Xóa {selected_dataset}", key="del_dataset", width="stretch"):
                     del st.session_state.datasets[selected_dataset]
                     if st.session_state.filename == selected_dataset:
                         st.session_state.df = None
@@ -343,7 +343,7 @@ with st.sidebar:
         
         if st.session_state.df is not None:
             st.caption(f"📄 {st.session_state.filename}")
-            if st.button("🗑 Clear All", key="clr", use_container_width=True):
+            if st.button("🗑 Clear All", key="clr", width="stretch"):
                 st.session_state.df = None
                 st.session_state.filename = ""
                 st.session_state.datasets = {}
@@ -364,14 +364,14 @@ with st.sidebar:
         with st.expander("💾 Session Management", expanded=False):
             sess_col1, sess_col2 = st.columns(2)
             with sess_col1:
-                if st.button("💾 Save Session", use_container_width=True, key="save_sess"):
+                if st.button("💾 Save Session", width="stretch", key="save_sess"):
                     ok, msg = save_session_state()
                     if ok:
                         st.success(msg)
                     else:
                         st.error(msg)
             with sess_col2:
-                if st.button("📂 Load Session", use_container_width=True, key="load_sess"):
+                if st.button("📂 Load Session", width="stretch", key="load_sess"):
                     ok, msg = load_session_state()
                     if ok:
                         st.success(msg)
@@ -387,7 +387,7 @@ with st.sidebar:
         # PDF Report
         with st.expander("📄 Export PDF Report", expanded=False):
             st.caption("Generate a beautiful PDF report of your analysis")
-            if st.button("📄 Generate PDF Report", use_container_width=True, key="gen_pdf"):
+            if st.button("📄 Generate PDF Report", width="stretch", key="gen_pdf"):
                 with st.spinner("⏳ Generating PDF report..."):
                     try:
                         pdf_bytes = generate_pdf_report(
@@ -512,7 +512,6 @@ else:
                 df.head(MAX_DISPLAY_ROWS),
                 width='stretch',
                 column_config=col_config,
-                use_container_width=True
             )
         
         # Export
@@ -531,7 +530,7 @@ else:
                                      f"data_{datetime.now():%Y%m%d}.xlsx",
                                      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             with col2:
-                if st.button("🔄 Reset Session", use_container_width=True):
+                if st.button("🔄 Reset Session", width="stretch"):
                     for k in list(st.session_state.keys()): del st.session_state[k]
                     st.rerun()
 
@@ -863,7 +862,7 @@ else:
                             c4.metric("Features", f"{len(features)}")
                             
                             coef_df = pd.DataFrame({"Feature": features, "Coefficient": model.coef_})
-                            st.dataframe(coef_df, width='stretch', use_container_width=True)
+                            st.dataframe(coef_df, width='stretch')
                             
                             # Scatter: Actual vs Predicted
                             y_pred = model.predict(X_test_s)
@@ -1285,12 +1284,12 @@ else:
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("🔄 Reset to Original", use_container_width=True):
+                    if st.button("🔄 Reset to Original", width="stretch"):
                         st.session_state.cleaned_df = df.copy()
                         st.success("✅ Reset")
                         st.rerun()
                 with col2:
-                    if st.button("💾 Save Cleaned Data", use_container_width=True):
+                    if st.button("💾 Save Cleaned Data", width="stretch"):
                         st.session_state.df = work_df.copy()
                         st.success("✅ Saved")
                         st.rerun()
@@ -1414,7 +1413,7 @@ else:
                     st.info("Install: pip install xgboost scikit-learn")
 
     # ═══════════════ AI INSIGHTS ═══════════════
-    with main_tabs[4]:
+    with main_tabs[5]:
         is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
         if not is_valid:
             st.error(f"❌ {msg}")

@@ -29,7 +29,7 @@ def render_data_dictionary(df: pd.DataFrame) -> None:
     st.caption("Metadata chi tiết về từng cột trong dataset")
     
     dict_df = generate_data_dictionary(df)
-    st.dataframe(dict_df, width='stretch', use_container_width=True)
+    st.dataframe(dict_df, width="stretch")
     
     csv = dict_df.to_csv(index=False).encode('utf-8')
     st.download_button(
