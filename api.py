@@ -1,11 +1,28 @@
 """FastAPI Backend for Learning Analytics SaaS"""
-from fastapi import FastAPI, HTTPException, Depends, status, Header
+import logging
+from fastapi import FastAPI, HTTPException, Depends, status, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import hashlib
+import traceback
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Learning Analytics API", version="1.0.0")
+
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "Unhandled exception: %s | Path: %s | Detail: %s",
+        type(exc).__name__, request.url.path, str(exc), exc_info=True
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error. Please try again later."}
+    )
 
 # CORS middleware
 app.add_middleware(
@@ -151,6 +168,7 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+if __name__ == "__main__":      
+    import uvicorn   
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    

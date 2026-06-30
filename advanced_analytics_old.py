@@ -485,7 +485,7 @@ def render_logistic_tab(df, num, cat):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 4. NAIVE BAYES (Book Ch.5)
+# 4. NAIVE BAYES (Book Ch.5) 
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_naive_bayes_tab(df, num, cat):
     if not SKLEARN_AVAIL:
@@ -498,7 +498,7 @@ def render_naive_bayes_tab(df, num, cat):
     st.caption("Phân loại xác suất với Gaussian & Categorical Naive Bayes (Book Ch.5)")
 
     # Target
-    target_options = num + cat
+    target_options = num + cat 
     target_col = st.selectbox("Chọn biến mục tiêu:", target_options, key="nb_target")
     
     if target_col in num:
@@ -1524,14 +1524,14 @@ def render_deep_analysis_tab(df, num, cat, dat):
         "✅ Data Quality"
     ])
 
-    with deep_tabs[0]: render_advanced_stats_tab(df, num, cat)
-    with deep_tabs[1]: render_bootstrap_tab(df, num)
-    with deep_tabs[2]: render_ab_testing_tab(df, num, cat)
-    with deep_tabs[3]: render_logistic_tab(df, num, cat)
-    with deep_tabs[4]: render_naive_bayes_tab(df, num, cat)
-    with deep_tabs[5]: render_diagnostics_tab(df, num)
-    with deep_tabs[6]: render_clustering_tab(df, num)
-    with deep_tabs[7]: render_pca_tab(df, num)
-    with deep_tabs[8]: render_feature_engineering_tab(df, num, cat)
-    with deep_tabs[9]: render_model_comparison_tab(df, num)
-    with deep_tabs[10]: render_data_quality_tab(df, num, cat)
+    with deep_tabs[0]: render_advanced_stats_tab(df, num, cat)        
+    with deep_tabs[1]: render_bootstrap_tab(df, num)             
+    with deep_tabs[2]: render_ab_testing_tab(df, num, cat)     
+    with deep_tabs[3]: render_logistic_tab(df, num, cat)     
+    with deep_tabs[4]: render_naive_bayes_tab(df, num, cat)      
+    with deep_tabs[5]: render_diagnostics_tab(df, num)      
+    with deep_tabs[6]: render_clustering_tab(df, num)     
+    with deep_tabs[7]: render_pca_tab(df, num)     
+    with deep_tabs[8]: render_feature_engineering_tab(df, num, cat)       
+    with deep_tabs[9]: render_model_comparison_tab(df, num)      
+    with deep_tabs[10]: render_data_quality_tab(df, num, cat)     

@@ -1,4 +1,5 @@
 """Utilities for PDF reports and session management"""
+import logging
 import os
 import pickle
 import tempfile
@@ -9,6 +10,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from fpdf import FPDF
+
+from exceptions import handle_error, DataValidationError
+
+logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
 # SESSION MANAGEMENT
@@ -28,8 +33,12 @@ def save_session_state():
         with open(SESSION_FILE, "wb") as f:
             pickle.dump(session_data, f)
         return True, f"✅ Session saved at {datetime.now():%H:%M:%S}"
-    except Exception as e:
+    except (IOError, pickle.PickleError) as e:
+        logger.error("Session save failed: %s", e, exc_info=True)
         return False, f"❌ Save failed: {str(e)}"
+    except Exception as e:
+        logger.error("Unexpected session save error: %s", e, exc_info=True)
+        return False, f"❌ Save failed: unexpected error"
 
 def load_session_state():
     """Load session state from pickle file"""
@@ -48,8 +57,12 @@ def load_session_state():
         
         saved_at = session_data.get("saved_at", "unknown")
         return True, f"✅ Session loaded (saved: {saved_at})"
-    except Exception as e:
+    except (IOError, pickle.PickleError) as e:
+        logger.error("Session load failed: %s", e, exc_info=True)
         return False, f"❌ Load failed: {str(e)}"
+    except Exception as e:
+        logger.error("Unexpected session load error: %s", e, exc_info=True)
+        return False, f"❌ Load failed: unexpected error"
 
 def has_saved_session():
     """Check if a saved session exists"""
@@ -68,7 +81,11 @@ def get_session_info():
             "rows": len(data.get("df", [])),
             "cols": len(data.get("df", pd.DataFrame()).columns) if data.get("df") is not None else 0,
         }
-    except:
+    except (IOError, pickle.PickleError, KeyError) as e:
+        logger.warning("Session info read failed: %s", e)
+        return None
+    except Exception as e:
+        logger.error("Unexpected session info error: %s", e, exc_info=True)
         return None
 
 

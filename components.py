@@ -1,15 +1,27 @@
 """Reusable UI Components for Data Analyst Pro v3.0 — Practical Statistics Edition"""
+from typing import List, Optional, Any, Dict, Tuple
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from typing import List, Optional, Any, Tuple
 
 from utils import get_column_stats, compute_data_quality_score, generate_data_dictionary
 
-def render_kpi_card(container, label: str, value: str, delta: Optional[str] = None) -> None:
-    """Render KPI card inside a container"""
+
+def render_kpi_card(container: st.delta_generator.DeltaGenerator, label: str, value: str, delta: Optional[str] = None) -> None:
+    """
+    Render a KPI metric card inside a Streamlit container.
+
+    Args:
+        container: Streamlit column/container to render into
+        label: Short label describing the metric (e.g. "Rows", "Quality")
+        value: Formatted value string to display (e.g. "1,234", "95.2%")
+        delta: Optional delta/change indicator string (e.g. "+5%")
+
+    Returns:
+        None — renders HTML directly into the container
+    """
     container.markdown(f'''
     <div class="kpi-card">
         <div class="kpi-label">{label}</div>
@@ -18,19 +30,46 @@ def render_kpi_card(container, label: str, value: str, delta: Optional[str] = No
     </div>
     ''', unsafe_allow_html=True)
 
+
 def render_insight_card(icon: str, title: str, msg: str, type: str = "info") -> None:
-    """Render insight card với màu sắc"""
-    st.markdown(f'<div class="insight-card insight-{type}"><strong>{icon} {title}</strong><br>{msg}</div>',
-                unsafe_allow_html=True)
+    """
+    Render a styled insight card with icon and color-coded type.
+
+    Args:
+        icon: Emoji or icon string (e.g. "📊", "✅")
+        title: Card title text
+        msg: Card body/content text
+        type: Card variant — "info", "success", "warning", "danger", or "good" (default "info")
+
+    Returns:
+        None — renders HTML directly into Streamlit
+    """
+    st.markdown(
+        f'<div class="insight-card insight-{type}">'
+        f'<strong>{icon} {title}</strong><br>{msg}</div>',
+        unsafe_allow_html=True
+    )
+
 
 def render_data_dictionary(df: pd.DataFrame) -> None:
-    """Render Data Dictionary table"""
+    """
+    Render a Data Dictionary table with download button.
+
+    Displays metadata for each column (type, dtype, missing %, unique count, sample).
+    Includes a CSV download button for the dictionary.
+
+    Args:
+        df: Input DataFrame to analyze
+
+    Returns:
+        None — renders table + download button into Streamlit
+    """
     st.markdown("### 📖 Data Dictionary")
     st.caption("Metadata chi tiết về từng cột trong dataset")
-    
+
     dict_df = generate_data_dictionary(df)
     st.dataframe(dict_df, width="stretch")
-    
+
     csv = dict_df.to_csv(index=False).encode('utf-8')
     st.download_button(
         "📥 Download Data Dictionary (CSV)",
@@ -39,23 +78,39 @@ def render_data_dictionary(df: pd.DataFrame) -> None:
         "text/csv"
     )
 
+
 def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List[str]) -> None:
-    """Render detailed column profiling"""
+    """
+    Render an interactive column profiler with statistics and visualizations.
+
+    Allows user to select a column and view:
+    - Count, missing %, unique count
+    - Numeric stats (min, max, mean, median, std, IQR) + histogram for numeric columns
+    - Value counts + bar chart for categorical columns
+
+    Args:
+        df: Input DataFrame containing the column
+        num_cols: List of numeric column names in df
+        cat_cols: List of categorical column names in df
+
+    Returns:
+        None — renders selectbox + stats + chart into Streamlit
+    """
     st.markdown("### 🔍 Column Profiler")
     st.caption("Phân tích chi tiết từng cột")
-    
+
     all_cols = df.columns.tolist()
     selected_col = st.selectbox("Chọn cột để phân tích:", all_cols, key="profiler_col")
-    
+
     if selected_col:
         stats = get_column_stats(df, selected_col)
-        
+
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Count", f"{stats['count']:,}")
         c2.metric("Missing", f"{stats['missing']:,}")
         c3.metric("Missing %", f"{stats['missing_pct']}%")
         c4.metric("Unique", f"{stats['unique']:,}")
-        
+
         if selected_col in num_cols:
             st.markdown("#### 📊 Numeric Statistics")
             r1c1, r1c2, r1c3 = st.columns(3)
@@ -66,8 +121,8 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
             r2c1.metric("Median", f"{stats['median']:,.4f}")
             r2c2.metric("Std", f"{stats['std']:,.4f}")
             r2c3.metric("IQR", f"{stats['iqr']:,.4f}")
-            
-            fig = px.histogram(df, x=selected_col, nbins=50, 
+
+            fig = px.histogram(df, x=selected_col, nbins=50,
                              title=f"Distribution of {selected_col}",
                              marginal="box")
             fig.update_traces(marker_line_width=0, opacity=0.8)
@@ -84,20 +139,34 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
                         color=vc.values, color_continuous_scale="Viridis")
             st.plotly_chart(fig, width='stretch')
 
+
 def render_data_quality_report(df: pd.DataFrame) -> None:
-    """Render comprehensive data quality report"""
+    """
+    Render a comprehensive data quality scorecard with gauge chart.
+
+    Computes and displays:
+    - Completeness, Uniqueness, Validity percentages
+    - Overall quality score as a gauge indicator
+    - List of detected issues (duplicates, outliers, missing values)
+
+    Args:
+        df: Input DataFrame to evaluate
+
+    Returns:
+        None — renders metrics + gauge + issues into Streamlit
+    """
     st.markdown("### ✅ Data Quality Report")
     st.caption("Đánh giá tổng thể chất lượng dữ liệu")
-    
+
     quality = compute_data_quality_score(df)
-    
+
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("📦 Completeness", f"{quality['completeness']}%")
     c2.metric("🎯 Uniqueness", f"{quality['uniqueness']}%")
     c3.metric("✅ Validity", f"{quality['validity']}%")
     c4.metric("🏆 Overall Score", f"{quality['overall']}%",
              delta="Tốt ✅" if quality['overall'] >= 80 else "Trung bình ⚠️" if quality['overall'] >= 60 else "Kém ❌")
-    
+
     fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",
         value=quality['overall'],
@@ -121,9 +190,9 @@ def render_data_quality_report(df: pd.DataFrame) -> None:
     ))
     fig.update_layout(height=300)
     st.plotly_chart(fig, width='stretch')
-    
+
     st.markdown("#### 📌 Vấn đề phát hiện")
-    issues = []
+    issues: List[str] = []
     if quality['dup_rows'] > 0:
         issues.append(f"⚠️ {quality['dup_rows']:,} dòng trùng lặp")
     if quality['outlier_count'] > 0:
@@ -131,31 +200,40 @@ def render_data_quality_report(df: pd.DataFrame) -> None:
     if quality['filled_cells'] < quality['total_cells']:
         missing = quality['total_cells'] - quality['filled_cells']
         issues.append(f"⚠️ {missing:,} giá trị thiếu")
-    
+
     if not issues:
         issues.append("✅ Dữ liệu sạch, không phát hiện vấn đề!")
-    
+
     for issue in issues:
         render_insight_card("📊", "", issue, "good" if "✅" in issue else "warning")
 
+
 def render_quick_start_tutorial() -> None:
-    """Render quick start tutorial cho new users"""
+    """
+    Render an expandable quick start guide for new users.
+
+    Displays step-by-step instructions for uploading data, navigating tabs,
+    and using key features of the application.
+
+    Returns:
+        None — renders markdown inside an expander
+    """
     st.markdown("### 🚀 Quick Start Guide")
     st.caption("Hướng dẫn nhanh để bắt đầu")
-    
+
     with st.expander("📖 Click để xem hướng dẫn", expanded=True):
         st.markdown("""
         **Chào mừng đến với Data Analyst Pro v3.0!** Phiên bản dựa trên cuốn *Practical Statistics for Data Scientists*.
-        
+
         ### 1️⃣ Upload dữ liệu
         - Click vào **Browse files** ở sidebar
         - Chọn file CSV hoặc Excel
-        
+
         ### 2️⃣ Khám phá Overview
         - Xem KPI dashboard: số dòng, cột, chất lượng dữ liệu
         - Sparkline trends cho các cột numeric
         - Biểu đồ tự động: phân phối, top categories
-        
+
         ### 3️⃣ Statistics (Tính năng mới!)
         - **🔬 Hypothesis Testing** — T-test, ANOVA, Chi-Square, Mann-Whitney
         - **🎲 Bootstrap** — Confidence intervals, resampling
@@ -164,42 +242,86 @@ def render_quick_start_tutorial() -> None:
         - **🔴 Logistic** — Logistic regression, confusion matrix, ROC
         - **🧮 Naive Bayes** — Gaussian & Categorical NB
         - **🔧 Diagnostics** — VIF, Heteroskedasticity, Durbin-Watson
-        
+
         ### 4️⃣ Deep Analysis
         - 7 modules phân tích chuyên sâu
-        
+
         ---
-        
+
         **💡 Tips:**
         - Click nút 🌓 để chuyển Dark/Light mode
         - Dùng **Export** để tải dữ liệu đã xử lý
         """)
 
+
 def render_sidebar_stats(df: pd.DataFrame) -> None:
-    """Render dataset stats trong sidebar"""
+    """
+    Render dataset statistics in the sidebar.
+
+    Displays row count, column count, numeric/categorical breakdown,
+    and overall data quality score.
+
+    Args:
+        df: Input DataFrame whose stats to display
+
+    Returns:
+        None — renders metrics inside sidebar expander
+    """
     if df is not None:
         st.markdown("---")
         with st.expander("📊 Dataset Stats", expanded=False):
-            n = df.select_dtypes(include=[np.number]).columns.tolist()
-            c = df.select_dtypes(include=["object", "category"]).columns.tolist()
+            n: List[str] = df.select_dtypes(include=[np.number]).columns.tolist()
+            c: List[str] = df.select_dtypes(include=["object", "category"]).columns.tolist()
             st.metric("Rows", f"{len(df):,}")
             st.metric("Columns", len(df.columns))
             st.metric("Numeric", len(n))
             st.metric("Categorical", len(c))
-            
-            quality = compute_data_quality_score(df)
+
+            quality: Dict[str, Any] = compute_data_quality_score(df)
             st.metric("Quality Score", f"{quality['overall']}%")
 
-def render_confusion_matrix(cm, labels):
-    """Render confusion matrix as heatmap"""
+
+def render_confusion_matrix(cm: np.ndarray, labels: List[str]) -> go.Figure:
+    """
+    Render a confusion matrix as a Plotly heatmap.
+
+    Args:
+        cm: 2D numpy array of shape (n_classes, n_classes) with confusion counts
+        labels: List of class label strings for x and y axes
+
+    Returns:
+        Plotly Figure with heatmap visualization
+
+    Example:
+        >>> cm = np.array([[50, 10], [5, 35]])
+        >>> fig = render_confusion_matrix(cm, ["Negative", "Positive"])
+        >>> st.plotly_chart(fig)
+    """
     fig = px.imshow(cm, text_auto=True, x=labels, y=labels,
                     color_continuous_scale="Blues", aspect='auto',
                     title="Confusion Matrix")
     fig.update_layout(height=400)
     return fig
 
-def render_roc_curve(fpr, tpr, auc_score):
-    """Render ROC curve"""
+
+def render_roc_curve(fpr: np.ndarray, tpr: np.ndarray, auc_score: float) -> go.Figure:
+    """
+    Render an ROC curve as a Plotly line chart.
+
+    Args:
+        fpr: False positive rates (1D numpy array from sklearn.metrics.roc_curve)
+        tpr: True positive rates (1D numpy array from sklearn.metrics.roc_curve)
+        auc_score: Area Under the Curve score (float, 0-1)
+
+    Returns:
+        Plotly Figure with ROC curve + diagonal reference line
+
+    Example:
+        >>> from sklearn.metrics import roc_curve, auc
+        >>> fpr, tpr, _ = roc_curve(y_test, y_prob)
+        >>> auc_score = auc(fpr, tpr)
+        >>> fig = render_roc_curve(fpr, tpr, auc_score)
+    """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines',
                             name=f'ROC (AUC={auc_score:.3f})',

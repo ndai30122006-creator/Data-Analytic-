@@ -104,7 +104,7 @@ def generate_ai_report(df: pd.DataFrame, analysis_type: str = "overview",
     missing_pct = (df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100
     if missing_pct > 10:
         ai_insights.append({
-            "type": "warning",
+            "type": "warning",  
             "icon": "⚠️",
             "title": "Chất lượng dữ liệu",
             "message": f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu. Nên xử lý missing values trước khi phân tích sâu."
@@ -331,4 +331,4 @@ Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
             report_text,
             f"ai_insights_{pd.Timestamp.now():%Y%m%d_%H%M}.md",
             "text/markdown"
-        )
+        ) 
