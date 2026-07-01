@@ -137,6 +137,13 @@ PROFILER_TABS: List[str] = [PROFILER_TAB_COLUMNS, PROFILER_TAB_DISTRIBUTIONS, PR
 QUALITY_THRESHOLD_GOOD = 80
 QUALITY_THRESHOLD_WARNING = 60
 
+# ── Error / Info Message Constants ──────────────────────────
+ERROR_INVALID_DATAFRAME = "❌ {msg}"
+ERROR_NO_NUMERIC_COLS = "Need numeric columns"
+ERROR_NO_CATEGORICAL_COLS = "Need categorical columns"
+ERROR_EMPTY_DATAFRAME = "❌ DataFrame is empty"
+ERROR_WORK_DF_NONE = "❌ Work DF is None"
+
 # ── Color Scheme ────────────────────────────────────────────
 COLOR_SUCCESS = "#22c55e"
 COLOR_WARNING = "#eab308"

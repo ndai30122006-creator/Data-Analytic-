@@ -7,7 +7,10 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from config import MIN_ROWS_VALIDATION, PARAM_GRIDS, PROFILER_TABS
+from config import (
+    MIN_ROWS_VALIDATION, PARAM_GRIDS, PROFILER_TABS,
+    ERROR_NO_NUMERIC_COLS, ERROR_EMPTY_DATAFRAME, ERROR_WORK_DF_NONE
+)
 from utils import validate_dataframe
 from helpers import apply_theme
 from exceptions import handle_error, ModelTrainingError, DataValidationError
@@ -25,7 +28,7 @@ except Exception as e:
     logger.error("Failed to load sklearn.ensemble: %s", e)
 
 
-def render_analytics_tab(df, num, cat):
+def render_analytics_tab(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
     """Render the Analytics tab with 4 sub-tabs: Anomaly, Profiling, Cleaning, AutoML"""
     is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
     if not is_valid:
@@ -41,9 +44,12 @@ def render_analytics_tab(df, num, cat):
     with an_tabs[3]: _render_automl(df, num)
 
 
-def _render_anomaly(df, num):
+def _render_anomaly(df: pd.DataFrame, num: List[str]) -> None:
     if not num:
-        st.warning("Need numeric columns")
+        st.warning(ERROR_NO_NUMERIC_COLS)
+        return
+    if df.empty:
+        st.error(ERROR_EMPTY_DATAFRAME)
         return
     ac = st.multiselect("Columns:", num, default=num[:min(3, len(num))], key="an")
     ct = st.slider("Contamination:", 0.01, 0.5, 0.05, 0.01)
@@ -68,7 +74,7 @@ def _render_anomaly(df, num):
             st.plotly_chart(fig, width='stretch')
 
 
-def _render_profiling(df, num, cat):
+def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
     ni = df.select_dtypes(include=[np.number])
     ci = df.select_dtypes(include=["object", "category"])
     c1, c2, c3, c4 = st.columns(4)
@@ -120,12 +126,16 @@ def _render_profiling(df, num, cat):
             st.plotly_chart(fig, width='stretch')
 
 
-def _render_cleaning(df, num):
+def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
     st.markdown("### 🧹 Data Cleaning & Transformation")
 
     if "cleaned_df" not in st.session_state or st.session_state.cleaned_df is None:
         st.session_state.cleaned_df = df.copy()
     work_df = st.session_state.cleaned_df
+
+    if work_df is None:
+        st.error(ERROR_WORK_DF_NONE)
+        return
 
     # Missing Values
     st.markdown("#### 🔲 Missing Values")
@@ -282,7 +292,7 @@ def _render_cleaning(df, num):
             st.rerun()
 
 
-def _render_automl(df, num):
+def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
     try:
         import xgboost as xgb
         XGB_AVAIL = True
