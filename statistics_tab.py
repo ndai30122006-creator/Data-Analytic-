@@ -108,11 +108,11 @@ def _render_hypothesis_testing(df, num, cat):
 
     elif "paired" in test_type:
         if len(num) >= 2:
-            c1 = st.selectbox("Before:", num, key="ht_pa")
-            c2 = st.selectbox("After:", [c for c in num if c != c1], key="ht_pb")
+            col_before = st.selectbox("Before:", num, key="ht_pa")
+            col_after = st.selectbox("After:", [c for c in num if c != col_before], key="ht_pb")
             if st.button("🔬 Run", key="ht_p_run"):
-                s = df[[c1, c2]].dropna()
-                stat, p = ttest_rel(s[c1], s[c2])
+                s = df[[col_before, col_after]].dropna()
+                stat, p = ttest_rel(s[col_before], s[col_after])
                 c1, c2 = st.columns(2)
                 c1.metric("t-statistic", f"{stat:.4f}")
                 c2.metric("p-value", f"{p:.6f}")
@@ -172,10 +172,10 @@ def _render_hypothesis_testing(df, num, cat):
 
     elif "Chi-Square" in test_type:
         if len(cat) >= 2:
-            c1 = st.selectbox("Column 1:", cat, key="ht_cs1")
-            c2 = st.selectbox("Column 2:", [c for c in cat if c != c1], key="ht_cs2")
+            col1_name = st.selectbox("Column 1:", cat, key="ht_cs1")
+            col2_name = st.selectbox("Column 2:", [c for c in cat if c != col1_name], key="ht_cs2")
             if st.button("🔬 Run", key="ht_cs_run"):
-                ct = pd.crosstab(df[c1], df[c2])
+                ct = pd.crosstab(df[col1_name], df[col2_name])
                 stat, p, dof, expected = chi2_contingency(ct)
                 c1, c2, c3 = st.columns(3)
                 c1.metric("χ²", f"{stat:.4f}")
@@ -259,6 +259,9 @@ def _render_ab_testing(df, num, cat):
         if st.button("📐 Calculate Sample Size", key="ab_ss"):
             from scipy.stats import norm
             p1, p2 = baseline/100, (baseline+effect)/100
+            if abs(p2 - p1) < 1e-9:
+                st.error("❌ Effect size must be > 0")
+                return
             z_a = norm.ppf(0.975)
             z_b = norm.ppf(0.80)
             n = ((z_a*np.sqrt(2*(p1+p2)/2*(1-(p1+p2)/2)) + z_b*np.sqrt(p1*(1-p1)+p2*(1-p2)))**2) / ((p2-p1)**2)
@@ -281,7 +284,7 @@ def _render_ab_testing(df, num, cat):
                     z_b = (np.sqrt(n_per)*abs(p2-p1) - norm.ppf(0.975)*np.sqrt(2*(p1+p2)/2*(1-(p1+p2)/2))) / np.sqrt(p1*(1-p1)+p2*(1-p2))
                     powers.append(norm.cdf(z_b))
                 except (ValueError, ZeroDivisionError, RuntimeError):
-                    logger.warning("Power calculation failed for effect=%.4f", eff)
+                    logger.warning(f"Power calculation failed for effect={eff:.4f}")
                     powers.append(0)
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=effects*100, y=powers, mode='lines', line=dict(color="#818cf8", width=2)))
@@ -336,17 +339,7 @@ def _render_regression(df, num):
 
 
 def _render_logistic(df, num):
-    try:
-        from sklearn.ensemble import IsolationForest
-        SKLEARN_ENSEMBLE_AVAIL = True
-    except ImportError:
-        SKLEARN_ENSEMBLE_AVAIL = False
-        logger.warning("sklearn.ensemble not available - logistic disabled")
-    except Exception as e:
-        SKLEARN_ENSEMBLE_AVAIL = False
-        logger.error("Failed to load sklearn.ensemble: %s", e, exc_info=True)
-
-    if not SKLEARN_ENSEMBLE_AVAIL or len(num) < 2:
+    if len(num) < 2:
         st.warning("Need ≥2 numeric columns")
         return
     from sklearn.linear_model import LogisticRegression

@@ -1,5 +1,6 @@
 """Analytics tab — Anomaly Detection, Profiling, Data Cleaning, AutoML"""
 import logging
+from typing import List, Dict, Any
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -51,11 +52,14 @@ def _render_anomaly(df, num):
             X = df[ac].dropna().copy()
             iso = IsolationForest(contamination=ct, random_state=42)
             p = iso.fit_predict(X)
-        nc, ac_ = (p == 1).sum(), (p == -1).sum()
-        c1, c2, c3 = st.columns(3)
-        c1.metric("✅ Normal", nc)
-        c2.metric("🚨 Anomalies", ac_)
-        c3.metric("Ratio", f"{ac_/(nc+ac_)*100:.1f}%")
+        normal_count, anomaly_count = (p == 1).sum(), (p == -1).sum()
+        col_metrics1, col_metrics2, col_metrics3 = st.columns(3)
+        col_metrics1.metric("✅ Normal", normal_count)
+        col_metrics2.metric("🚨 Anomalies", anomaly_count)
+        if (normal_count + anomaly_count) > 0:
+            col_metrics3.metric("Ratio", f"{anomaly_count/(normal_count+anomaly_count)*100:.1f}%")
+        else:
+            col_metrics3.metric("Ratio", "N/A")
         if len(ac) >= 2:
             X["A"] = p
             fig = px.scatter(X, x=ac[0], y=ac[1], color=X["A"].map({1: "Normal", -1: "Anomaly"}),
@@ -352,8 +356,8 @@ def _render_automl(df, num):
                     "Lasso": Lasso(max_iter=5000)
                 }
 
-                results = []
-                best_overall = {"name": "", "score": -999}
+                results: List[Dict[str, Any]] = []
+                best_overall: Dict[str, Any] = {"name": "", "score": -999}
                 progress_bar = st.progress(0)
 
                 for i, model_name in enumerate(auto_models):
@@ -396,7 +400,7 @@ def _render_automl(df, num):
                         if test_score > best_overall["score"]:
                             best_overall = {"name": model_name, "score": test_score}
                     except (ValueError, MemoryError) as model_e:
-                        logger.error("Model {} failed: {}", model_name, model_e, exc_info=True)
+                        logger.error("Model %s failed: %s", model_name, model_e, exc_info=True)
                         error_type_name = type(model_e).__name__
                         results.append({
                             "Model": model_name,
@@ -406,7 +410,7 @@ def _render_automl(df, num):
                         })
                         handle_error(model_e, f"_render_automl / {model_name}")
                     except Exception as model_e:
-                        logger.error("Model {} failed: {}", model_name, model_e, exc_info=True)
+                        logger.error("Model %s failed: %s", model_name, model_e, exc_info=True)
                         results.append({
                             "Model": model_name,
                             "Train R²": "❌ Failed",

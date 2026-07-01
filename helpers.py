@@ -1,5 +1,5 @@
 """Helper functions extracted from app.py"""
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -8,6 +8,10 @@ from io import BytesIO
 from datetime import datetime
 
 from config import CHART_THEME
+
+# ── Constants ──
+SPARKLINE_DEFAULT_COLOR: str = '#5b6bf7'
+SPARKLINE_DEFAULT_HEIGHT: int = 40
 
 
 def convert_df_to_csv(df: pd.DataFrame) -> bytes:
@@ -32,23 +36,33 @@ def apply_theme(fig: go.Figure) -> go.Figure:
 
     Returns:
         The same figure with CHART_THEME layout applied (mutated in-place)
+
+    Raises:
+        ValueError: If fig is None
     """
+    if fig is None:
+        raise ValueError("Figure cannot be None")
     fig.update_layout(**CHART_THEME)
     return fig
 
 
-def sparkline(series: pd.Series, color: str = '#5b6bf7', height: int = 40) -> go.Figure:
+def sparkline(series: pd.Series, color: str = SPARKLINE_DEFAULT_COLOR, height: int = SPARKLINE_DEFAULT_HEIGHT) -> go.Figure:
     """
     Generate a minimal sparkline chart for inline trend display.
 
     Args:
         series: Numeric data series to plot
-        color: Hex color string for the line (default '#5b6bf7')
-        height: Chart height in pixels (default 40)
+        color: Hex color string for the line (default SPARKLINE_DEFAULT_COLOR)
+        height: Chart height in pixels (default SPARKLINE_DEFAULT_HEIGHT)
 
     Returns:
         Plotly Figure with axes hidden, suitable for inline display
+
+    Raises:
+        ValueError: If series is None
     """
+    if series is None:
+        raise ValueError("Series cannot be None")
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         y=series.values, mode='lines',
@@ -78,6 +92,8 @@ def guess_learning_column(columns: List[str], keywords: List[str]) -> Optional[s
     Returns:
         The first matching column name, or None if no match found
     """
+    if not columns or not keywords:
+        return None
     normalized = {c: str(c).lower().replace(" ", "_") for c in columns}
     for col, name in normalized.items():
         if any(keyword in name for keyword in keywords):

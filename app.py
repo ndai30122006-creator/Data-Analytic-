@@ -40,10 +40,13 @@ for key, default in SESSION_DEFAULTS:
     if key not in st.session_state:
         st.session_state[key] = default
 
-st.set_page_config(
-    page_title="Learning Analytics Thống kê", page_icon="🎓",
-    layout="wide", initial_sidebar_state="expanded"
-)
+try:
+    st.set_page_config(
+        page_title="Learning Analytics Thống kê", page_icon="🎓",
+        layout="wide", initial_sidebar_state="expanded"
+    )
+except Exception as e:
+    logger.error("Page config failed: %s", e, exc_info=True)
 
 # ── Inject Theme ──
 render_theme()
