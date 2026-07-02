@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
-from exceptions import handle_error, DataValidationError
+from src.utils.exceptions import handle_error, DataValidationError
 
 logger = logging.getLogger(__name__)
 TOP_N_VALUES: int = 10
