@@ -23,7 +23,7 @@ class ModelTrainingError(Exception):
     pass
 
 
-class ImportError(Exception):
+class MissingModuleError(Exception):
     """Lỗi thiếu thư viện"""
     pass
 
@@ -44,7 +44,7 @@ ERROR_MESSAGES: Dict[Type[Exception], Dict[str, str]] = {
         "icon": "🧠",
         "default": "Model training thất bại",
     },
-    ImportError: {
+    MissingModuleError: {
         "title": "📦 Thiếu thư viện",
         "icon": "📦",
         "default": "Cài đặt thư viện: pip install <package>",
@@ -162,7 +162,7 @@ def safe_run(
     """
     try:
         return func(**kwargs)
-    except (DataValidationError, ValueError, KeyError, IndexError, TypeError, ZeroDivisionError) as e:
+    except (DataValidationError, MissingModuleError, ValueError, KeyError, IndexError, TypeError, ZeroDivisionError) as e:
         handle_error(e, context)
         return fallback
     except MemoryError as e:

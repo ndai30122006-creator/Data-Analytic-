@@ -7,20 +7,19 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-from theme_config import render_theme
-from sidebar import render_sidebar
-from landing import render_landing_page
-from overview_tab import render_overview_tab
-from learning_analytics import render_learning_analytics_tab
-from statistics_tab import render_statistics_tab
-from compare_datasets import render_compare_tab
-from analytics_tab import render_analytics_tab
-from ai_insights import render_ai_insights_tab
-
-from exceptions import handle_error
+from src.ui.theme import render_theme
+from src.ui.sidebar import render_sidebar
+from src.ui.tabs.landing import render_landing_page
+from src.ui.tabs.overview import render_overview_tab
+from src.ui.tabs.learning_analytics import render_learning_analytics_tab
+from src.ui.tabs.statistics import render_statistics_tab
+from src.ui.tabs.compare import render_compare_tab
+from src.ui.tabs.analytics import render_analytics_tab
+from src.ui.tabs.ai_insights import render_ai_insights_tab
+from src.utils.exceptions import handle_error
 
 try:
-    from advanced_analytics import render_deep_analysis_tab
+    from src.core.analytics_engine import render_deep_analysis_tab
     DEEP_ANALYSIS_AVAIL = True
 except ImportError as e:
     DEEP_ANALYSIS_AVAIL = False
@@ -66,7 +65,7 @@ else:
     dat = raw.select_dtypes(include=["datetime64", "datetime64[ns]"]).columns.tolist()
     df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-    from config import MAIN_TABS
+    from src.utils.config import MAIN_TABS
     main_tabs = st.tabs(MAIN_TABS)
 
     with main_tabs[0]: render_overview_tab(df, num, cat)
