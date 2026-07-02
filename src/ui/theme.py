@@ -1,83 +1,92 @@
-"""Theme configuration for Streamlit UI"""
+"""Theme configuration — CSS styles and chart theme for the app"""
 import streamlit as st
 
+from config import CHART_THEME
 
-def render_theme() -> None:
-    """Inject custom CSS theme into the Streamlit app."""
-    st.markdown("""
-    <style>
-    /* ── Base ── */
-    .stApp { background: #0f172a; color: #e2e8f0; }
-    .stApp > header { background: #1e293b !important; }
-    .stApp > footer { display: none; }
+THEME_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root {
+    --bg: #0b0d11; --bg-soft: #111318; --bg-card: #181a20; --bg-hover: #1e2028;
+    --fg: #e8eaed; --fg-muted: #7c8290; --accent: #5b6bf7;
+    --border: #22242b; --success: #22c55e; --warning: #eab308; --danger: #ef4444;
+    --radius: 10px;
+}
+.stApp { background: var(--bg); color: var(--fg); font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; }
+section[data-testid="stSidebar"] { background: var(--bg-soft); border-right: 1px solid var(--border); padding: 0.75rem; }
+.main-header { font-size: 1.3rem; font-weight: 700; color: var(--fg); padding: 0.4rem 0; letter-spacing: -0.3px; }
+.insight-card, .kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem; margin-bottom: 0.4rem; color: var(--fg); transition: border 0.15s ease; }
+.insight-card:hover, .kpi-card:hover { background: var(--bg-hover); }
+.insight-warning { border-left: 2px solid var(--warning); }
+.insight-good { border-left: 2px solid var(--success); }
+.insight-danger { border-left: 2px solid var(--danger); }
+.kpi-label { font-size: 0.6rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+.kpi-value { font-size: 1.2rem; font-weight: 700; color: var(--fg); letter-spacing: -0.3px; }
+.stTabs [data-baseweb="tab-list"] { gap: 0; background: transparent; border-bottom: 1px solid var(--border); padding: 0; border-radius: 0; }
+.stTabs [data-baseweb="tab"] { padding: 6px 12px; color: var(--fg-muted); font-size: 0.78rem; font-weight: 450; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; }
+.stTabs [aria-selected="true"] { color: var(--fg); border-bottom: 2px solid var(--accent); }
+.stTabs [data-baseweb="tab"]:hover { color: var(--fg); }
+.stButton button { border-radius: 8px; font-weight: 500; font-size: 0.82rem; border: 1px solid var(--border); background: transparent; color: var(--fg); padding: 0.3rem 0.9rem; transition: all 0.15s; }
+.stButton button:hover { border-color: #3a3d48; background: var(--bg-hover); }
+.stButton button[kind="primary"] { background: var(--accent); color: #fff; border: none; }
+.stButton button[kind="primary"]:hover { background: #4a5ae6; box-shadow: 0 0 0 2px rgba(91,107,247,0.2); }
+[data-testid="stMetric"] { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
+[data-testid="stMetric"] label { color: var(--fg-muted) !important; font-size: 0.6rem !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+[data-testid="stMetric"] [data-testid="stMetricValue"] { color: var(--fg) !important; font-weight: 700; font-size: 1.2rem !important; letter-spacing: -0.3px; }
+.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: 0.85rem; }
+.stSlider > div > div > div { background: var(--border); }
+.stSlider > div > div > div > div { background: var(--accent); }
+.stDataFrame { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.streamlit-expanderHeader { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; }
+[data-testid="stFileUploader"] section { border: 1px dashed var(--border); border-radius: var(--radius); padding: 1rem; }
+[data-testid="stFileUploader"] section:hover { border-color: var(--accent); }
+.stAlert { border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; }
+.stSpinner > div > div { border-color: var(--accent) !important; }
+hr { border-color: var(--border); margin: 0.6rem 0; }
+h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.3px; color: var(--fg); }
+.stMarkdown { font-size: 0.88rem; }
+div[data-baseweb="select"] > div { background: var(--bg-card) !important; }
+.stCheckbox label, .stRadio label { font-size: 0.85rem; }
 
-    /* ── Typography ── */
-    h1, h2, h3 { font-weight: 700 !important; letter-spacing: -0.02em; }
-    h1 { font-size: 2rem !important; background: linear-gradient(135deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    h2 { font-size: 1.4rem !important; color: #f1f5f9 !important; }
-    h3 { font-size: 1.1rem !important; color: #cbd5e1 !important; }
-    p, li, .stMarkdown { color: #cbd5e1; }
+.hero-bg { position: relative; overflow: hidden; border-radius: 16px; padding: 2.5rem 1rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, rgba(91,107,247,0.05), rgba(167,139,250,0.05)); border: 1px solid var(--border); }
+.hero { text-align: center; padding: 1.5rem 0; }
+.hero h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #5b6bf7, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 1rem; color: var(--fg-muted); margin-top: 0.3rem; }
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin: 1rem 0; }
+.feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; transition: all 0.2s; }
+.feature-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.feature-card .icon { font-size: 1.8rem; }
+.feature-card .title { font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem; }
+.feature-card .desc { font-size: 0.7rem; color: var(--fg-muted); }
+.st-emotion-cache-1wivap2 { background: var(--bg-card); }
+.hero-bg::before, .hero-bg::after {
+    content: ''; position: absolute; border-radius: 50%;
+    filter: blur(60px); opacity: 0.3; z-index: 0; pointer-events: none;
+}
+.hero-bg::before {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(91,107,247,0.3), transparent);
+    top: -80px; left: -80px;
+    animation: meshMove1 8s ease-in-out infinite;
+}
+.hero-bg::after {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(167,139,250,0.25), transparent);
+    bottom: -100px; right: -100px;
+    animation: meshMove2 10s ease-in-out infinite;
+}
+@keyframes meshMove1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-20px) scale(1.1); } }
+@keyframes meshMove2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,20px) scale(1.05); } }
+@keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
+.skeleton { background: var(--bg-card); border-radius: var(--radius); height: 60px; animation: shimmer 1.5s ease-in-out infinite; margin-bottom: 0.5rem; }
+.skeleton-sm { height: 40px; }
+.skeleton-lg { height: 200px; }
+"""
 
-    /* ── Cards ── */
-    div[data-testid="stMetric"] {
-        background: #1e293b; border: 1px solid #334155; border-radius: 12px;
-        padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    div[data-testid="stMetric"] > div:first-child { color: #94a3b8; font-size: 0.8rem; }
-    div[data-testid="stMetric"] > div:nth-child(2) { color: #f1f5f9; font-size: 1.6rem; font-weight: 700; }
+def apply_chart_theme(fig):
+    """Apply global chart theme to a plotly figure"""
+    fig.update_layout(**CHART_THEME)
+    return fig
 
-    /* ── Buttons ── */
-    .stButton > button {
-        background: linear-gradient(135deg, #5b6bf7, #7c3aed); color: white;
-        border: none; border-radius: 8px; padding: 0.5rem 1.2rem;
-        font-weight: 600; transition: all 0.2s;
-    }
-    .stButton > button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,107,247,0.4); }
-
-    /* ── DataFrames ── */
-    .stDataFrame { background: #1e293b; border-radius: 12px; border: 1px solid #334155; }
-    .stDataFrame th { background: #334155 !important; color: #e2e8f0 !important; }
-    .stDataFrame td { color: #cbd5e1 !important; }
-
-    /* ── Tabs ── */
-    .stTabs [data-baseweb="tab-list"] { gap: 4px; background: #1e293b; border-radius: 10px; padding: 4px; }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px; padding: 6px 14px; color: #94a3b8;
-        font-weight: 500; transition: all 0.2s;
-    }
-    .stTabs [aria-selected="true"] { background: #5b6bf7 !important; color: white !important; }
-
-    /* ── Expanders ── */
-    .streamlit-expanderHeader { background: #1e293b; border-radius: 8px; border: 1px solid #334155; }
-    .streamlit-expanderContent { border: 1px solid #334155; border-top: none; border-radius: 0 0 8px 8px; padding: 12px; }
-
-    /* ── Select / Input ── */
-    .stSelectbox > div > div { background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; }
-    .stMultiSelect > div > div { background: #1e293b; border: 1px solid #334155; border-radius: 8px; }
-    .stSlider > div > div > div { background: #5b6bf7 !important; }
-
-    /* ── Alerts ── */
-    .stAlert { border-radius: 10px; border: none; }
-    div[data-testid="stAlert"] { background: #1e293b; border-left: 4px solid #5b6bf7; }
-
-    /* ── Progress ── */
-    .stProgress > div > div > div { background: linear-gradient(90deg, #5b6bf7, #a78bfa); }
-
-    /* ── Sidebar ── */
-    section[data-testid="stSidebar"] { background: #1e293b; border-right: 1px solid #334155; }
-    section[data-testid="stSidebar"] .stMarkdown { color: #cbd5e1; }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-    /* ── Code blocks ── */
-    code { background: #334155 !important; color: #a78bfa !important; border-radius: 4px; padding: 2px 6px; }
-    pre code { background: #1e293b !important; color: #e2e8f0 !important; }
-
-    /* ── Hero section ── */
-    .hero-bg { background: linear-gradient(135deg, rgba(91,107,247,0.08), rgba(167,139,250,0.05)); border-radius: 16px; border: 1px solid rgba(91,107,247,0.15); }
-    </style>
-    """, unsafe_allow_html=True)
+def render_theme():
+    """Inject CSS theme into the app"""
+    st.markdown(f"<style>{THEME_CSS}</style>", unsafe_allow_html=True)
