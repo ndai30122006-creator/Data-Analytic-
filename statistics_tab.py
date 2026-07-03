@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from config import MIN_ROWS_VALIDATION
 from utils import validate_dataframe
 from helpers import apply_theme
-from exceptions import handle_error, DataValidationError
+from src.utils.exceptions import handle_error, DataValidationError
 
 logger = logging.getLogger(__name__)
 

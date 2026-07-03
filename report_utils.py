@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from fpdf import FPDF
 
-from exceptions import handle_error, DataValidationError
+from src.utils.exceptions import handle_error, DataValidationError
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ from config import (
 )
 from utils import validate_dataframe
 from helpers import apply_theme
-from exceptions import handle_error, ModelTrainingError, DataValidationError
+from src.utils.exceptions import handle_error, ModelTrainingError, DataValidationError
 
 logger = logging.getLogger(__name__)
 
