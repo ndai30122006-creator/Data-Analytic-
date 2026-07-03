@@ -17,7 +17,7 @@ from compare_datasets import render_compare_tab
 from analytics_tab import render_analytics_tab
 from ai_insights import render_ai_insights_tab
 
-from exceptions import handle_error
+from src.utils.exceptions import handle_error
 
 try:
     from advanced_analytics import render_deep_analysis_tab

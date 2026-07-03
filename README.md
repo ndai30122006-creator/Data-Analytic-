@@ -97,10 +97,13 @@ streamlit run app.py
 Mở trình duyệt tại `http://localhost:8501`
 
 ### Đăng nhập
+> ⚠️ **Cảnh báo:** Các tài khoản dưới đây chỉ dành cho **mục đích demo / phát triển**.  
+> **Không sử dụng trong môi trường production.** Thay đổi mật khẩu hoặc tích hợp xác thực thực tế trước khi triển khai công khai.
+
 Sử dụng một trong các tài khoản demo:
-- **admin** / admin123
-- **user** / user123
-- **teacher** / teacher123
+- **admin** / `admin123` *(demo — hãy đổi mật khẩu nếu deploy thật)*
+- **user** / `user123` *(demo)*
+- **teacher** / `teacher123` *(demo)*
 
 ## 🐳 Deploy với Docker (Production)
 
@@ -142,43 +145,22 @@ streamlit>=1.29.0
 pandas>=2.1.0
 numpy>=1.24.0
 matplotlib>=3.7.0
-seaborn>=0.12.0
 plotly>=5.17.0
-openpyxl>=3.1.0
-
-# Advanced Analytics
 scipy>=1.10.0
 scikit-learn>=1.3.0
 statsmodels>=0.14.0
-
-# Time Series
-prophet>=1.1.0
-
-# ML
-xgboost>=1.7.0
-
-# Database
-sqlalchemy>=2.0.0
-pymysql>=1.0.0
-
-# Google
-google-generativeai>=0.3.0
-gspread>=5.0.0
-google-auth>=2.0.0
-
-# PDF
 fpdf2>=2.5.0
-
-# API Backend
 fastapi>=0.104.0
 uvicorn>=0.24.0
 pydantic>=2.0.0
 python-multipart>=0.0.6
-
-# AI/LLM (optional)
-openai>=1.0.0
-google-generativeai>=0.3.0
 ```
+
+> 🧩 **Build notes:** `scipy`, `scikit-learn`, and `statsmodels` include C extensions. If pip fails to build them, install a pre-compiled wheel or use **conda**:
+> ```bash
+> conda install scipy scikit-learn statsmodels
+> ```
+> These packages are **optional** unless you use the Deep Analysis / Statistics tabs — the core app runs without them.
 
 ## 📖 Hướng dẫn sử dụng
 
@@ -296,23 +278,47 @@ docker-compose restart
 
 ## 🏗️ Cấu trúc dự án
 
+> ⚠️ **Legacy layout:** Mã nguồn hiện tại tồn tại song song ở 2 nơi — root và `src/`.  
+> **Khuyến nghị:** Các module mới nên đặt trong `src/` package. Dịch chuyển dần code cũ ra khỏi root khi có thời gian.
+
 ```
 project1/
-├── app.py                  # Main Streamlit application
-├── advanced_analytics.py   # Deep analysis module (10 modules)
-├── ai_insights.py          # AI-powered insights & reporting
-├── api.py                  # FastAPI backend
-├── auth.py                 # Authentication module
-├── components.py           # Reusable UI components
-├── config.py               # Configuration constants
-├── utils.py                # Utility functions
+├── app.py                  # Main Streamlit application (entry point)
+├── sidebar.py              # Sidebar component (to migrate → src/ui/)
+├── components.py           # Reusable UI components (to migrate → src/ui/)
+├── config.py               # Configuration constants (to migrate → src/utils/)
+├── utils.py                # Utility functions (to migrate → src/utils/)
 ├── report_utils.py         # PDF report generation
-├── requirements.txt        # Python dependencies
+├── landing.py              # Landing page (to migrate → src/ui/tabs/)
+├── overview_tab.py         # Overview tab (to migrate → src/ui/tabs/)
+├── statistics_tab.py       # Statistics tab (to migrate → src/ui/tabs/)
+├── analytics_tab.py        # Analytics tab (to migrate → src/ui/tabs/)
+├── learn_analytics.py      # Learning analytics tab
+├── compare_datasets.py     # Compare datasets tab
+├── ai_insights.py          # AI-powered insights & reporting
+├── advanced_analytics/     # Deep analysis package (advanced modules)
+├── api.py                  # FastAPI backend
+├── report_utils.py         # PDF report generation
+│
+├── src/                    # 📦 New package structure (recommended)
+│   ├── ui/
+│   │   ├── sidebar.py      # Refactored sidebar
+│   │   ├── theme.py        # Theme configuration
+│   │   └── tabs/           # Tab components
+│   ├── utils/
+│   │   ├── exceptions.py   # Error handling
+│   │   ├── helpers.py      # Helper functions
+│   │   ├── config.py       # Configuration
+│   │   └── validators.py   # Data validation
+│   ├── core/
+│   │   └── analytics_engine.py
+│   └── api/
+│
+├── .streamlit/
+│   └── config.toml         # Streamlit configuration
 ├── Dockerfile              # Multi-stage Docker build
 ├── docker-compose.yml      # Docker Compose configuration
 ├── nginx.conf              # Nginx reverse proxy config
-├── .streamlit/
-│   └── config.toml         # Streamlit configuration
 └── README.md               # Documentation
 ```
 

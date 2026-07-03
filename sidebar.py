@@ -63,7 +63,7 @@ def render_sidebar():
                         st.rerun()
 
                 if selected_dataset != "-- Chọn --":
-                    if st.button(f"🗑 Xóa {selected_dataset}", key="del_dataset", width="stretch"):
+                    if st.button(f"🗑 Xóa {selected_dataset}", key="del_dataset", use_container_width=True):
                         del st.session_state.datasets[selected_dataset]
                         if st.session_state.filename == selected_dataset:
                             st.session_state.df = None
@@ -72,7 +72,7 @@ def render_sidebar():
 
             if st.session_state.df is not None:
                 st.caption(f"📄 {st.session_state.filename}")
-                if st.button("🗑 Clear All", key="clr", width="stretch"):
+                if st.button("🗑 Clear All", key="clr", use_container_width=True):
                     st.session_state.df = None
                     st.session_state.filename = ""
                     st.session_state.datasets = {}
@@ -92,11 +92,11 @@ def render_sidebar():
             with st.expander("💾 Session Management", expanded=False):
                 sess_col1, sess_col2 = st.columns(2)
                 with sess_col1:
-                    if st.button("💾 Save Session", width="stretch", key="save_sess"):
+                    if st.button("💾 Save Session", use_container_width=True, key="save_sess"):
                         ok, msg = save_session_state()
                         st.success(msg) if ok else st.error(msg)
                 with sess_col2:
-                    if st.button("📂 Load Session", width="stretch", key="load_sess"):
+                    if st.button("📂 Load Session", use_container_width=True, key="load_sess"):
                         ok, msg = load_session_state()
                         if ok:
                             st.success(msg)
@@ -111,7 +111,7 @@ def render_sidebar():
 
             with st.expander("📄 Export PDF Report", expanded=False):
                 st.caption("Generate a beautiful PDF report of your analysis")
-                if st.button("📄 Generate PDF Report", width="stretch", key="gen_pdf"):
+                if st.button("📄 Generate PDF Report", use_container_width=True, key="gen_pdf"):
                     with st.spinner("⏳ Generating PDF report..."):
                         try:
                             pdf_bytes = generate_pdf_report(
