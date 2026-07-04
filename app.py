@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-from src.ui.theme import render_theme
+from theme_config import render_theme
 from sidebar import render_sidebar
 from landing import render_landing_page
 from overview_tab import render_overview_tab
