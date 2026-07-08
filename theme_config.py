@@ -287,26 +287,38 @@ def get_light_mode_css() -> str:
     /* TABS */
     /* ═══════════════════════════════════════════════════════════ */
     
+    .stTabs {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        background: var(--bg-secondary) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 4px !important;
+        gap: 2px !important;
+        border: 1px solid var(--border-light) !important;
+    }
+    
     .stTabs [role="tab"] {
-        border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-        padding: 12px 16px !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 18px !important;
         font-weight: 500 !important;
+        font-size: 0.88rem !important;
         color: var(--text-secondary) !important;
         background-color: transparent !important;
         border: none !important;
-        border-bottom: 2px solid transparent !important;
         transition: all var(--transition) !important;
     }
     
     .stTabs [role="tab"]:hover {
         color: var(--primary-color) !important;
-        background-color: var(--bg-secondary) !important;
+        background-color: var(--bg-tertiary) !important;
     }
     
     .stTabs [role="tab"][aria-selected="true"] {
-        color: var(--primary-color) !important;
-        border-bottom-color: var(--primary-color) !important;
-        background-color: var(--bg-secondary) !important;
+        color: #fff !important;
+        background: var(--primary-color) !important;
+        box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3) !important;
     }
     
     /* ═══════════════════════════════════════════════════════════ */
@@ -637,26 +649,38 @@ def get_dark_mode_css() -> str:
         color: var(--text-tertiary) !important;
     }
     
+    .stTabs {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        background: var(--bg-secondary) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 4px !important;
+        gap: 2px !important;
+        border: 1px solid var(--border-light) !important;
+    }
+    
     .stTabs [role="tab"] {
-        border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-        padding: 12px 16px !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 18px !important;
         font-weight: 500 !important;
+        font-size: 0.88rem !important;
         color: var(--text-secondary) !important;
         background-color: transparent !important;
         border: none !important;
-        border-bottom: 2px solid transparent !important;
         transition: all var(--transition) !important;
     }
     
     .stTabs [role="tab"]:hover {
         color: var(--primary-color) !important;
-        background-color: var(--bg-secondary) !important;
+        background-color: var(--bg-tertiary) !important;
     }
     
     .stTabs [role="tab"][aria-selected="true"] {
-        color: var(--primary-color) !important;
-        border-bottom-color: var(--primary-color) !important;
-        background-color: var(--bg-secondary) !important;
+        color: #fff !important;
+        background: var(--primary-color) !important;
+        box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3) !important;
     }
     
     .stDataFrame {

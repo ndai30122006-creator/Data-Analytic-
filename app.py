@@ -143,6 +143,35 @@ def main() -> None:
             st.error("⚠️ Configuration error: tab definitions could not be loaded.")
             st.stop()
 
+        # ── Header section before tabs ──
+        st.markdown(f"""
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        ">
+            <div>
+                <h2 style="margin:0;font-size:1.5rem;font-weight:700;">
+                    📊 {st.session_state.filename}
+                </h2>
+                <span style="font-size:0.82rem;color:var(--text-secondary);">
+                    {len(df):,} rows · {len(num)} numeric · {len(cat)} categorical
+                </span>
+            </div>
+            <div style="
+                background: var(--bg-secondary);
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-md);
+                padding: 0.4rem 0.8rem;
+                font-size:0.82rem;
+                color:var(--text-secondary);
+            ">
+                🎯 {len(MAIN_TABS)} analysis tabs
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
         # ── Dynamic tab dispatch ──
         # Map each tab name to its renderer (with pre-bound args).
         # If a tab has no entry, a warning is shown instead.
