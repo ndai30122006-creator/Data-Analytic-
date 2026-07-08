@@ -74,8 +74,25 @@ render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
 if not DEEP_ANALYSIS_AVAIL:
     logger.warning("Advanced analytics module not available")
 
-# ── Safe import for error handler ──
-handle_error, _ = _safe_import("src.utils.exceptions", "handle_error")
+# ── Safe import for error handler (no automatic fallback) ──
+_handle_error, _handle_error_ok = _safe_import(
+    "src.utils.exceptions", "handle_error", fallback=False)
+if _handle_error_ok:
+    handle_error = _handle_error
+else:
+    # Local fallback so the app never crashes on a missing handler
+    def handle_error(exc: Exception, context: str = "",
+                     user_message: str = "") -> None:
+        """Fallback error handler when src.utils.exceptions.handle_error
+        failed to load."""
+        logger.error("[%s] %s | Context: %s",
+                     type(exc).__name__, exc, context, exc_info=True)
+        try:
+            import streamlit as st
+            st.error(f"❌ {user_message or str(exc)}")
+        except Exception:
+            pass
+    logger.warning("Using local fallback for handle_error")
 
 
 def main() -> None:
@@ -118,7 +135,13 @@ def main() -> None:
         dat = raw.select_dtypes(include=["datetime"]).columns.tolist()
         df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-        from config import MAIN_TABS, TAB_DEEP_ANALYSIS
+        try:
+            from config import MAIN_TABS, TAB_DEEP_ANALYSIS
+        except Exception as exc:
+            logger.error("Failed to import MAIN_TABS from config: %s", exc,
+                          exc_info=True)
+            st.error("⚠️ Configuration error: tab definitions could not be loaded.")
+            st.stop()
 
         # ── Dynamic tab dispatch ──
         # Map each tab name to its renderer (with pre-bound args).
