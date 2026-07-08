@@ -54,6 +54,7 @@ def _safe_import(module_name: str, attr: str, *,
 
 # ── Safe imports for every render_* function ──
 render_theme, _ = _safe_import("theme_config", "render_theme")
+metric_card, _ = _safe_import("theme_config", "metric_card")
 render_sidebar, _ = _safe_import("sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("landing", "render_landing_page")
 render_overview_tab, _ = _safe_import("overview_tab", "render_overview_tab")

@@ -377,3 +377,47 @@ def render_theme() -> None:
     .st-info, .st-success, .st-warning, .st-error { border-radius: var(--radius-sm) !important; }
     </style>
     """, unsafe_allow_html=True)
+
+
+def metric_card(label: str, value: str, delta: str = "",
+                icon: str = "") -> str:
+    """Render an HTML metric card with dark mint theme styling.
+
+    Parameters
+    ----------
+    label : str
+        The metric label (e.g. "Total Students").
+    value : str
+        The primary value (e.g. "1,250").
+    delta : str, optional
+        Change indicator (e.g. "↑ 5.3%").
+    icon : str, optional
+        Emoji icon prefix (e.g. "👥").
+
+    Returns
+    -------
+    str
+        Raw HTML string suitable for ``st.markdown(…, unsafe_allow_html=True)``.
+    """
+    pfx = f"{icon} " if icon else ""
+    delta_html = (f'<div class="metric-delta">{delta}</div>'
+                  ) if delta else ""
+    return f"""
+    <div class="metric-card" style="
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    ">
+        <div style="color: var(--text2); font-size: 0.85rem; font-weight: 500; letter-spacing: 0.02em;">
+            {pfx}{label}
+        </div>
+        <div style="color: var(--text); font-size: 1.75rem; font-weight: 700; line-height: 1.2;">
+            {value}
+        </div>
+        {delta_html}
+    </div>
+    """
