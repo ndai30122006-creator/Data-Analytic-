@@ -126,6 +126,23 @@ def main() -> None:
     # ═══════════════════════════════════
     if st.session_state.df is None:
         try:
+            # ── Demo metric cards ──
+            st.markdown("### 📊 Key Metrics")
+            cols = st.columns(4)
+            with cols[0]:
+                st.markdown(metric_card("Total Students", "1,250", "↑ 5.3%", "👥"),
+                            unsafe_allow_html=True)
+            with cols[1]:
+                st.markdown(metric_card("Avg Score", "87.4", "↑ 2.1%", "📚"),
+                            unsafe_allow_html=True)
+            with cols[2]:
+                st.markdown(metric_card("Courses", "24", "→ 0%", "🎯"),
+                            unsafe_allow_html=True)
+            with cols[3]:
+                st.markdown(metric_card("Graduation", "94.2%", "↑ 1.8%", "🎓"),
+                            unsafe_allow_html=True)
+            st.divider()
+
             render_landing_page()
         except Exception as exc:
             handle_error(exc, "render_landing_page()", "Landing page failed to load.")
