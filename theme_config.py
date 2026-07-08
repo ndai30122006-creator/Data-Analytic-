@@ -1,423 +1,1005 @@
-"""Theme configuration — đen + xanh mint, sinh động"""
+"""
+🎨 Theme Configuration — Meta-style Modern Design System
+Palette: Facebook/Instagram colors with dark mode support
+"""
+
 import streamlit as st
+from typing import Dict, Any
+import json
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# COLOR PALETTE (Meta Design System)
+# ═══════════════════════════════════════════════════════════════════════════════
 
-def render_theme() -> None:
-    """Inject vibrant dark mint theme CSS."""
-    st.markdown("""
+COLORS = {
+    "light": {
+        "primary": "#1877F2",          # Meta Blue
+        "primary_hover": "#0A66C2",    # Darker blue on hover
+        "secondary": "#E4405F",        # Instagram warm
+        "success": "#31A24C",          # Green
+        "warning": "#F5A623",          # Orange
+        "danger": "#F02849",           # Red/Pink
+        "info": "#0A66C2",             # Info blue
+        
+        "bg_primary": "#FFFFFF",       # White
+        "bg_secondary": "#F0F2F5",     # Light gray
+        "bg_tertiary": "#E4E6EB",      # Medium gray
+        "bg_hover": "#F5F5F5",         # Hover gray
+        
+        "text_primary": "#000000",     # Black
+        "text_secondary": "#65676B",   # Medium gray
+        "text_tertiary": "#8A8D91",    # Light gray
+        "text_inverse": "#FFFFFF",     # White (on dark)
+        
+        "border": "#CED0D4",           # Border gray
+        "border_light": "#E4E6EB",     # Light border
+        
+        "chart_bg": "#FFFFFF",
+        "chart_grid": "#E4E6EB",
+    },
+    "dark": {
+        "primary": "#1877F2",          # Meta Blue (same)
+        "primary_hover": "#1E86E8",    # Lighter blue on hover
+        "secondary": "#E4405F",        # Instagram warm
+        "success": "#31A24C",          # Green
+        "warning": "#F5A623",          # Orange
+        "danger": "#F02849",           # Red/Pink
+        "info": "#0A66C2",             # Info blue
+        
+        "bg_primary": "#111828",       # Almost black
+        "bg_secondary": "#1F2937",     # Dark gray
+        "bg_tertiary": "#374151",      # Medium gray
+        "bg_hover": "#2D3748",         # Hover gray
+        
+        "text_primary": "#F9FAFB",     # Almost white
+        "text_secondary": "#D1D5DB",   # Medium gray
+        "text_tertiary": "#9CA3AF",    # Light gray
+        "text_inverse": "#111828",     # Dark (on light)
+        
+        "border": "#4B5563",           # Border gray
+        "border_light": "#2D3748",     # Light border
+        
+        "chart_bg": "#1F2937",
+        "chart_grid": "#374151",
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STREAMLIT THEME INJECTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+STREAMLIT_CONFIG = {
+    "theme": {
+        "primaryColor": COLORS["light"]["primary"],
+        "backgroundColor": COLORS["light"]["bg_primary"],
+        "secondaryBackgroundColor": COLORS["light"]["bg_secondary"],
+        "textColor": COLORS["light"]["text_primary"],
+        "font": "sans serif"
+    },
+    "client": {
+        "showErrorDetails": False,
+        "toolbarMode": "minimal",
+    },
+    "logger": {
+        "level": "info",
+    },
+    "ui": {
+        "hideStreamlitMenuItems": False,
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CUSTOM CSS FOR META-STYLE COMPONENTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_light_mode_css() -> str:
+    """Light mode CSS with Meta design tokens"""
+    return """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
+    /* ═══════════════════════════════════════════════════════════ */
+    /* GLOBAL STYLES */
+    /* ═══════════════════════════════════════════════════════════ */
     :root {
-        --bg: #000000;
-        --bg2: #050d1a;
-        --card: #0a1628;
-        --card-hover: #0f1f3a;
-        --text: #e2e8f0;
-        --text2: #94a3b8;
-        --text3: #64748b;
-        --mint: #14b8a6;
-        --mint-light: #5eead4;
-        --mint-dark: #0f766e;
-        --mint-glow: rgba(20, 184, 166, 0.25);
-        --mint-glow-strong: rgba(20, 184, 166, 0.4);
-        --border: #1a2744;
-        --success: #22c55e;
-        --warning: #eab308;
-        --danger: #ef4444;
-        --radius: 12px;
-        --radius-sm: 8px;
+        --primary-color: #1877F2;
+        --primary-hover: #0A66C2;
+        --secondary-color: #E4405F;
+        --success-color: #31A24C;
+        --warning-color: #F5A623;
+        --danger-color: #F02849;
+        --info-color: #0A66C2;
+        
+        --bg-primary: #FFFFFF;
+        --bg-secondary: #F0F2F5;
+        --bg-tertiary: #E4E6EB;
+        --bg-hover: #F5F5F5;
+        
+        --text-primary: #000000;
+        --text-secondary: #65676B;
+        --text-tertiary: #8A8D91;
+        
+        --border-color: #CED0D4;
+        --border-light: #E4E6EB;
+        
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+        
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+        
+        --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    html, body, .stApp {
-        background: var(--bg) !important;
-        color: var(--text) !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    
+    * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
     }
-
-    /* ── Animated background particles ── */
-    .stApp::before {
-        content: '';
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background:
-            radial-gradient(ellipse 80% 60% at 20% 20%, rgba(20, 184, 166, 0.04) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 50% at 80% 80%, rgba(20, 184, 166, 0.03) 0%, transparent 60%),
-            radial-gradient(ellipse 40% 40% at 50% 50%, rgba(20, 184, 166, 0.02) 0%, transparent 50%);
-        pointer-events: none;
-        z-index: 0;
+    
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
     }
-
-    /* ── Typography ── */
-    h1, h2, h3, h4, h5, h6 { color: var(--text) !important; font-weight: 600 !important; letter-spacing: -0.02em !important; }
-    p, li, span, div { color: var(--text2); }
-    a { color: var(--mint-light) !important; text-decoration: none !important; transition: all 0.2s !important; }
-    a:hover { color: var(--mint) !important; text-shadow: 0 0 20px var(--mint-glow) !important; }
-
-    /* ── Sidebar ── */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #020812, #050d1a) !important;
-        border-right: 1px solid var(--border) !important;
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* STREAMLIT OVERRIDES */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    /* Main container */
+    .main {
+        background-color: var(--bg-primary);
     }
-    section[data-testid="stSidebar"] .stButton button {
-        width: 100%;
-        background: linear-gradient(135deg, var(--card), #0c1a30) !important;
-        color: var(--text) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius-sm) !important;
-        padding: 0.45rem 0.9rem !important;
-        font-size: 0.85rem !important;
-        transition: all 0.25s !important;
-        position: relative !important;
-        overflow: hidden !important;
+    
+    /* Sidebar */
+    .sidebar .sidebar-content {
+        background-color: var(--bg-secondary);
+        border-right: 1px solid var(--border-light);
     }
-    section[data-testid="stSidebar"] .stButton button::after {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, var(--mint-glow), transparent);
-        transition: left 0.5s;
+    
+    /* Header/Title */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-primary);
+        font-weight: 600;
+        letter-spacing: -0.5px;
     }
-    section[data-testid="stSidebar"] .stButton button:hover::after { left: 100%; }
-    section[data-testid="stSidebar"] .stButton button:hover {
-        border-color: var(--mint) !important;
-        background: var(--card-hover) !important;
-        box-shadow: 0 0 20px var(--mint-glow) !important;
+    
+    h1 {
+        font-size: 32px;
+        margin-bottom: 24px;
+    }
+    
+    h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid var(--border-light);
+        padding-bottom: 12px;
+    }
+    
+    h3 {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+    
+    /* Body text */
+    p, span, div {
+        color: var(--text-primary);
+    }
+    
+    small, .text-secondary {
+        color: var(--text-secondary);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* BUTTONS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    button[kind="primary"] {
+        background-color: var(--primary-color) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 16px !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        transition: all var(--transition) !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+    
+    button[kind="primary"]:hover {
+        background-color: var(--primary-hover) !important;
+        box-shadow: var(--shadow-md) !important;
         transform: translateY(-1px);
     }
-
-    /* ── KPI Cards ── */
-    .kpi-card {
-        background: linear-gradient(135deg, var(--card), #080f20) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        padding: 1.2rem !important;
-        transition: all 0.3s !important;
-        position: relative !important;
-        overflow: hidden !important;
+    
+    button[kind="primary"]:active {
+        transform: translateY(0);
+        box-shadow: var(--shadow-sm) !important;
     }
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--mint), transparent);
-        opacity: 0;
-        transition: opacity 0.3s;
+    
+    button[kind="secondary"] {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 16px !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        transition: all var(--transition) !important;
     }
-    .kpi-card:hover::before { opacity: 1; }
-    .kpi-card:hover {
-        border-color: var(--mint) !important;
-        box-shadow: 0 0 30px var(--mint-glow) !important;
-        transform: translateY(-3px) !important;
+    
+    button[kind="secondary"]:hover {
+        background-color: var(--bg-tertiary) !important;
+        border-color: var(--border-color) !important;
     }
-    .kpi-label { color: var(--text3) !important; font-size: 0.7rem !important; text-transform: uppercase !important; letter-spacing: 0.08em !important; font-weight: 600 !important; }
-    .kpi-value { color: var(--mint-light) !important; font-size: 1.8rem !important; font-weight: 800 !important; letter-spacing: -0.03em !important; }
-    .kpi-delta { color: var(--success) !important; font-size: 0.85rem !important; font-weight: 600 !important; }
-
-    .insight-card { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; padding: 0.7rem 1rem !important; margin-bottom: 0.5rem !important; transition: all 0.2s !important; }
-    .insight-card:hover { background: var(--card-hover) !important; border-color: var(--mint) !important; }
-    .insight-info { border-left: 3px solid var(--mint) !important; }
-    .insight-success { border-left: 3px solid var(--success) !important; }
-    .insight-warning { border-left: 3px solid var(--warning) !important; }
-    .insight-danger { border-left: 3px solid var(--danger) !important; }
-    .insight-good { border-left: 3px solid var(--success) !important; }
-
-    /* ── Hero Section ── */
-    .hero-bg {
-        text-align: center;
-        padding: 3.5rem 2rem;
-        background: linear-gradient(135deg, #050d1a 0%, #000000 50%, #020812 100%);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* CARDS & CONTAINERS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    .metric-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition);
     }
-    .hero-bg::before {
-        content: '';
-        position: absolute;
-        top: -50%; left: -50%;
-        width: 200%; height: 200%;
-        background:
-            radial-gradient(circle at 30% 40%, rgba(20, 184, 166, 0.06) 0%, transparent 50%),
-            radial-gradient(circle at 70% 60%, rgba(94, 234, 212, 0.04) 0%, transparent 50%);
-        animation: heroGlow 8s ease-in-out infinite alternate;
+    
+    .metric-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-4px);
+        border-color: var(--primary-color);
     }
-    @keyframes heroGlow {
-        0% { transform: translate(0, 0) rotate(0deg); }
-        100% { transform: translate(-5%, 5%) rotate(3deg); }
+    
+    .card {
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow-md);
     }
-    .hero-title {
-        font-size: 2.5rem !important; font-weight: 800 !important;
-        background: linear-gradient(135deg, #5eead4 0%, #14b8a6 50%, #0d9488 100%) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
-        margin-bottom: 0.75rem !important;
-        position: relative !important;
-        z-index: 1 !important;
-        animation: titleFade 1s ease-out;
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* INPUTS & FORMS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    input, select, textarea {
+        background-color: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 12px !important;
+        transition: all var(--transition) !important;
     }
-    @keyframes titleFade {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
+    
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1) !important;
+        outline: none !important;
     }
-    .hero-title::after {
-        content: '✨';
-        position: absolute;
-        font-size: 1.5rem;
-        -webkit-text-fill-color: initial;
-        animation: sparkle 2s ease-in-out infinite;
+    
+    input::placeholder {
+        color: var(--text-tertiary) !important;
     }
-    @keyframes sparkle {
-        0%, 100% { opacity: 0.3; transform: translate(0, 0); }
-        50% { opacity: 1; transform: translate(10px, -10px); }
-    }
-    .hero-subtitle {
-        color: var(--text3) !important;
-        font-size: 1.05rem !important;
-        max-width: 560px !important;
-        margin: 0 auto !important;
-        position: relative !important;
-        z-index: 1 !important;
-        animation: subtitleFade 1s ease-out 0.3s both;
-    }
-    @keyframes subtitleFade {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── Feature Cards ── */
-    .feature-card {
-        background: #0d1f3c;
-        border: 1px solid #2a4a7f;
-        border-radius: var(--radius);
-        padding: 0.6rem 0.4rem;
-        text-align: center;
-        transition: all 0.3s;
-        min-height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-    .feature-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--mint), transparent);
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    .feature-card:hover::before { opacity: 1; }
-    .feature-card:hover {
-        border-color: var(--mint);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 24px var(--mint-glow);
-        background: #112a50;
-    }
-    @keyframes cardIn {
-        from { opacity: 0; transform: translateY(15px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .feature-card:nth-child(1) { animation: cardIn 0.4s ease-out 0.1s both; }
-    .feature-card:nth-child(2) { animation: cardIn 0.4s ease-out 0.18s both; }
-    .feature-card:nth-child(3) { animation: cardIn 0.4s ease-out 0.26s both; }
-    .feature-card:nth-child(4) { animation: cardIn 0.4s ease-out 0.34s both; }
-    .feature-card:nth-child(5) { animation: cardIn 0.4s ease-out 0.42s both; }
-    .feature-card:nth-child(6) { animation: cardIn 0.4s ease-out 0.5s both; }
-    .feature-icon { font-size: 1.5rem; display: block; line-height: 1; margin-bottom: 0.3rem; transition: transform 0.3s; }
-    .feature-card:hover .feature-icon { transform: scale(1.15); }
-    .feature-title { color: var(--text); font-weight: 600; font-size: 0.78rem; display: block; margin-bottom: 0.1rem; }
-    .feature-subtitle { color: var(--mint-light); font-size: 0.68rem; font-weight: 400; display: block; opacity: 0.9; }
-
-    /* ── Tabs ── */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0 !important; background: var(--bg2) !important;
-        border-radius: var(--radius-sm) !important; padding: 4px !important;
-        border: 1px solid var(--border) !important;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: transparent !important; color: var(--text3) !important;
-        border-radius: 5px !important; padding: 0.4rem 1rem !important;
-        font-size: 0.82rem !important; font-weight: 500 !important;
-        transition: all 0.2s !important; border: none !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, var(--mint), #0d9488) !important;
-        color: #000000 !important;
-        box-shadow: 0 0 20px var(--mint-glow) !important;
-    }
-    .stTabs [data-baseweb="tab"]:hover:not([aria-selected="true"]) {
-        color: var(--mint-light) !important;
-        background: rgba(20, 184, 166, 0.08) !important;
-    }
-
-    /* ── Buttons ── */
-    .stButton button {
-        background: linear-gradient(135deg, var(--mint), #0d9488) !important;
-        color: #000000 !important;
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* TABS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    .stTabs [role="tab"] {
+        border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+        padding: 12px 16px !important;
+        font-weight: 500 !important;
+        color: var(--text-secondary) !important;
+        background-color: transparent !important;
         border: none !important;
-        border-radius: var(--radius-sm) !important;
-        padding: 0.45rem 1.3rem !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-        transition: all 0.25s !important;
-        box-shadow: 0 4px 15px var(--mint-glow) !important;
-        position: relative !important;
+        border-bottom: 2px solid transparent !important;
+        transition: all var(--transition) !important;
+    }
+    
+    .stTabs [role="tab"]:hover {
+        color: var(--primary-color) !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
+    .stTabs [role="tab"][aria-selected="true"] {
+        color: var(--primary-color) !important;
+        border-bottom-color: var(--primary-color) !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* TABLES */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    .stDataFrame {
+        background-color: var(--bg-primary) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: var(--radius-lg) !important;
         overflow: hidden !important;
     }
-    .stButton button::after {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-        transition: left 0.5s;
+    
+    .stDataFrame thead {
+        background-color: var(--bg-secondary) !important;
+        border-bottom: 2px solid var(--border-color) !important;
     }
-    .stButton button:hover::after { left: 100%; }
-    .stButton button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 25px var(--mint-glow-strong) !important;
+    
+    .stDataFrame tbody tr {
+        border-bottom: 1px solid var(--border-light) !important;
     }
-    .stButton button:active {
-        transform: translateY(0) !important;
+    
+    .stDataFrame tbody tr:hover {
+        background-color: var(--bg-secondary) !important;
     }
-    .stButton button[kind="secondary"] {
-        background: var(--card) !important;
-        color: var(--text) !important;
-        border: 1px solid var(--border) !important;
-        box-shadow: none !important;
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* ALERTS & NOTIFICATIONS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    .stAlert {
+        border-radius: var(--radius-md) !important;
+        border-left: 4px solid !important;
+        padding: 16px !important;
     }
-    .stButton button[kind="secondary"]::after { display: none !important; }
-    .stButton button[kind="secondary"]:hover {
-        border-color: var(--mint) !important;
-        box-shadow: 0 0 20px var(--mint-glow) !important;
+    
+    .stSuccess {
+        background-color: #E8F5E9 !important;
+        border-left-color: var(--success-color) !important;
+        color: #1B5E20 !important;
     }
-
-    /* ── Metrics ── */
-    [data-testid="stMetricValue"] { color: var(--mint-light) !important; font-size: 1.8rem !important; font-weight: 800 !important; letter-spacing: -0.03em !important; }
-    [data-testid="stMetricLabel"] { color: var(--text3) !important; font-size: 0.82rem !important; font-weight: 500 !important; }
-    [data-testid="stMetricDelta"] { font-size: 0.85rem !important; font-weight: 600 !important; }
-
-    /* ── Tables ── */
-    [data-testid="stDataFrame"] { border-radius: var(--radius-sm) !important; border: 1px solid var(--border) !important; overflow: hidden !important; }
-    [data-testid="stDataFrame"] th { background: var(--card) !important; color: var(--text2) !important; font-weight: 600 !important; font-size: 0.82rem !important; }
-    [data-testid="stDataFrame"] td { color: var(--text) !important; background: #000000 !important; }
-
-    /* ── Expander ── */
+    
+    .stWarning {
+        background-color: #FFF3E0 !important;
+        border-left-color: var(--warning-color) !important;
+        color: #E65100 !important;
+    }
+    
+    .stError {
+        background-color: #FFEBEE !important;
+        border-left-color: var(--danger-color) !important;
+        color: #B71C1C !important;
+    }
+    
+    .stInfo {
+        background-color: #E3F2FD !important;
+        border-left-color: var(--info-color) !important;
+        color: #0D47A1 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* BADGES & LABELS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-primary {
+        background-color: rgba(24, 119, 242, 0.1);
+        color: var(--primary-color);
+    }
+    
+    .badge-success {
+        background-color: rgba(49, 162, 76, 0.1);
+        color: var(--success-color);
+    }
+    
+    .badge-warning {
+        background-color: rgba(245, 166, 35, 0.1);
+        color: var(--warning-color);
+    }
+    
+    .badge-danger {
+        background-color: rgba(240, 40, 73, 0.1);
+        color: var(--danger-color);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* EXPANDER */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    .streamlit-expander {
+        border: 1px solid var(--border-light) !important;
+        border-radius: var(--radius-md) !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
     .streamlit-expanderHeader {
-        background: linear-gradient(135deg, var(--card), #080f20) !important;
-        border-radius: var(--radius-sm) !important;
-        color: var(--text) !important;
-        font-weight: 600 !important;
-        border: 1px solid var(--border) !important;
-        transition: all 0.2s !important;
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
     }
-    .streamlit-expanderHeader:hover { border-color: var(--mint) !important; box-shadow: 0 0 15px var(--mint-glow) !important; }
-    .streamlit-expanderContent { background: var(--bg2) !important; border: 1px solid var(--border) !important; border-top: none !important; border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important; padding: 1rem !important; }
-
-    /* ── Select / Input ── */
-    [data-baseweb="select"] { background: var(--card) !important; border-radius: var(--radius-sm) !important; border: 1px solid var(--border) !important; transition: all 0.2s !important; }
-    [data-baseweb="select"]:hover { border-color: var(--mint) !important; box-shadow: 0 0 15px var(--mint-glow) !important; }
-    [data-baseweb="input"] { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; color: var(--text) !important; transition: all 0.2s !important; }
-    [data-baseweb="input"]:focus { border-color: var(--mint) !important; box-shadow: 0 0 15px var(--mint-glow) !important; }
-
-    /* ── File Uploader ── */
-    [data-testid="stFileUploader"] {
-        background: var(--card) !important;
-        border: 2px dashed var(--border) !important;
-        border-radius: var(--radius) !important;
-        padding: 1rem !important;
-        transition: all 0.3s !important;
+    
+    .streamlit-expanderHeader:hover {
+        background-color: var(--bg-tertiary) !important;
     }
-    [data-testid="stFileUploader"]:hover {
-        border-color: var(--mint) !important;
-        background: var(--card-hover) !important;
-        box-shadow: 0 0 25px var(--mint-glow) !important;
-        transform: translateY(-2px) !important;
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* SCROLLBAR */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
     }
-
-    /* ── Progress ── */
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, var(--mint), var(--mint-light), var(--mint)) !important;
-        background-size: 200% 100% !important;
-        animation: progressShine 2s linear infinite;
+    
+    ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
     }
-    @keyframes progressShine {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
     }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* ANIMATIONS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn var(--transition) ease-out;
+    }
+    
+    .animate-slide-in {
+        animation: slideIn var(--transition) ease-out;
+    }
+    
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    </style>
+    """
 
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #000000; }
-    ::-webkit-scrollbar-thumb { background: var(--card); border-radius: 4px; transition: all 0.2s; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--mint); }
-
-    /* ── Dividers ── */
-    hr {
+def get_dark_mode_css() -> str:
+    """Dark mode CSS with Meta design tokens"""
+    return """
+    <style>
+    :root {
+        --primary-color: #1877F2;
+        --primary-hover: #1E86E8;
+        --secondary-color: #E4405F;
+        --success-color: #31A24C;
+        --warning-color: #F5A623;
+        --danger-color: #F02849;
+        --info-color: #0A66C2;
+        
+        --bg-primary: #111828;
+        --bg-secondary: #1F2937;
+        --bg-tertiary: #374151;
+        --bg-hover: #2D3748;
+        
+        --text-primary: #F9FAFB;
+        --text-secondary: #D1D5DB;
+        --text-tertiary: #9CA3AF;
+        
+        --border-color: #4B5563;
+        --border-light: #2D3748;
+        
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+        
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+        
+        --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+    }
+    
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+    }
+    
+    .main {
+        background-color: var(--bg-primary);
+    }
+    
+    .sidebar .sidebar-content {
+        background-color: var(--bg-secondary);
+        border-right: 1px solid var(--border-light);
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-primary);
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+    
+    p, span, div {
+        color: var(--text-primary);
+    }
+    
+    small, .text-secondary {
+        color: var(--text-secondary);
+    }
+    
+    button[kind="primary"] {
+        background-color: var(--primary-color) !important;
+        color: white !important;
         border: none !important;
-        height: 1px !important;
-        background: linear-gradient(90deg, transparent, var(--mint-dark), var(--mint), var(--mint-dark), transparent) !important;
-        margin: 1.5rem 0 !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 16px !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        transition: all var(--transition) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
+    
+    button[kind="primary"]:hover {
+        background-color: var(--primary-hover) !important;
+        box-shadow: var(--shadow-md) !important;
+        transform: translateY(-1px);
+    }
+    
+    button[kind="secondary"] {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 16px !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        transition: all var(--transition) !important;
+    }
+    
+    button[kind="secondary"]:hover {
+        background-color: var(--bg-tertiary) !important;
+        border-color: var(--primary-color) !important;
+    }
+    
+    .metric-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition);
+    }
+    
+    .metric-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-4px);
+        border-color: var(--primary-color);
+    }
+    
+    .card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow-md);
+    }
+    
+    input, select, textarea {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 12px !important;
+        transition: all var(--transition) !important;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2) !important;
+        outline: none !important;
+    }
+    
+    input::placeholder {
+        color: var(--text-tertiary) !important;
+    }
+    
+    .stTabs [role="tab"] {
+        border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+        padding: 12px 16px !important;
+        font-weight: 500 !important;
+        color: var(--text-secondary) !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-bottom: 2px solid transparent !important;
+        transition: all var(--transition) !important;
+    }
+    
+    .stTabs [role="tab"]:hover {
+        color: var(--primary-color) !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
+    .stTabs [role="tab"][aria-selected="true"] {
+        color: var(--primary-color) !important;
+        border-bottom-color: var(--primary-color) !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
+    .stDataFrame {
+        background-color: var(--bg-secondary) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: var(--radius-lg) !important;
+        overflow: hidden !important;
+    }
+    
+    .stDataFrame thead {
+        background-color: var(--bg-tertiary) !important;
+        border-bottom: 2px solid var(--border-color) !important;
+    }
+    
+    .stDataFrame tbody tr {
+        border-bottom: 1px solid var(--border-light) !important;
+    }
+    
+    .stDataFrame tbody tr:hover {
+        background-color: var(--bg-tertiary) !important;
+    }
+    
+    .stAlert {
+        border-radius: var(--radius-md) !important;
+        border-left: 4px solid !important;
+        padding: 16px !important;
+    }
+    
+    .stSuccess {
+        background-color: rgba(49, 162, 76, 0.15) !important;
+        border-left-color: var(--success-color) !important;
+        color: #9AED7D !important;
+    }
+    
+    .stWarning {
+        background-color: rgba(245, 166, 35, 0.15) !important;
+        border-left-color: var(--warning-color) !important;
+        color: #FFD700 !important;
+    }
+    
+    .stError {
+        background-color: rgba(240, 40, 73, 0.15) !important;
+        border-left-color: var(--danger-color) !important;
+        color: #FF6B9D !important;
+    }
+    
+    .stInfo {
+        background-color: rgba(24, 119, 242, 0.15) !important;
+        border-left-color: var(--info-color) !important;
+        color: #87CEEB !important;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-primary {
+        background-color: rgba(24, 119, 242, 0.15);
+        color: #87CEEB;
+    }
+    
+    .badge-success {
+        background-color: rgba(49, 162, 76, 0.15);
+        color: #9AED7D;
+    }
+    
+    .badge-warning {
+        background-color: rgba(245, 166, 35, 0.15);
+        color: #FFD700;
+    }
+    
+    .badge-danger {
+        background-color: rgba(240, 40, 73, 0.15);
+        color: #FF6B9D;
+    }
+    
+    .streamlit-expander {
+        border: 1px solid var(--border-light) !important;
+        border-radius: var(--radius-md) !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
+    .streamlit-expanderHeader {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background-color: var(--bg-tertiary) !important;
+    }
+    
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn var(--transition) ease-out;
+    }
+    
+    .animate-slide-in {
+        animation: slideIn var(--transition) ease-out;
+    }
+    
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    </style>
+    """
 
-    /* ── Code ── */
-    code { background: var(--card) !important; color: var(--mint-light) !important; border-radius: 4px !important; padding: 0.15rem 0.35rem !important; font-size: 0.85rem !important; }
-    pre { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; }
+# ═══════════════════════════════════════════════════════════════════════════════
+# THEME COMPONENTS (Reusable)
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    /* ── Alerts ── */
-    .stAlert { background: var(--card) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
-    .stAlert [data-testid="stAlert"] { color: var(--text) !important; }
+def metric_card(title: str, value: str, change: str = "", icon: str = "📊",
+                color: str = "primary") -> str:
+    """Generate a beautiful metric card HTML"""
+    
+    change_class = ""
+    if "↑" in change:
+        change_class = "badge-success"
+    elif "↓" in change:
+        change_class = "badge-danger"
+    
+    html = f"""
+    <div class="metric-card animate-fade-in">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="margin: 0; font-size: 14px; font-weight: 500; opacity: 0.7;">{title}</h4>
+            <span style="font-size: 24px;">{icon}</span>
+        </div>
+        <h2 style="margin: 8px 0; font-size: 28px; font-weight: 700;">{value}</h2>
+        {f'<span class="badge {change_class}">{change}</span>' if change else ""}
+    </div>
+    """
+    return html
 
-    /* ── Spinner ── */
-    .stSpinner > div > div { border-color: var(--mint) transparent transparent transparent !important; }
+def status_badge(text: str, status: str = "primary") -> str:
+    """Generate a status badge"""
+    status_colors = {
+        "success": "#31A24C",
+        "warning": "#F5A623",
+        "danger": "#F02849",
+        "primary": "#1877F2",
+        "info": "#0A66C2",
+    }
+    color = status_colors.get(status, status_colors["primary"])
+    
+    return f"""
+    <span class="badge badge-{status}" style="background-color: rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.15); 
+                                             color: {color}; padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+        {text}
+    </span>
+    """
 
-    /* ── Info boxes ── */
-    .st-info, .st-success, .st-warning, .st-error { border-radius: var(--radius-sm) !important; }
+def gradient_text(text: str, color1: str = "#1877F2", color2: str = "#E4405F") -> str:
+    """Generate gradient text"""
+    return f"""
+    <span style="
+        background: linear-gradient(135deg, {color1} 0%, {color2} 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 1.1em;
+    ">{text}</span>
+    """
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RENDER FUNCTION (Main Theme Injector)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def render_theme() -> None:
+    """Initialize and render the theme (light/dark mode aware)"""
+    
+    # Initialize theme mode in session state
+    if "theme_mode" not in st.session_state:
+        st.session_state.theme_mode = "light"  # Default to light
+    
+    # Inject appropriate CSS based on theme
+    if st.session_state.theme_mode == "light":
+        st.markdown(get_light_mode_css(), unsafe_allow_html=True)
+    else:
+        st.markdown(get_dark_mode_css(), unsafe_allow_html=True)
+    
+    # Inject custom HTML for header styling
+    st.markdown("""
+    <style>
+    /* Custom header styling */
+    div[data-testid="stVerticalBlock"] > div:first-child {
+        padding-top: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border-light);
+        margin-bottom: 24px;
+    }
+    
+    /* Main content padding */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Reduce header bottom margin */
+    h1 {
+        margin-bottom: 24px !important;
+    }
+    
+    h2 {
+        margin-top: 32px !important;
+        margin-bottom: 20px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
+def get_theme_colors(mode: str = "light") -> Dict[str, str]:
+    """Get color palette for a specific theme mode"""
+    return COLORS.get(mode, COLORS["light"])
 
-def metric_card(label: str, value: str, delta: str = "",
-                icon: str = "") -> str:
-    """Render an HTML metric card with dark mint theme styling.
+def render_theme_switcher() -> None:
+    """Render theme mode switcher in sidebar"""
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("☀️ Light", use_container_width=True,
+                    help="Switch to light mode"):
+            st.session_state.theme_mode = "light"
+            st.rerun()
+    
+    with col2:
+        if st.button("🌙 Dark", use_container_width=True,
+                    help="Switch to dark mode"):
+            st.session_state.theme_mode = "dark"
+            st.rerun()
+    
+    # Show current mode
+    mode_name = "Light Mode ☀️" if st.session_state.theme_mode == "light" else "Dark Mode 🌙"
+    st.caption(f"Current: **{mode_name}**")
 
-    Parameters
-    ----------
-    label : str
-        The metric label (e.g. "Total Students").
-    value : str
-        The primary value (e.g. "1,250").
-    delta : str, optional
-        Change indicator (e.g. "↑ 5.3%").
-    icon : str, optional
-        Emoji icon prefix (e.g. "👥").
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEBUG HELPER (View theme config)
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    Returns
-    -------
-    str
-        Raw HTML string suitable for ``st.markdown(…, unsafe_allow_html=True)``.
-    """
-    pfx = f"{icon} " if icon else ""
-    delta_html = (f'<div class="metric-delta">{delta}</div>'
-                  ) if delta else ""
-    return f"""
-    <div class="metric-card" style="
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 1.25rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    ">
-        <div style="color: var(--text2); font-size: 0.85rem; font-weight: 500; letter-spacing: 0.02em;">
-            {pfx}{label}
-        </div>
-        <div style="color: var(--text); font-size: 1.75rem; font-weight: 700; line-height: 1.2;">
-            {value}
-        </div>
-        {delta_html}
-    </div>
-    """
+def debug_theme_config() -> None:
+    """Display theme configuration (development only)"""
+    if st.checkbox("🔧 Debug: Show Theme Config"):
+        st.json({
+            "Light Mode": COLORS["light"],
+            "Dark Mode": COLORS["dark"],
+        })
+
+
+if __name__ == "__main__":
+    """Test theme in standalone mode"""
+    st.set_page_config(page_title="Theme Preview", page_icon="🎨", layout="wide")
+    
+    render_theme()
+    render_theme_switcher()
+    
+    st.markdown("---")
+    
+    st.title("🎨 Theme Preview — Meta Design System")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(metric_card("Total Users", "45,230", "↑ 12.5%", "👥"), unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(metric_card("Revenue", "$123K", "↑ 8.3%", "💰"), unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(metric_card("Conversion", "3.2%", "↓ 0.5%", "📈"), unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.markdown("### Status Badges")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        st.markdown(status_badge("Success", "success"), unsafe_allow_html=True)
+    with col2:
+        st.markdown(status_badge("Warning", "warning"), unsafe_allow_html=True)
+    with col3:
+        st.markdown(status_badge("Danger", "danger"), unsafe_allow_html=True)
+    with col4:
+        st.markdown(status_badge("Primary", "primary"), unsafe_allow_html=True)
+    with col5:
+        st.markdown(status_badge("Info", "info"), unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.markdown("### Gradient Text")
+    st.markdown(gradient_text("🚀 Modern Analytics Platform"), unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    debug_theme_config()

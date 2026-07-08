@@ -55,6 +55,9 @@ def _safe_import(module_name: str, attr: str, *,
 # ── Safe imports for every render_* function ──
 render_theme, _ = _safe_import("theme_config", "render_theme")
 metric_card, _ = _safe_import("theme_config", "metric_card")
+render_theme_switcher, _ = _safe_import("theme_config", "render_theme_switcher")
+status_badge, _ = _safe_import("theme_config", "status_badge")
+gradient_text, _ = _safe_import("theme_config", "gradient_text")
 render_sidebar, _ = _safe_import("sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("landing", "render_landing_page")
 render_overview_tab, _ = _safe_import("overview_tab", "render_overview_tab")
@@ -120,6 +123,13 @@ def main() -> None:
         render_sidebar()
     except Exception as exc:
         handle_error(exc, "render_sidebar()", "Sidebar failed to load.")
+
+    # ── Theme Switcher (renders inside sidebar) ──
+    try:
+        with st.sidebar:
+            render_theme_switcher()
+    except Exception as exc:
+        handle_error(exc, "render_theme_switcher()", "Theme switcher failed.")
 
     # ═══════════════════════════════════
     # MAIN CONTENT
