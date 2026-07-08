@@ -54,10 +54,7 @@ def _safe_import(module_name: str, attr: str, *,
 
 # ── Safe imports for every render_* function ──
 render_theme, _ = _safe_import("theme_config", "render_theme")
-metric_card, _ = _safe_import("theme_config", "metric_card")
 render_theme_switcher, _ = _safe_import("theme_config", "render_theme_switcher")
-status_badge, _ = _safe_import("theme_config", "status_badge")
-gradient_text, _ = _safe_import("theme_config", "gradient_text")
 render_sidebar, _ = _safe_import("sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("landing", "render_landing_page")
 render_overview_tab, _ = _safe_import("overview_tab", "render_overview_tab")
@@ -136,23 +133,6 @@ def main() -> None:
     # ═══════════════════════════════════
     if st.session_state.df is None:
         try:
-            # ── Demo metric cards ──
-            st.markdown("### 📊 Key Metrics")
-            cols = st.columns(4)
-            with cols[0]:
-                st.markdown(metric_card("Total Students", "1,250", "↑ 5.3%", "👥"),
-                            unsafe_allow_html=True)
-            with cols[1]:
-                st.markdown(metric_card("Avg Score", "87.4", "↑ 2.1%", "📚"),
-                            unsafe_allow_html=True)
-            with cols[2]:
-                st.markdown(metric_card("Courses", "24", "→ 0%", "🎯"),
-                            unsafe_allow_html=True)
-            with cols[3]:
-                st.markdown(metric_card("Graduation", "94.2%", "↑ 1.8%", "🎓"),
-                            unsafe_allow_html=True)
-            st.divider()
-
             render_landing_page()
         except Exception as exc:
             handle_error(exc, "render_landing_page()", "Landing page failed to load.")
