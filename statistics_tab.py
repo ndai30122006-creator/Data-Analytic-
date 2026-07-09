@@ -11,6 +11,16 @@ from utils import validate_dataframe
 from helpers import apply_theme
 from src.utils.exceptions import handle_error, DataValidationError
 
+try:
+    from theme_config import metric_card, status_badge, gradient_text
+except ImportError:
+    def metric_card(title, value, change="", icon="📊", color="primary"):
+        return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
+    def status_badge(text, status="primary"):
+        return f"<span>{text}</span>"
+    def gradient_text(text, c1="#1877F2", c2="#E4405F"):
+        return f"<span style='font-weight:700'>{text}</span>"
+
 logger = logging.getLogger(__name__)
 
 
