@@ -41,8 +41,8 @@ COLORS = {
 def get_light_mode_css() -> str:
     return """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
 
     :root {
         --primary: #6366F1; --primary-hover: #4F46E5;
@@ -70,8 +70,8 @@ def get_light_mode_css() -> str:
         --morph: 1500ms var(--ease-in-out);
     }
 
-    * { font-family: 'Nunito', 'Quicksand', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+    * { font-family: 'Baloo 2', 'Nunito', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--text); overflow-x: hidden; font-size: 16px; letter-spacing: 0.01em; }
 
     /* ═══════════════════════════════════════════
        MORPHING AMBIENT BACKGROUND — Fluid & Alive
@@ -407,8 +407,8 @@ def get_light_mode_css() -> str:
 def get_dark_mode_css() -> str:
     return """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
 
     :root {
         --primary: #818CF8; --primary-hover: #A5B4FC;
@@ -436,8 +436,8 @@ def get_dark_mode_css() -> str:
         --morph: 1500ms var(--ease-in-out);
     }
 
-    * { font-family: 'Nunito', 'Quicksand', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+    * { font-family: 'Baloo 2', 'Nunito', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--text); overflow-x: hidden; font-size: 16px; letter-spacing: 0.01em; }
 
     /* ═══════════════════════════════════════════
        COSMIC AMBIENT BACKGROUND
