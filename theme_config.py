@@ -93,16 +93,20 @@ STREAMLIT_CONFIG = {
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def get_light_mode_css() -> str:
-    """Light mode CSS with Meta design tokens"""
+    """Light mode CSS with Meta design tokens — modern, smooth, premium"""
     return """
     <style>
     /* ═══════════════════════════════════════════════════════════ */
-    /* GLOBAL STYLES */
+    /* GLOBAL STYLES — Ultra-modern Design System                */
     /* ═══════════════════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
     :root {
         --primary-color: #1877F2;
         --primary-hover: #0A66C2;
+        --primary-glow: rgba(24, 119, 242, 0.25);
         --secondary-color: #E4405F;
+        --secondary-glow: rgba(228, 64, 95, 0.2);
         --success-color: #31A24C;
         --warning-color: #F5A623;
         --danger-color: #F02849;
@@ -120,26 +124,59 @@ def get_light_mode_css() -> str:
         --border-color: #CED0D4;
         --border-light: #E4E6EB;
         
-        --radius-sm: 4px;
-        --radius-md: 8px;
-        --radius-lg: 12px;
-        --radius-xl: 16px;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+        --radius-full: 9999px;
         
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+        --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.06);
+        --shadow-glow: 0 0 20px var(--primary-glow);
         
+        --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
         --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+        --bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     }
     
     * {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
     
     body {
         background-color: var(--bg-primary);
         color: var(--text-primary);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* ANIMATED BACKGROUND */
+    /* ═══════════════════════════════════════════════════════════ */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background:
+            radial-gradient(ellipse 80% 50% at 10% 10%, rgba(24, 119, 242, 0.03) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 40% at 90% 90%, rgba(228, 64, 95, 0.02) 0%, transparent 60%),
+            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(24, 119, 242, 0.015) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+        animation: ambientShift 20s ease-in-out infinite alternate;
+    }
+    
+    @keyframes ambientShift {
+        0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+        50% { transform: translate(-1%, 1%) scale(1.02); opacity: 1; }
+        100% { transform: translate(1%, -1%) scale(0.98); opacity: 0.8; }
     }
     
     /* ═══════════════════════════════════════════════════════════ */
@@ -504,45 +541,60 @@ def get_light_mode_css() -> str:
     """
 
 def get_dark_mode_css() -> str:
-    """Dark mode CSS with Meta design tokens"""
+    """Dark mode CSS with Meta design tokens — modern, smooth, premium"""
     return """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
     :root {
         --primary-color: #1877F2;
         --primary-hover: #1E86E8;
+        --primary-glow: rgba(24, 119, 242, 0.3);
         --secondary-color: #E4405F;
+        --secondary-glow: rgba(228, 64, 95, 0.25);
         --success-color: #31A24C;
         --warning-color: #F5A623;
         --danger-color: #F02849;
         --info-color: #0A66C2;
         
-        --bg-primary: #111828;
-        --bg-secondary: #1F2937;
-        --bg-tertiary: #374151;
-        --bg-hover: #2D3748;
+        --bg-primary: #0B1120;
+        --bg-secondary: #131C31;
+        --bg-tertiary: #1E293B;
+        --bg-hover: #1A2744;
         
-        --text-primary: #F9FAFB;
-        --text-secondary: #D1D5DB;
-        --text-tertiary: #9CA3AF;
+        --text-primary: #F1F5F9;
+        --text-secondary: #CBD5E1;
+        --text-tertiary: #94A3B8;
         
-        --border-color: #4B5563;
-        --border-light: #2D3748;
+        --border-color: #334155;
+        --border-light: #1E293B;
         
-        --radius-sm: 4px;
-        --radius-md: 8px;
-        --radius-lg: 12px;
-        --radius-xl: 16px;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+        --radius-full: 9999px;
         
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+        --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.3);
+        --shadow-glow: 0 0 20px var(--primary-glow);
         
+        --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
         --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+        --bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        
+        --glass-bg: rgba(19, 28, 49, 0.8);
+        --glass-border: rgba(255, 255, 255, 0.06);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
     
     * {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
     
     body {
@@ -574,25 +626,39 @@ def get_dark_mode_css() -> str:
     }
     
     button[kind="primary"] {
-        background-color: var(--primary-color) !important;
+        background: linear-gradient(135deg, var(--primary-color), #1557B0) !important;
         color: white !important;
         border: none !important;
         border-radius: var(--radius-md) !important;
-        padding: 10px 16px !important;
-        font-weight: 500 !important;
+        padding: 10px 20px !important;
+        font-weight: 600 !important;
         font-size: 14px !important;
         transition: all var(--transition) !important;
-        box-shadow: var(--shadow-sm) !important;
+        box-shadow: var(--shadow-sm), 0 0 0 0 var(--primary-glow) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    button[kind="primary"]::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.6s;
     }
     
     button[kind="primary"]:hover {
-        background-color: var(--primary-hover) !important;
-        box-shadow: var(--shadow-md) !important;
-        transform: translateY(-1px);
+        box-shadow: var(--shadow-md), 0 0 20px var(--primary-glow) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    button[kind="primary"]:hover::after {
+        left: 100%;
     }
     
     button[kind="secondary"] {
-        background-color: var(--bg-secondary) !important;
+        background: var(--bg-secondary) !important;
         color: var(--text-primary) !important;
         border: 1px solid var(--border-color) !important;
         border-radius: var(--radius-md) !important;
@@ -603,31 +669,49 @@ def get_dark_mode_css() -> str:
     }
     
     button[kind="secondary"]:hover {
-        background-color: var(--bg-tertiary) !important;
+        background: var(--bg-tertiary) !important;
         border-color: var(--primary-color) !important;
+        box-shadow: 0 0 15px var(--primary-glow) !important;
     }
     
     .metric-card {
-        background-color: var(--bg-secondary);
-        border: 1px solid var(--border-light);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        box-shadow: var(--shadow-sm);
-        transition: all var(--transition);
+        background: linear-gradient(135deg, var(--bg-secondary), rgba(19, 28, 49, 0.5)) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 20px !important;
+        box-shadow: var(--shadow-sm) !important;
+        backdrop-filter: blur(10px);
+        transition: all var(--transition) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        opacity: 0;
+        transition: opacity var(--transition);
     }
     
     .metric-card:hover {
-        box-shadow: var(--shadow-md);
-        transform: translateY(-4px);
-        border-color: var(--primary-color);
+        box-shadow: var(--shadow-lg), 0 0 30px var(--primary-glow) !important;
+        transform: translateY(-6px) scale(1.01) !important;
+        border-color: var(--primary-color) !important;
+    }
+    
+    .metric-card:hover::before {
+        opacity: 1;
     }
     
     .card {
-        background-color: var(--bg-secondary);
-        border: 1px solid var(--border-light);
-        border-radius: var(--radius-lg);
-        padding: 24px;
-        box-shadow: var(--shadow-md);
+        background: linear-gradient(135deg, var(--bg-secondary), rgba(19, 28, 49, 0.5)) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-light) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 24px !important;
+        box-shadow: var(--shadow-md) !important;
     }
     
     input, select, textarea {
@@ -635,13 +719,14 @@ def get_dark_mode_css() -> str:
         color: var(--text-primary) !important;
         border: 1px solid var(--border-color) !important;
         border-radius: var(--radius-md) !important;
-        padding: 10px 12px !important;
+        padding: 12px 14px !important;
         transition: all var(--transition) !important;
+        font-size: 14px !important;
     }
     
     input:focus, select:focus, textarea:focus {
         border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2) !important;
+        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15), 0 0 15px var(--primary-glow) !important;
         outline: none !important;
     }
     
@@ -651,6 +736,7 @@ def get_dark_mode_css() -> str:
     
     .stTabs {
         margin-bottom: 1.5rem !important;
+        animation: fadeIn 0.4s ease-out;
     }
     
     .stTabs [data-baseweb="tab-list"] {
@@ -659,28 +745,32 @@ def get_dark_mode_css() -> str:
         padding: 4px !important;
         gap: 2px !important;
         border: 1px solid var(--border-light) !important;
+        backdrop-filter: blur(10px);
     }
     
     .stTabs [role="tab"] {
         border-radius: var(--radius-md) !important;
-        padding: 10px 18px !important;
+        padding: 10px 20px !important;
         font-weight: 500 !important;
         font-size: 0.88rem !important;
         color: var(--text-secondary) !important;
         background-color: transparent !important;
         border: none !important;
         transition: all var(--transition) !important;
+        position: relative !important;
     }
     
     .stTabs [role="tab"]:hover {
         color: var(--primary-color) !important;
         background-color: var(--bg-tertiary) !important;
+        transform: translateY(-1px);
     }
     
     .stTabs [role="tab"][aria-selected="true"] {
         color: #fff !important;
-        background: var(--primary-color) !important;
-        box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3) !important;
+        background: linear-gradient(135deg, var(--primary-color), #1557B0) !important;
+        box-shadow: 0 4px 15px var(--primary-glow) !important;
+        transform: translateY(-1px);
     }
     
     .stDataFrame {
