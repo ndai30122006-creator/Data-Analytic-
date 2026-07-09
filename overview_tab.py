@@ -14,6 +14,16 @@ from components import (
 )
 from helpers import convert_df_to_csv, sparkline, apply_theme
 
+try:
+    from theme_config import metric_card, status_badge, gradient_text
+except ImportError:
+    def metric_card(title, value, change="", icon="📊", color="primary"):
+        return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
+    def status_badge(text, status="primary"):
+        return f"<span>{text}</span>"
+    def gradient_text(text, c1="#1877F2", c2="#E4405F"):
+        return f"<span style='font-weight:700'>{text}</span>"
+
 
 def render_overview_tab(df, num, cat):
     """Render the Overview tab with KPIs, charts, data dictionary, profiler, and export"""
@@ -22,18 +32,29 @@ def render_overview_tab(df, num, cat):
         st.error(f"❌ {msg}")
         return
 
-    # KPI row
-    row1 = st.columns(4)
-    render_kpi_card(row1[0], "Rows", f"{len(df):,}")
-    render_kpi_card(row1[1], "Columns", df.shape[1])
+    # ═══════════════════════════════════════
+    # KPI METRIC CARDS — with hover effect
+    # ═══════════════════════════════════════
+    st.markdown("### 📊 Key Metrics")
     pct = round((1 - df.isnull().sum().sum() / (len(df) * df.shape[1])) * 100, 1)
-    render_kpi_card(row1[2], "Quality", f"{pct}%")
-    render_kpi_card(row1[3], "Missing", f"{df.isnull().sum().sum():,}")
+    missing = df.isnull().sum().sum()
+    kpi_data = [
+        ("📦 Rows", f"{len(df):,}", "↑ 0%", "📦"),
+        ("🔧 Columns", str(df.shape[1]), "→ 0%", "🔧"),
+        ("✅ Quality", f"{pct}%", f"{'↑' if pct >= 80 else '↓'} {pct:.1f}%", "✅"),
+        ("❌ Missing", f"{missing:,}", f"{'↓' if missing == 0 else '↑'} {missing}", "❌"),
+    ]
+    kpi_cols = st.columns(4)
+    for i, (label, value, change, icon) in enumerate(kpi_data):
+        with kpi_cols[i]:
+            st.markdown(metric_card(label, value, change, icon), unsafe_allow_html=True)
 
     # Data Quality Report
     render_data_quality_report(df)
 
-    # Sparkline row
+    # ═══════════════════════════════════════
+    # SPARKLINE TRENDS
+    # ═══════════════════════════════════════
     if num:
         st.markdown("### 📈 Data Trends")
         spark_cols = st.columns(min(len(num), 4))

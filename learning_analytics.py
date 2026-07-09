@@ -8,6 +8,16 @@ import plotly.graph_objects as go
 from helpers import apply_theme, guess_learning_column
 from components import render_kpi_card
 
+try:
+    from theme_config import metric_card, status_badge, gradient_text
+except ImportError:
+    def metric_card(title, value, change="", icon="📊", color="primary"):
+        return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
+    def status_badge(text, status="primary"):
+        return f"<span>{text}</span>"
+    def gradient_text(text, c1="#1877F2", c2="#E4405F"):
+        return f"<span style='font-weight:700'>{text}</span>"
+
 
 def render_learning_analytics_tab(df, num_cols, cat_cols):
     st.markdown("### 🎓 Phân tích dữ liệu học tập ngành Thống kê")
@@ -52,12 +62,18 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
     pass_rate = (score >= pass_mark).mean() * 100
     risk_rate = (score < risk_mark).mean() * 100
 
+    st.markdown("#### 🎯 Performance Metrics")
     kpis = st.columns(5)
-    render_kpi_card(kpis[0], "Số quan sát", f"{len(analysis_df):,}")
-    render_kpi_card(kpis[1], "Điểm TB", f"{score.mean():.2f}")
-    render_kpi_card(kpis[2], "Trung vi", f"{score.median():.2f}")
-    render_kpi_card(kpis[3], "Tỷ lệ đạt", f"{pass_rate:.1f}%")
-    render_kpi_card(kpis[4], "Nhóm rủi ro", f"{risk_rate:.1f}%")
+    kpi_data_l = [
+        ("👥 Số quan sát", f"{len(analysis_df):,}", "→ 0", "👥"),
+        ("📊 Điểm TB", f"{score.mean():.2f}", "→ 0", "📊"),
+        ("📈 Trung vị", f"{score.median():.2f}", "→ 0", "📈"),
+        ("✅ Tỷ lệ đạt", f"{pass_rate:.1f}%", f"{'↑' if pass_rate >= 80 else '↓'} {pass_rate:.1f}%", "✅"),
+        ("🔴 Nhóm rủi ro", f"{risk_rate:.1f}%", f"{'↑' if risk_rate >= 25 else '↓'} {risk_rate:.1f}%", "🔴"),
+    ]
+    for i, (label, value, change, icon) in enumerate(kpi_data_l):
+        with kpis[i]:
+            st.markdown(metric_card(label, value, change, icon), unsafe_allow_html=True)
 
     chart_cols = st.columns(2)
     with chart_cols[0]:
