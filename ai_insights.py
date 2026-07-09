@@ -220,6 +220,17 @@ def generate_ai_report(df: pd.DataFrame, analysis_type: str = "overview",
         "analysis_type": analysis_type
     }
 
+try:
+    from theme_config import metric_card, status_badge, gradient_text
+except ImportError:
+    def metric_card(title, value, change="", icon="📊", color="primary"):
+        return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
+    def status_badge(text, status="primary"):
+        return f"<span>{text}</span>"
+    def gradient_text(text, c1="#1877F2", c2="#E4405F"):
+        return f"<span style='font-weight:700'>{text}</span>"
+
+
 def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List[str]):
     """Render AI Insights tab in Streamlit"""
     st.markdown("### 🤖 AI Auto Insights")
