@@ -41,8 +41,8 @@ COLORS = {
 def get_light_mode_css() -> str:
     return """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
 
     :root {
         --primary: #6366F1; --primary-hover: #4F46E5;
@@ -53,7 +53,7 @@ def get_light_mode_css() -> str:
         --bg: #FAFBFC; --bg2: #F1F5F9; --bg3: #E2E8F0;
         --text: #0F172A; --text2: #475569; --text3: #94A3B8;
         --border: #CBD5E1; --border2: #E2E8F0;
-        --radius-sm: 6px; --radius: 12px; --radius-lg: 20px; --radius-xl: 24px;
+        --radius-sm: 10px; --radius: 18px; --radius-lg: 28px; --radius-xl: 36px;
 
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
         --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
@@ -70,7 +70,7 @@ def get_light_mode_css() -> str:
         --morph: 1500ms var(--ease-in-out);
     }
 
-    * { font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { font-family: 'Nunito', 'Quicksand', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
     body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 
     /* ═══════════════════════════════════════════
@@ -407,8 +407,8 @@ def get_light_mode_css() -> str:
 def get_dark_mode_css() -> str:
     return """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
 
     :root {
         --primary: #818CF8; --primary-hover: #A5B4FC;
@@ -419,7 +419,7 @@ def get_dark_mode_css() -> str:
         --bg: #080D1A; --bg2: #111827; --bg3: #1F2937;
         --text: #F1F5F9; --text2: #CBD5E1; --text3: #64748B;
         --border: #334155; --border2: #1E293B;
-        --radius-sm: 6px; --radius: 12px; --radius-lg: 20px; --radius-xl: 24px;
+        --radius-sm: 10px; --radius: 18px; --radius-lg: 28px; --radius-xl: 36px;
 
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
         --shadow: 0 4px 16px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
@@ -436,7 +436,7 @@ def get_dark_mode_css() -> str:
         --morph: 1500ms var(--ease-in-out);
     }
 
-    * { font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { font-family: 'Nunito', 'Quicksand', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
     body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 
     /* ═══════════════════════════════════════════
