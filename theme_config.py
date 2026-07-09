@@ -13,54 +13,58 @@ import json
 
 COLORS = {
     "light": {
-        "primary": "#1877F2",          # Meta Blue
-        "primary_hover": "#0A66C2",    # Darker blue on hover
-        "secondary": "#E4405F",        # Instagram warm
-        "success": "#31A24C",          # Green
-        "warning": "#F5A623",          # Orange
-        "danger": "#F02849",           # Red/Pink
-        "info": "#0A66C2",             # Info blue
+        "primary": "#6366F1",          # Indigo — vibrant yet soft
+        "primary_hover": "#4F46E5",    # Deeper indigo
+        "primary_light": "#A5B4FC",    # Light indigo for glows
+        "secondary": "#EC4899",        # Pink — warm accent
+        "secondary_hover": "#DB2777",
+        "success": "#10B981",          # Emerald
+        "warning": "#F59E0B",          # Amber
+        "danger": "#EF4444",           # Red
+        "info": "#06B6D4",             # Cyan
         
-        "bg_primary": "#FFFFFF",       # White
-        "bg_secondary": "#F0F2F5",     # Light gray
-        "bg_tertiary": "#E4E6EB",      # Medium gray
-        "bg_hover": "#F5F5F5",         # Hover gray
+        "bg_primary": "#FAFBFC",
+        "bg_secondary": "#F1F5F9",
+        "bg_tertiary": "#E2E8F0",
+        "bg_hover": "#F8FAFC",
         
-        "text_primary": "#000000",     # Black
-        "text_secondary": "#65676B",   # Medium gray
-        "text_tertiary": "#8A8D91",    # Light gray
-        "text_inverse": "#FFFFFF",     # White (on dark)
+        "text_primary": "#0F172A",
+        "text_secondary": "#475569",
+        "text_tertiary": "#94A3B8",
+        "text_inverse": "#FFFFFF",
         
-        "border": "#CED0D4",           # Border gray
-        "border_light": "#E4E6EB",     # Light border
+        "border": "#CBD5E1",
+        "border_light": "#E2E8F0",
         
         "chart_bg": "#FFFFFF",
-        "chart_grid": "#E4E6EB",
+        "chart_grid": "#E2E8F0",
     },
     "dark": {
-        "primary": "#1877F2",          # Meta Blue (same)
-        "primary_hover": "#1E86E8",    # Lighter blue on hover
-        "secondary": "#E4405F",        # Instagram warm
-        "success": "#31A24C",          # Green
-        "warning": "#F5A623",          # Orange
-        "danger": "#F02849",           # Red/Pink
-        "info": "#0A66C2",             # Info blue
+        "primary": "#818CF8",          # Indigo lighter for dark
+        "primary_hover": "#A5B4FC",
+        "primary_light": "rgba(129, 140, 248, 0.3)",
+        "secondary": "#F472B6",        # Pink lighter
+        "secondary_hover": "#F9A8D4",
+        "success": "#34D399",
+        "warning": "#FBBF24",
+        "danger": "#F87171",
+        "info": "#22D3EE",
         
-        "bg_primary": "#111828",       # Almost black
-        "bg_secondary": "#1F2937",     # Dark gray
-        "bg_tertiary": "#374151",      # Medium gray
-        "bg_hover": "#2D3748",         # Hover gray
+        "bg_primary": "#0C1222",
+        "bg_secondary": "#1A233A",
+        "bg_tertiary": "#253250",
+        "bg_hover": "#1E2A45",
         
-        "text_primary": "#F9FAFB",     # Almost white
-        "text_secondary": "#D1D5DB",   # Medium gray
-        "text_tertiary": "#9CA3AF",    # Light gray
-        "text_inverse": "#111828",     # Dark (on light)
+        "text_primary": "#F1F5F9",
+        "text_secondary": "#CBD5E1",
+        "text_tertiary": "#64748B",
+        "text_inverse": "#0C1222",
         
-        "border": "#4B5563",           # Border gray
-        "border_light": "#2D3748",     # Light border
+        "border": "#334155",
+        "border_light": "#1E293B",
         
-        "chart_bg": "#1F2937",
-        "chart_grid": "#374151",
+        "chart_bg": "#1A233A",
+        "chart_grid": "#253250",
     }
 }
 
@@ -102,27 +106,27 @@ def get_light_mode_css() -> str:
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
     :root {
-        --primary-color: #1877F2;
-        --primary-hover: #0A66C2;
-        --primary-glow: rgba(24, 119, 242, 0.25);
-        --secondary-color: #E4405F;
-        --secondary-glow: rgba(228, 64, 95, 0.2);
-        --success-color: #31A24C;
-        --warning-color: #F5A623;
-        --danger-color: #F02849;
-        --info-color: #0A66C2;
+        --primary-color: #6366F1;
+        --primary-hover: #4F46E5;
+        --primary-glow: rgba(99, 102, 241, 0.25);
+        --secondary-color: #EC4899;
+        --secondary-glow: rgba(236, 72, 153, 0.2);
+        --success-color: #10B981;
+        --warning-color: #F59E0B;
+        --danger-color: #EF4444;
+        --info-color: #06B6D4;
         
-        --bg-primary: #FFFFFF;
-        --bg-secondary: #F0F2F5;
-        --bg-tertiary: #E4E6EB;
-        --bg-hover: #F5F5F5;
+        --bg-primary: #FAFBFC;
+        --bg-secondary: #F1F5F9;
+        --bg-tertiary: #E2E8F0;
+        --bg-hover: #F8FAFC;
         
-        --text-primary: #000000;
-        --text-secondary: #65676B;
-        --text-tertiary: #8A8D91;
+        --text-primary: #0F172A;
+        --text-secondary: #475569;
+        --text-tertiary: #94A3B8;
         
-        --border-color: #CED0D4;
-        --border-light: #E4E6EB;
+        --border-color: #CBD5E1;
+        --border-light: #E2E8F0;
         
         --radius-sm: 6px;
         --radius-md: 10px;
@@ -165,9 +169,9 @@ def get_light_mode_css() -> str:
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         background:
-            radial-gradient(ellipse 80% 50% at 10% 10%, rgba(24, 119, 242, 0.03) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 40% at 90% 90%, rgba(228, 64, 95, 0.02) 0%, transparent 60%),
-            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(24, 119, 242, 0.015) 0%, transparent 50%);
+            radial-gradient(ellipse 80% 50% at 10% 10%, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 40% at 90% 90%, rgba(236, 72, 153, 0.03) 0%, transparent 60%),
+            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(6, 182, 212, 0.02) 0%, transparent 50%);
         pointer-events: none;
         z-index: 0;
         animation: ambientShift 20s ease-in-out infinite alternate;
@@ -312,7 +316,7 @@ def get_light_mode_css() -> str:
     
     input:focus, select:focus, textarea:focus {
         border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1) !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
         outline: none !important;
     }
     
@@ -355,7 +359,7 @@ def get_light_mode_css() -> str:
     .stTabs [role="tab"][aria-selected="true"] {
         color: #fff !important;
         background: var(--primary-color) !important;
-        box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3) !important;
+        box-shadow: 0 2px 8px var(--primary-glow) !important;
     }
     
     /* ═══════════════════════════════════════════════════════════ */
