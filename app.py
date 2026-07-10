@@ -95,6 +95,28 @@ else:
     logger.warning("Using local fallback for handle_error")
 
 
+# ── Keyboard shortcut: inject JS for Ctrl+K command palette ──
+_KEYBOARD_JS = """
+<script>
+document.addEventListener('keydown', function(e) {
+  // Ctrl+K or Cmd+K → focus the command palette input
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    const cp = document.getElementById('cmd-palette');
+    if (cp) { cp.focus(); cp.select(); }
+  }
+  // Ctrl+1..Ctrl+7 → switch tabs
+  if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '7') {
+    e.preventDefault();
+    const idx = parseInt(e.key) - 1;
+    const tabs = document.querySelectorAll('[role="tab"]');
+    if (tabs[idx]) tabs[idx].click();
+  }
+});
+</script>
+"""
+
+
 def main() -> None:
     """Main entry point — initialises session state and renders the UI."""
     # ── Session State Init ──
@@ -111,6 +133,7 @@ def main() -> None:
     # ── Inject Theme ──
     try:
         render_theme()
+        st.markdown(_KEYBOARD_JS, unsafe_allow_html=True)
     except Exception as exc:
         handle_error(exc, "render_theme()", "Failed to apply theme.")
 
@@ -119,6 +142,24 @@ def main() -> None:
         render_sidebar()
     except Exception as exc:
         handle_error(exc, "render_sidebar()", "Sidebar failed to load.")
+
+    # ═══════════════════════════════════
+    # GLOBAL COMMAND PALETTE
+    # ═══════════════════════════════════
+    st.markdown("""
+    <div style="text-align:right; margin-bottom:0.25rem;">
+        <input id="cmd-palette" type="text" placeholder="🔍 Tìm kiếm nhanh... (Ctrl+K)"
+               style="width:280px; padding:8px 14px; border-radius:var(--radius); border:1px solid var(--border);
+                      background:var(--bg2); color:var(--text); font-size:14px;
+                      transition: all 0.3s var(--ease-out);"
+               oninput="filterPalette(this.value)" />
+    </div>
+    <script>
+    function filterPalette(val) {
+      // highlight matching sections – simple placeholder for future enhancement
+    }
+    </script>
+    """, unsafe_allow_html=True)
 
     # ═══════════════════════════════════
     # MAIN CONTENT
