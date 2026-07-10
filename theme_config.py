@@ -79,17 +79,19 @@ def get_light_mode_css() -> str:
     .stApp::before {
         content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-            radial-gradient(ellipse 70% 40% at 15% 20%, rgba(99,102,241,0.06) 0%, transparent 60%),
-            radial-gradient(ellipse 50% 35% at 85% 80%, rgba(236,72,153,0.04) 0%, transparent 55%),
-            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(6,182,212,0.03) 0%, transparent 50%),
+            radial-gradient(ellipse 70% 40% at 15% 20%, rgba(99,102,241,0.08) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 35% at 85% 80%, rgba(236,72,153,0.05) 0%, transparent 55%),
+            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(6,182,212,0.04) 0%, transparent 50%),
             radial-gradient(ellipse 60% 40% at 30% 70%, rgba(16,185,129,0.03) 0%, transparent 50%);
         animation: morphBg 25s var(--ease-in-out) infinite alternate;
     }
+    .stApp::before { background-blend-mode: overlay; }
     @keyframes morphBg {
-        0% { transform: scale(1) rotate(0deg); opacity: 0.7; }
-        33% { transform: scale(1.05) rotate(1deg); opacity: 1; }
-        66% { transform: scale(0.97) rotate(-0.5deg); opacity: 0.8; }
-        100% { transform: scale(1.02) rotate(0.5deg); opacity: 0.9; }
+        0% { transform: scale(1) rotate(0deg) skew(0deg); opacity: 0.6; }
+        25% { transform: scale(1.06) rotate(1.5deg) skew(-0.5deg); opacity: 0.9; }
+        50% { transform: scale(0.96) rotate(-0.5deg) skew(1deg); opacity: 0.7; }
+        75% { transform: scale(1.03) rotate(0.8deg) skew(-0.3deg); opacity: 1; }
+        100% { transform: scale(1.01) rotate(-0.3deg) skew(0deg); opacity: 0.8; }
     }
 
     /* ═══════════════════════════════════════════
@@ -98,86 +100,100 @@ def get_light_mode_css() -> str:
     .stApp::after {
         content: ''; position: fixed; z-index: 0; pointer-events: none;
         width: 600px; height: 600px;
-        background: radial-gradient(circle at center, rgba(99,102,241,0.08), transparent 70%);
+        background: radial-gradient(circle at center, rgba(99,102,241,0.1), transparent 70%);
         border-radius: 50%;
+        filter: blur(40px);
         top: -200px; right: -200px;
         animation: floatOrb1 18s var(--ease-out) infinite alternate;
     }
     @keyframes floatOrb1 {
-        0% { transform: translate(0,0) scale(1); opacity: 0.5; }
-        50% { transform: translate(-100px,80px) scale(1.2); opacity: 0.8; }
-        100% { transform: translate(-50px,150px) scale(0.9); opacity: 0.4; }
+        0% { transform: translate(0,0) scale(1); opacity: 0.4; }
+        50% { transform: translate(-120px,100px) scale(1.3); opacity: 0.7; }
+        100% { transform: translate(-60px,180px) scale(0.8); opacity: 0.3; }
     }
 
     /* Second floating orb */
-    .main > div:first-child::before {
+    body::before {
         content: ''; position: fixed; z-index: 0; pointer-events: none;
         width: 400px; height: 400px;
-        background: radial-gradient(circle at center, rgba(236,72,153,0.06), transparent 70%);
+        background: radial-gradient(circle at center, rgba(236,72,153,0.08), transparent 70%);
         border-radius: 50%;
+        filter: blur(50px);
         bottom: -100px; left: -100px;
         animation: floatOrb2 22s var(--ease-out) infinite alternate;
     }
     @keyframes floatOrb2 {
-        0% { transform: translate(0,0) scale(1); opacity: 0.3; }
-        50% { transform: translate(100px,-60px) scale(1.3); opacity: 0.7; }
-        100% { transform: translate(60px,-120px) scale(0.8); opacity: 0.4; }
+        0% { transform: translate(0,0) scale(1); opacity: 0.2; }
+        50% { transform: translate(120px,-80px) scale(1.4); opacity: 0.5; }
+        100% { transform: translate(80px,-140px) scale(0.7); opacity: 0.3; }
     }
 
     /* ═══════════════════════════════════════════
-       GLASSMORPHISM SIDEBAR
+       PREMIUM GLASSMORPHISM SIDEBAR
        ═══════════════════════════════════════════ */
     .sidebar .sidebar-content {
-        background: rgba(250,251,252,0.85) !important;
-        backdrop-filter: blur(20px) saturate(1.3) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(1.3) !important;
-        border-right: 1px solid rgba(203,213,225,0.4) !important;
-        box-shadow: 4px 0 24px rgba(0,0,0,0.04) !important;
+        background: rgba(250,251,252,0.7) !important;
+        backdrop-filter: blur(24px) saturate(1.4) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+        border-right: 1px solid rgba(203,213,225,0.3) !important;
+        box-shadow: 4px 0 40px rgba(0,0,0,0.04), inset 1px 0 0 rgba(255,255,255,0.6) !important;
     }
 
     /* ═══════════════════════════════════════════
-       3D PERSPECTIVE CARDS
+       ULTRA-GLASS 3D PERSPECTIVE CARDS
        ═══════════════════════════════════════════ */
     .metric-card {
-        background: rgba(255,255,255,0.7) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(203,213,225,0.3) !important;
+        background: rgba(255,255,255,0.55) !important;
+        backdrop-filter: blur(16px) saturate(1.5) !important;
+        -webkit-backdrop-filter: blur(16px) saturate(1.5) !important;
+        border: 1px solid rgba(255,255,255,0.4) !important;
         border-radius: var(--radius-lg) !important;
         padding: 24px !important;
-        box-shadow: var(--shadow) !important;
-        transition: all 0.4s var(--ease-out) !important;
+        box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+        transition: all 0.5s var(--ease-out) !important;
         position: relative !important;
         overflow: hidden !important;
         transform-style: preserve-3d !important;
-        perspective: 800px !important;
+        perspective: 1000px !important;
     }
 
     .metric-card::before {
         content: ''; position: absolute; inset: 0;
         background: linear-gradient(135deg,
-            rgba(99,102,241,0.03) 0%, transparent 50%,
-            rgba(236,72,153,0.02) 100%);
-        opacity: 0; transition: opacity 0.5s var(--ease-out);
+            rgba(99,102,241,0.04) 0%, transparent 40%,
+            rgba(236,72,153,0.03) 100%);
+        opacity: 0; transition: opacity 0.6s var(--ease-out);
     }
 
     .metric-card::after {
-        content: ''; position: absolute; top: 0; left: -100%;
-        width: 300%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(99,102,241,0.04), transparent);
-        animation: shimmer 3s ease-in-out infinite;
+        content: ''; position: absolute; top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: conic-gradient(from 0deg,
+            transparent, rgba(99,102,241,0.04), transparent,
+            rgba(236,72,153,0.03), transparent);
+        animation: rotateShimmer 8s linear infinite;
+        opacity: 0.6;
     }
-    @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+    @keyframes rotateShimmer {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     .metric-card:hover {
-        transform: translateY(-8px) scale(1.02) rotateX(2deg) !important;
-        box-shadow: var(--shadow-xl), 0 0 40px var(--primary-glow) !important;
+        transform: translateY(-10px) scale(1.02) rotateX(2deg) !important;
+        box-shadow: var(--shadow-xl), 0 0 50px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,0.9) !important;
         border-color: var(--primary) !important;
+        background: rgba(255,255,255,0.7) !important;
     }
     .metric-card:hover::before { opacity: 1; }
+
+    /* ═══════════════════════════════════════════
+       MICRO-INTERACTION: ACTIVE PRESS
+       ═══════════════════════════════════════════ */
+    .metric-card:active {
+        transform: translateY(-2px) scale(0.98) !important;
+        transition-duration: 0.1s !important;
+    }
 
     /* ═══════════════════════════════════════════
        FLUID BUTTONS
