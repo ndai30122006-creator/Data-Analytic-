@@ -144,22 +144,63 @@ def main() -> None:
         handle_error(exc, "render_sidebar()", "Sidebar failed to load.")
 
     # ═══════════════════════════════════
-    # GLOBAL COMMAND PALETTE
+    # SMART SEARCH / COMMAND PALETTE
     # ═══════════════════════════════════
-    st.markdown("""
-    <div style="text-align:right; margin-bottom:0.25rem;">
-        <input id="cmd-palette" type="text" placeholder="🔍 Tìm kiếm nhanh... (Ctrl+K)"
-               style="width:280px; padding:8px 14px; border-radius:var(--radius); border:1px solid var(--border);
-                      background:var(--bg2); color:var(--text); font-size:14px;
-                      transition: all 0.3s var(--ease-out);"
-               oninput="filterPalette(this.value)" />
-    </div>
+    import streamlit.components.v1 as components
+
+    components.html("""
     <script>
-    function filterPalette(val) {
-      // highlight matching sections – simple placeholder for future enhancement
-    }
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            var inputs = document.querySelectorAll('input[data-testid="stTextInput"]');
+            if (inputs.length > 0) {
+                // Find the smart search input specifically
+                for (var inp of inputs) {
+                    if (inp.placeholder && inp.placeholder.includes('Ctrl+K')) {
+                        inp.focus(); inp.select();
+                        break;
+                    }
+                }
+            }
+        }
+    });
     </script>
-    """, unsafe_allow_html=True)
+    """, height=0)
+
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        query = st.text_input("🔍", placeholder="Tìm kiếm nhanh (Ctrl+K)...", key="smart_search",
+                              label_visibility="collapsed")
+    with col2:
+        st.button("⚡", help="Phím tắt Ctrl+K", disabled=True, key="smart_search_btn")
+
+    if query:
+        query_lower = query.lower().strip()
+        found = False
+        # Search through column names if data is loaded
+        if st.session_state.df is not None:
+            matching_cols = [c for c in st.session_state.df.columns if query_lower in c.lower()]
+            if matching_cols:
+                st.info(f"📊 **Cột phù hợp:** {', '.join(matching_cols[:10])}")
+                found = True
+        # Search through tab names
+        try:
+            from config import MAIN_TABS
+            matching_tabs = [t for t in MAIN_TABS if query_lower in t.lower()]
+            if matching_tabs:
+                st.info(f"📑 **Tab phù hợp:** {', '.join(matching_tabs)}")
+                found = True
+        except Exception:
+            pass
+        # Search through all session state keys
+        for key in st.session_state.keys():
+            if query_lower in key.lower():
+                st.info(f"⚙️ **Session key:** `{key}`")
+                found = True
+                break
+        if not found:
+            st.info(f"ℹ️ Không tìm thấy kết quả cho '{query}'. Thử tìm cột, tab, hoặc tính năng.")
 
     # ═══════════════════════════════════
     # MAIN CONTENT
