@@ -65,6 +65,32 @@ def render_bento_dashboard(df, num, cat):
             st.plotly_chart(fig, use_container_width=True)
 
 
+def render_interactive_table(df):
+    """Render an interactive data table with grouping and column selection (Airtable-style)."""
+    st.markdown("#### 📋 Dữ liệu chi tiết")
+
+    # Chọn cột để nhóm
+    group_col = st.selectbox("Nhóm theo:", ["Không"] + df.columns.tolist(), key="group_by")
+    if group_col != "Không":
+        grouped = df.groupby(group_col).agg(['mean', 'count', 'sum']).reset_index()
+        st.dataframe(grouped, use_container_width=True)
+    else:
+        # Cho phép lọc cột
+        cols = st.multiselect("Hiển thị cột:", df.columns.tolist(),
+                              default=df.columns.tolist()[:5])
+        if cols:
+            # Smart column config
+            col_config = {}
+            for c in cols:
+                if pd.api.types.is_numeric_dtype(df[c].dtype):
+                    col_config[c] = st.column_config.NumberColumn(c)
+                elif "date" in c.lower() or "time" in c.lower():
+                    col_config[c] = st.column_config.DatetimeColumn(c)
+                else:
+                    col_config[c] = st.column_config.TextColumn(c)
+            st.dataframe(df[cols], use_container_width=True, column_config=col_config)
+
+
 def render_overview_tab(df, num, cat):
     """Render the Overview tab with Bento Grid layout."""
     is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
@@ -78,6 +104,10 @@ def render_overview_tab(df, num, cat):
     # ── Data Quality ──
     st.markdown("### ⚠️ Data Quality")
     render_data_quality_report(df)
+    st.divider()
+
+    # ── Interactive Table ──
+    render_interactive_table(df)
     st.divider()
 
     # ── Charts ──

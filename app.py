@@ -146,27 +146,7 @@ def main() -> None:
     # ═══════════════════════════════════
     # SMART SEARCH / COMMAND PALETTE
     # ═══════════════════════════════════
-    import streamlit.components.v1 as components
-
-    components.html("""
-    <script>
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            var inputs = document.querySelectorAll('input[data-testid="stTextInput"]');
-            if (inputs.length > 0) {
-                // Find the smart search input specifically
-                for (var inp of inputs) {
-                    if (inp.placeholder && inp.placeholder.includes('Ctrl+K')) {
-                        inp.focus(); inp.select();
-                        break;
-                    }
-                }
-            }
-        }
-    });
-    </script>
-    """, height=0)
+    # Ctrl+K keyboard shortcut handled by _KEYBOARD_JS above
 
     col1, col2 = st.columns([4, 1])
     with col1:
