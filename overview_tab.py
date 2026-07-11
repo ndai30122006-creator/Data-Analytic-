@@ -26,6 +26,45 @@ except ImportError:
         return f"<span style='font-weight:700'>{text}</span>"
 
 
+def render_bento_dashboard(df, num, cat):
+    """Render a clean Bento Grid layout for the overview dashboard."""
+    # ── Hàng 1: 1 cột lớn + 2 cột nhỏ ──
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col1:
+        st.markdown(metric_card("📊 Tổng quan dữ liệu", f"{len(df):,} dòng · {df.shape[1]} cột",
+                                 icon="📊"), unsafe_allow_html=True)
+    with col2:
+        if num:
+            st.markdown(metric_card("📈 Điểm TB", f"{df[num[0]].mean():.2f}",
+                                     f"Min: {df[num[0]].min():.1f}", "📈"), unsafe_allow_html=True)
+        else:
+            st.markdown(metric_card("📈 Điểm TB", "N/A", icon="📈"), unsafe_allow_html=True)
+    with col3:
+        if num:
+            pass_rate = (df[num[0]] >= 5.0).mean() * 100
+            st.markdown(metric_card("✅ Tỷ lệ đạt", f"{pass_rate:.1f}%",
+                                     f"≥ 5.0", "✅"), unsafe_allow_html=True)
+        else:
+            st.markdown(metric_card("✅ Tỷ lệ đạt", "N/A", icon="✅"), unsafe_allow_html=True)
+
+    # ── Hàng 2: 1 cột trái (vừa) + 1 cột phải (lớn) ──
+    col_left, col_right = st.columns([1, 2])
+    with col_left:
+        st.markdown("#### 🔥 Top trends")
+        if num:
+            for c in num[:2]:
+                st.markdown(f"**{c}**")
+                st.plotly_chart(sparkline(df[c].dropna().head(200)), use_container_width=True)
+    with col_right:
+        st.markdown("#### 📈 Phân phối điểm")
+        if num:
+            fig = px.histogram(df, x=num[0], nbins=30, marginal="box",
+                             title=f"{num[0]}", color_discrete_sequence=["#6366F1"])
+            fig.update_traces(marker_line_width=0, opacity=0.8)
+            apply_theme(fig)
+            st.plotly_chart(fig, use_container_width=True)
+
+
 def render_overview_tab(df, num, cat):
     """Render the Overview tab with Bento Grid layout."""
     is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
@@ -33,59 +72,26 @@ def render_overview_tab(df, num, cat):
         st.error(f"❌ {msg}")
         return
 
-    pct = round((1 - df.isnull().sum().sum() / (len(df) * df.shape[1])) * 100, 1)
-    missing = df.isnull().sum().sum()
+    # Bento Dashboard
+    render_bento_dashboard(df, num, cat)
 
-    # ═══════════════════════════════════════════════════════════
-    # BENTO GRID LAYOUT
-    # ┌─────────────┬─────────────┬─────────────┐
-    # │  📊 Tổng    │  📈 Điểm TB  │  🎯 Tỷ lệ   │
-    # │  quan (Lớn) │  87.4 (Nhỏ) │  đạt (Nhỏ)  │
-    # ├─────────────┼─────────────┴─────────────┤
-    # │  🔥 Trends  │  📉 Phân phối điểm        │
-    # │  (Vừa)      │  (Biểu đồ lớn)            │
-    # ├─────────────┼────────────────────────────┤
-    # │  ⚠️ Quality │  📋 Data Preview          │
-    # └─────────────┴────────────────────────────┘
-    # ═══════════════════════════════════════════════════════════
+    # ── Data Quality ──
+    st.markdown("### ⚠️ Data Quality")
+    render_data_quality_report(df)
+    st.divider()
 
-    # ── Row 1: KPI Cards (3 across) ──
-    r1_cols = st.columns([2, 1.2, 1.2])
-    with r1_cols[0]:
-        st.markdown(metric_card("📊 Tổng quan", f"{len(df):,} rows",
-                                 f"{df.shape[1]} columns", "📊"), unsafe_allow_html=True)
-    with r1_cols[1]:
-        delta_quality = f"{'↑' if pct >= 80 else '↓'} {pct:.1f}%"
-        st.markdown(metric_card("✅ Chất lượng", f"{pct}%", delta_quality, "✅"), unsafe_allow_html=True)
-    with r1_cols[2]:
-        delta_missing = f"{'↓' if missing == 0 else '↑'} {missing:,}"
-        st.markdown(metric_card("❌ Thiếu", f"{missing:,}", delta_missing, "❌"), unsafe_allow_html=True)
-
-    # ── Row 2: Trends (left) + Distribution chart (right) ──
-    r2_cols = st.columns([1, 1.8])
-    with r2_cols[0]:
-        st.markdown("### 🔥 Data Trends")
-        if num:
-            for i, c in enumerate(num[:3]):
-                st.markdown(f"**{c}**")
-                st.plotly_chart(sparkline(df[c].dropna().head(200)), use_container_width=True)
-    with r2_cols[1]:
-        # Distribution chart (larger)
-        if num:
-            st.markdown("### 📉 Phân phối điểm")
-            fig = px.histogram(df, x=num[0], nbins=30, marginal="box",
-                             title=f"{num[0]}", color_discrete_sequence=["#6366F1"])
-            fig.update_traces(marker_line_width=0, opacity=0.8)
+    # ── Charts ──
+    chart_left, chart_right = st.columns([1, 1])
+    with chart_left:
+        if cat:
+            st.markdown("### 🏷️ Top Categories")
+            vc = df[cat[0]].value_counts().head(10)
+            fig = px.bar(y=vc.index, x=vc.values, orientation='h', title=f"Top {cat[0]}",
+                        color=vc.values, color_continuous_scale="Viridis")
+            fig.update_traces(marker_line_width=0)
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
-
-    # ── Row 3: Quality Report (left) + Data Preview (right) ──
-    r3_cols = st.columns([1, 1.8])
-    with r3_cols[0]:
-        st.markdown("### ⚠️ Data Quality")
-        render_data_quality_report(df)
-
-    with r3_cols[1]:
+    with chart_right:
         st.markdown("### 📋 Data Preview")
         col_config = {}
         for c in df.columns:
@@ -95,49 +101,33 @@ def render_overview_tab(df, num, cat):
                 col_config[c] = st.column_config.DatetimeColumn(c)
             else:
                 col_config[c] = st.column_config.TextColumn(c)
-        st.dataframe(
-            df.head(MAX_DISPLAY_ROWS),
-            use_container_width=True,
-            column_config=col_config,
-            height=280
-        )
+        st.dataframe(df.head(MAX_DISPLAY_ROWS), use_container_width=True,
+                     column_config=col_config, height=280)
 
-    # ── Row 4: Categorical chart + Export ──
-    r4_cols = st.columns([1, 1])
-    with r4_cols[0]:
-        if cat:
-            st.markdown("### 🏷️ Top Categories")
-            vc = df[cat[0]].value_counts().head(10)
-            fig = px.bar(y=vc.index, x=vc.values, orientation='h', title=f"Top {cat[0]}",
-                        color=vc.values, color_continuous_scale="Viridis")
-            fig.update_traces(marker_line_width=0)
-            apply_theme(fig)
-            st.plotly_chart(fig, use_container_width=True)
+    # ── Export ──
+    st.markdown("### 📤 Export")
+    fmt = st.radio("Format:", ["CSV", "Excel"], horizontal=True)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if fmt == "CSV":
+            st.download_button("📥 Download CSV", convert_df_to_csv(df),
+                             f"data_{datetime.now():%Y%m%d}.csv", "text/csv",
+                             use_container_width=True)
+        else:
+            out = BytesIO()
+            with pd.ExcelWriter(out, engine="openpyxl") as w:
+                df.to_excel(w, index=False, sheet_name="Data")
+            st.download_button("📥 Download Excel", out.getvalue(),
+                             f"data_{datetime.now():%Y%m%d}.xlsx",
+                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             use_container_width=True)
+    with col_b:
+        if st.button("🔄 Reset Session", use_container_width=True):
+            for k in list(st.session_state.keys()):
+                del st.session_state[k]
+            st.rerun()
 
-    with r4_cols[1]:
-        st.markdown("### 📤 Export")
-        fmt = st.radio("Format:", ["CSV", "Excel"], horizontal=True)
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if fmt == "CSV":
-                st.download_button("📥 Download CSV", convert_df_to_csv(df),
-                                 f"data_{datetime.now():%Y%m%d}.csv", "text/csv",
-                                 use_container_width=True)
-            else:
-                out = BytesIO()
-                with pd.ExcelWriter(out, engine="openpyxl") as w:
-                    df.to_excel(w, index=False, sheet_name="Data")
-                st.download_button("📥 Download Excel", out.getvalue(),
-                                 f"data_{datetime.now():%Y%m%d}.xlsx",
-                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                 use_container_width=True)
-        with col_b:
-            if st.button("🔄 Reset Session", use_container_width=True):
-                for k in list(st.session_state.keys()):
-                    del st.session_state[k]
-                st.rerun()
-
-    # ── Data Dictionary & Column Profiler (expandable) ──
+    # ── Data Dictionary & Column Profiler ──
     with st.expander("📖 Data Dictionary & Column Profiler", expanded=False):
         rt = st.tabs(["📖 Dictionary", "🔍 Profiler"])
         with rt[0]: render_data_dictionary(df)
