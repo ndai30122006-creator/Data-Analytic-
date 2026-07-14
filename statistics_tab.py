@@ -23,7 +23,7 @@ except ImportError:
     def gradient_text(text, c1="#1877F2", c2="#E4405F"):
         return f"<span style='font-weight:700'>{text}</span>"
 
-# ── Delegate to shared modules (DRY) ────────────────────────────────
+# ── Delegate to shared modules (DRY) with unique key_prefix ──
 try:
     from advanced_analytics.bootstrap import render_bootstrap_tab as _render_bootstrap
 except ImportError:
@@ -71,32 +71,32 @@ def render_statistics_tab(df, num, cat):
 
     with stats_tabs[0]: _render_hypothesis_testing(df, num, cat)
 
-    # ── Delegate to shared modules (DRY) ──
+    # ── Delegate to shared modules (DRY) — pass key_prefix="st" to avoid duplicates ──
     with stats_tabs[1]:
         if _render_bootstrap:
-            _render_bootstrap(df, num)
+            _render_bootstrap(df, num, key_prefix="st")
         else:
             st.warning("⚠️ Bootstrap module not loaded")
     with stats_tabs[2]:
         if _render_ab_testing:
-            _render_ab_testing(df, num, cat)
+            _render_ab_testing(df, num, cat, key_prefix="st")
         else:
             st.warning("⚠️ A/B Testing module not loaded")
     with stats_tabs[3]: _render_regression(df, num)
     with stats_tabs[4]:
         if _render_logistic:
-            _render_logistic(df, num, cat)
+            _render_logistic(df, num, cat, key_prefix="st")
         else:
             st.warning("⚠️ Logistic Regression module not loaded")
     with stats_tabs[5]:
         if _render_naive_bayes:
-            _render_naive_bayes(df, num, cat)
+            _render_naive_bayes(df, num, cat, key_prefix="st")
         else:
             st.markdown("### 🧮 Naive Bayes (Book Ch.5)")
             st.info("Naive Bayes is available in the **Deep Analysis** tab with full features.")
     with stats_tabs[6]:
         if _render_diagnostics:
-            _render_diagnostics(df, num)
+            _render_diagnostics(df, num, key_prefix="st")
         else:
             st.markdown("### 🔧 Diagnostics (Book Ch.4)")
             st.info("Regression Diagnostics (VIF, Heteroskedasticity, Durbin-Watson) are available in the **Deep Analysis** tab.")

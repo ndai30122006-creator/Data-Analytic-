@@ -1,12 +1,9 @@
-"""Shared utilities for Advanced Analytics modules"""
-import warnings
+"""Base utilities shared across all advanced analytics modules."""
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
-
-warnings.filterwarnings("ignore")
+import plotly.express as px
 
 # ── Chart Theme ──
 CHART_THEME = dict(
@@ -40,3 +37,8 @@ def validate_df(df, num, cat=None, min_rows=5, min_numeric=1):
         st.warning(f"⚠️ Cần ít nhất {min_numeric} cột numeric (hiện có {len(num)})")
         return False
     return True
+
+def make_key(base: str, prefix: str = "") -> str:
+    """Create a unique Streamlit widget key to avoid duplicates when
+    the same module is used in multiple tabs."""
+    return f"{prefix}_{base}" if prefix else base

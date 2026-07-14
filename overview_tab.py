@@ -54,7 +54,7 @@ def render_bento_dashboard(df, num, cat):
         if num:
             for c in num[:2]:
                 st.markdown(f"**{c}**")
-                st.plotly_chart(sparkline(df[c].dropna().head(200)), use_container_width=True)
+                st.plotly_chart(sparkline(df[c].dropna().head(200)), width='stretch')
     with col_right:
         st.markdown("#### 📈 Phân phối điểm")
         if num:
@@ -62,7 +62,7 @@ def render_bento_dashboard(df, num, cat):
                              title=f"{num[0]}", color_discrete_sequence=["#6366F1"])
             fig.update_traces(marker_line_width=0, opacity=0.8)
             apply_theme(fig)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 def render_interactive_table(df):
@@ -73,7 +73,7 @@ def render_interactive_table(df):
     group_col = st.selectbox("Nhóm theo:", ["Không"] + df.columns.tolist(), key="group_by")
     if group_col != "Không":
         grouped = df.groupby(group_col).agg(['mean', 'count', 'sum']).reset_index()
-        st.dataframe(grouped, use_container_width=True)
+        st.dataframe(grouped, width='stretch')
     else:
         # Cho phép lọc cột
         cols = st.multiselect("Hiển thị cột:", df.columns.tolist(),
@@ -88,7 +88,7 @@ def render_interactive_table(df):
                     col_config[c] = st.column_config.DatetimeColumn(c)
                 else:
                     col_config[c] = st.column_config.TextColumn(c)
-            st.dataframe(df[cols], use_container_width=True, column_config=col_config)
+            st.dataframe(df[cols], width='stretch', column_config=col_config)
 
 
 def render_overview_tab(df, num, cat):
@@ -120,7 +120,7 @@ def render_overview_tab(df, num, cat):
                         color=vc.values, color_continuous_scale="Viridis")
             fig.update_traces(marker_line_width=0)
             apply_theme(fig)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
     with chart_right:
         st.markdown("### 📋 Data Preview")
         col_config = {}
@@ -131,7 +131,7 @@ def render_overview_tab(df, num, cat):
                 col_config[c] = st.column_config.DatetimeColumn(c)
             else:
                 col_config[c] = st.column_config.TextColumn(c)
-        st.dataframe(df.head(MAX_DISPLAY_ROWS), use_container_width=True,
+        st.dataframe(df.head(MAX_DISPLAY_ROWS), width='stretch',
                      column_config=col_config, height=280)
 
     # ── Export ──
@@ -142,7 +142,7 @@ def render_overview_tab(df, num, cat):
         if fmt == "CSV":
             st.download_button("📥 Download CSV", convert_df_to_csv(df),
                              f"data_{datetime.now():%Y%m%d}.csv", "text/csv",
-                             use_container_width=True)
+                             width='stretch')
         else:
             out = BytesIO()
             with pd.ExcelWriter(out, engine="openpyxl") as w:
@@ -150,9 +150,9 @@ def render_overview_tab(df, num, cat):
             st.download_button("📥 Download Excel", out.getvalue(),
                              f"data_{datetime.now():%Y%m%d}.xlsx",
                              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                             use_container_width=True)
+                             width='stretch')
     with col_b:
-        if st.button("🔄 Reset Session", use_container_width=True):
+        if st.button("🔄 Reset Session", width='stretch'):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.rerun()

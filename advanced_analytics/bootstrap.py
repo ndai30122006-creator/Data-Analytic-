@@ -6,7 +6,13 @@ import plotly.graph_objects as go
 from .base import apply_theme, insight_card
 
 
-def render_bootstrap_tab(df, num):
+def render_bootstrap_tab(df, num, key_prefix="da"):
+    """Bootstrap resampling for confidence intervals.
+    
+    Args:
+        key_prefix: Prefix for Streamlit widget keys to avoid duplicates
+                     when rendered in multiple tabs. Default "da" (deep analysis).
+    """
     st.markdown("### 🎲 Bootstrap & Confidence Intervals")
     st.caption("Phương pháp resampling để ước lượng độ tin cậy (Book Ch.2)")
 
@@ -14,13 +20,15 @@ def render_bootstrap_tab(df, num):
         st.warning("Cần cột numeric")
         return
 
-    col = st.selectbox("Chọn cột:", num, key="da_boot_col")
-    n_iter = st.slider("Số lần resampling:", 100, 5000, 1000, 100, key="da_boot_iter")
-    conf_level = st.slider("Confidence Level (%):", 80, 99, 95, 1, key="da_boot_conf")
-    stat_choice = st.selectbox("Thống kê:", ["Mean", "Median", "Std"], key="da_boot_stat")
+    _k = lambda s: f"{key_prefix}_{s}"  # noqa: E731
+
+    col = st.selectbox("Chọn cột:", num, key=_k("boot_col"))
+    n_iter = st.slider("Số lần resampling:", 100, 5000, 1000, 100, key=_k("boot_iter"))
+    conf_level = st.slider("Confidence Level (%):", 80, 99, 95, 1, key=_k("boot_conf"))
+    stat_choice = st.selectbox("Thống kê:", ["Mean", "Median", "Std"], key=_k("boot_stat"))
     stat_map = {"Mean": np.mean, "Median": np.median, "Std": np.std}
 
-    if st.button("🎲 Run Bootstrap", key="da_boot_run"):
+    if st.button("🎲 Run Bootstrap", key=_k("boot_run")):
         with st.spinner("Đang resampling..."):
             data = df[col].dropna().values
             n = len(data)
