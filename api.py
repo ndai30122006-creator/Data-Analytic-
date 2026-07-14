@@ -1,4 +1,4 @@
-"""FastAPI Backend for Learning Analytics SaaS — Secure auth with JWT + bcrypt"""
+"""FastAPI Backend for Learning Analytics SaaS — JWT + bcrypt + SQLAlchemy + rate limiting"""
 import logging
 import os
 from datetime import datetime, timedelta, timezone
@@ -10,19 +10,38 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 import jwt
-from passlib.context import CryptContext
+
+from src.core.database import create_user, verify_user_password, get_user, update_api_key
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Learning Analytics API", version="1.1.0")
+app = FastAPI(title="Learning Analytics API", version="1.2.0")
 
-# ── Configuration ──────────────────────────────────────────
+# ── Configuration ──
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "change-me-in-production-use-env-var")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))
-MAX_USERS = 100  # Prevent unbounded dict growth
+RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60"))
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = None  # Handled by database module
+
+# ── Simple in-memory rate limiter ──
+_request_counts: Dict[str, list] = {}
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """Simple sliding-window rate limiter."""
+    now = timezone.now()
+    if client_ip not in _request_counts:
+        _request_counts[client_ip] = []
+    _request_counts[client_ip] = [
+        t for t in _request_counts[client_ip]
+        if (now - t).total_seconds() < 60
+    ]
+    if len(_request_counts[client_ip]) >= RATE_LIMIT_PER_MINUTE:
+        return False
+    _request_counts[client_ip].append(now)
+    return True
+
 
 # ── Global exception handler ──
 @app.exception_handler(Exception)
@@ -64,17 +83,9 @@ class AnalysisRequest(BaseModel):
     analysis_type: str
     params: Dict[str, Any] = {}
 
-# ── In-memory user store (replace with DB in production) ──
-USERS: Dict[str, str] = {}  # username -> bcrypt hash
+class ApiKeyUpdateRequest(BaseModel):
+    api_key: str
 
-def _seed_demo_users():
-    """Seed demo users if the store is empty."""
-    if not USERS:
-        USERS["admin"] = pwd_context.hash("admin123")
-        USERS["user"] = pwd_context.hash("user123")
-        USERS["teacher"] = pwd_context.hash("teacher123")
-
-_seed_demo_users()
 
 # ── Token utilities ────────────────────────────────────────
 def create_access_token(username: str) -> tuple[str, datetime]:
@@ -89,7 +100,7 @@ def create_access_token(username: str) -> tuple[str, datetime]:
     return token, expires_at
 
 def verify_access_token(token: str) -> Optional[str]:
-    """Verify a JWT token and return the username (sub claim)."""
+    """Verify a JWT token and return the username."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get("sub")
@@ -121,22 +132,22 @@ async def get_current_user(authorization: str = Header(...)) -> str:
 # ── Endpoints ──────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"message": "Learning Analytics API", "version": "1.1.0"}
+    return {"message": "Learning Analytics API", "version": "1.2.0"}
 
 @app.post("/auth/login", response_model=LoginResponse)
-async def login(request: LoginRequest):
-    """Authenticate user and return JWT token."""
-    if request.username not in USERS:
+async def login(request: LoginRequest, req: Request):
+    """Authenticate user via SQLite DB and return JWT token."""
+    user = verify_user_password(request.username, request.password)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    if not pwd_context.verify(request.password, USERS[request.username]):
+    if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
         )
-
     token, _ = create_access_token(request.username)
     return LoginResponse(
         access_token=token,
@@ -146,35 +157,45 @@ async def login(request: LoginRequest):
     )
 
 @app.post("/auth/register")
-async def register(request: RegisterRequest):
-    """Register a new user."""
-    if request.username in USERS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists",
-        )
+async def register(request: RegisterRequest, req: Request):
+    """Register a new user (persisted to SQLite)."""
     if len(request.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 6 characters",
         )
-    if len(USERS) >= MAX_USERS:
+    try:
+        user = create_user(request.username, request.password)
+        return {"message": f"User {user.username} registered successfully"}
+    except Exception as exc:
+        if "UNIQUE constraint" in str(exc):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already exists",
+            )
+        logger.error("Registration failed: %s", exc, exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Maximum user limit reached",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed",
         )
-
-    USERS[request.username] = pwd_context.hash(request.password)
-    return {"message": f"User {request.username} registered successfully"}
 
 @app.get("/auth/verify")
 async def verify_auth(username: str = Depends(get_current_user)):
-    """Verify token validity."""
     return {"username": username, "valid": True}
+
+@app.post("/auth/api-key")
+async def update_ai_api_key(
+    request: ApiKeyUpdateRequest,
+    username: str = Depends(get_current_user),
+):
+    """Update user's AI API key (for OpenAI/Gemini)."""
+    ok = update_api_key(username, request.api_key)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {"message": "API key updated"}
 
 @app.get("/datasets")
 async def list_datasets(username: str = Depends(get_current_user)):
-    """List available datasets for the authenticated user."""
     return {"datasets": [], "username": username, "message": "No datasets in demo mode"}
 
 @app.post("/analysis/run")
@@ -182,7 +203,6 @@ async def run_analysis(
     request: AnalysisRequest,
     username: str = Depends(get_current_user),
 ):
-    """Queue an analysis job on a dataset."""
     return {
         "status": "success",
         "username": username,

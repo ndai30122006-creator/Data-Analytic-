@@ -153,6 +153,12 @@ N_JOBS_MAX = 4                           # Cap for n_jobs to avoid resource exha
 N_JOBS_DEFAULT = -1                      # Will be clamped to N_JOBS_MAX at runtime
 UPLOAD_TIMEOUT_SECONDS = 300             # Upload timeout
 
+# ── Sample Limits for Heavy Algorithms ────────────────────
+MAX_BOOTSTRAP_SAMPLES = 5000             # Max rows for bootstrap resampling
+MAX_ML_SAMPLES = 5000                    # Max rows for ML models (AutoML, Model Comparison)
+MAX_CLUSTERING_SAMPLES = 5000            # Max rows for clustering
+SAMPLING_STRATEGY = "random"             # "random" or "head" — how to subsample
+
 # ── Feature Flags (reduce feature overload) ─────────────────
 FEATURE_FLAGS = {
     "show_landing_page": True,           # Landing page hero
