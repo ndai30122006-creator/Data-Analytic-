@@ -1,5 +1,5 @@
 """Reusable UI Components for Data Analyst Pro v3.0 — Practical Statistics Edition"""
-from typing import List, Optional, Any, Dict, Tuple
+from typing import List, Optional, Any, Dict
 import streamlit as st
 import pandas as pd
 import numpy as np

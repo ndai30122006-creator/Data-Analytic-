@@ -1,18 +1,30 @@
-"""FastAPI Backend for Learning Analytics SaaS"""
+"""FastAPI Backend for Learning Analytics SaaS — Secure auth with JWT + bcrypt"""
 import logging
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Dict, Any
+
 from fastapi import FastAPI, HTTPException, Depends, status, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
-import hashlib
-import traceback
+
+import jwt
+from passlib.context import CryptContext
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Learning Analytics API", version="1.0.0")
+app = FastAPI(title="Learning Analytics API", version="1.1.0")
 
-# Global exception handler
+# ── Configuration ──────────────────────────────────────────
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "change-me-in-production-use-env-var")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))
+MAX_USERS = 100  # Prevent unbounded dict growth
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# ── Global exception handler ──
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(
@@ -24,7 +36,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error. Please try again later."}
     )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -42,35 +53,55 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str
     username: str
+    expires_in: int
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
 
 class AnalysisRequest(BaseModel):
     dataset_name: str
     analysis_type: str
     params: Dict[str, Any] = {}
 
-# ── Auth (simple demo) ─────────────────────────────────────
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+# ── In-memory user store (replace with DB in production) ──
+USERS: Dict[str, str] = {}  # username -> bcrypt hash
 
-USERS = {
-    "admin": hash_password("admin123"),
-    "user": hash_password("user123"),
-    "teacher": hash_password("teacher123")
-}
+def _seed_demo_users():
+    """Seed demo users if the store is empty."""
+    if not USERS:
+        USERS["admin"] = pwd_context.hash("admin123")
+        USERS["user"] = pwd_context.hash("user123")
+        USERS["teacher"] = pwd_context.hash("teacher123")
 
-def create_token(username: str) -> str:
-    """Create simple token (in production, use JWT)"""
-    return hashlib.sha256(f"{username}:token".encode()).hexdigest()
+_seed_demo_users()
 
-def verify_token(token: str) -> Optional[str]:
-    """Verify token and return username"""
-    for username in USERS:
-        if create_token(username) == token:
-            return username
-    return None
+# ── Token utilities ────────────────────────────────────────
+def create_access_token(username: str) -> tuple[str, datetime]:
+    """Create a JWT access token with expiry."""
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        "sub": username,
+        "iat": datetime.now(timezone.utc),
+        "exp": expires_at,
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return token, expires_at
+
+def verify_access_token(token: str) -> Optional[str]:
+    """Verify a JWT token and return the username (sub claim)."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except jwt.ExpiredSignatureError:
+        logger.warning("Token expired")
+        return None
+    except jwt.InvalidTokenError as exc:
+        logger.warning("Invalid token: %s", exc)
+        return None
 
 async def get_current_user(authorization: str = Header(...)) -> str:
-    """Dependency that extracts and verifies the Bearer token from the Authorization header."""
+    """Dependency: extract and verify Bearer JWT token."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,7 +109,7 @@ async def get_current_user(authorization: str = Header(...)) -> str:
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = authorization[len("Bearer "):]
-    username = verify_token(token)
+    username = verify_access_token(token)
     if not username:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -90,59 +121,60 @@ async def get_current_user(authorization: str = Header(...)) -> str:
 # ── Endpoints ──────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"message": "Learning Analytics API", "version": "1.0.0"}
+    return {"message": "Learning Analytics API", "version": "1.1.0"}
 
 @app.post("/auth/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
-    """Login endpoint"""
+    """Authenticate user and return JWT token."""
     if request.username not in USERS:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username",
+            detail="Invalid username or password",
         )
-
-    if hash_password(request.password) != USERS[request.username]:
+    if not pwd_context.verify(request.password, USERS[request.username]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid password",
+            detail="Invalid username or password",
         )
 
-    token = create_token(request.username)
+    token, _ = create_access_token(request.username)
     return LoginResponse(
         access_token=token,
         token_type="bearer",
-        username=request.username
+        username=request.username,
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
 
 @app.post("/auth/register")
-async def register(username: str, password: str):
-    """Register new user"""
-    if username in USERS:
+async def register(request: RegisterRequest):
+    """Register a new user."""
+    if request.username in USERS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already exists",
         )
-
-    if len(password) < 6:
+    if len(request.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 6 characters",
         )
+    if len(USERS) >= MAX_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Maximum user limit reached",
+        )
 
-    # In production, save to database
-    USERS[username] = hash_password(password)
-
-    return {"message": f"User {username} registered successfully"}
+    USERS[request.username] = pwd_context.hash(request.password)
+    return {"message": f"User {request.username} registered successfully"}
 
 @app.get("/auth/verify")
 async def verify_auth(username: str = Depends(get_current_user)):
-    """Verify token — also serves as a auth self-check via the dependency."""
+    """Verify token validity."""
     return {"username": username, "valid": True}
 
 @app.get("/datasets")
 async def list_datasets(username: str = Depends(get_current_user)):
-    """List available datasets"""
-    # In production, fetch from database
+    """List available datasets for the authenticated user."""
     return {"datasets": [], "username": username, "message": "No datasets in demo mode"}
 
 @app.post("/analysis/run")
@@ -150,25 +182,19 @@ async def run_analysis(
     request: AnalysisRequest,
     username: str = Depends(get_current_user),
 ):
-    """Run analysis on dataset"""
-    # In production, this would trigger actual analysis
+    """Queue an analysis job on a dataset."""
     return {
         "status": "success",
         "username": username,
         "dataset": request.dataset_name,
         "analysis_type": request.analysis_type,
-        "results": {
-            "message": "Analysis queued",
-            "params": request.params
-        }
+        "results": {"message": "Analysis queued", "params": request.params},
     }
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     return {"status": "healthy"}
 
-if __name__ == "__main__":      
-    import uvicorn   
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
-    
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

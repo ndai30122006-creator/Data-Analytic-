@@ -1,11 +1,8 @@
 """Helper functions extracted from app.py"""
-from typing import Optional, List, Any, Dict
+from typing import Optional, List
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
-from io import BytesIO
-from datetime import datetime
 
 from config import CHART_THEME
 

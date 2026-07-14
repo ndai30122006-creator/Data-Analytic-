@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 from .base import apply_theme, insight_card, validate_df
+from src.utils.performance import safe_n_jobs
 
 try:
     from sklearn.model_selection import cross_val_score, train_test_split
@@ -73,10 +74,10 @@ def render_model_comparison_tab(df, num):
                 "Lasso": Lasso(alpha=0.01),
                 "ElasticNet": ElasticNet(alpha=0.01, l1_ratio=0.5),
                 "Decision Tree": DecisionTreeRegressor(max_depth=10),
-                "Random Forest": RandomForestRegressor(n_estimators=100, n_jobs=-1),
+                "Random Forest": RandomForestRegressor(n_estimators=100, n_jobs=safe_n_jobs(-1)),
                 "Gradient Boosting": GradientBoostingRegressor(n_estimators=100),
                 "AdaBoost": AdaBoostRegressor(n_estimators=50),
-                "Extra Trees": ExtraTreesRegressor(n_estimators=100, n_jobs=-1),
+                "Extra Trees": ExtraTreesRegressor(n_estimators=100, n_jobs=safe_n_jobs(-1)),
                 "KNN": KNeighborsRegressor(n_neighbors=5),
                 "SVR": SVR(kernel='rbf')
             }
@@ -85,7 +86,7 @@ def render_model_comparison_tab(df, num):
             for name in models_to_compare:
                 model = model_map[name]
                 try:
-                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=cv_folds, scoring='r2', n_jobs=-1)
+                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=cv_folds, scoring='r2', n_jobs=safe_n_jobs(1))
                     cv_mean = cv_scores.mean()
                     cv_std = cv_scores.std()
                 except:

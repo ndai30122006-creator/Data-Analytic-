@@ -11,6 +11,22 @@ import pandas as pd
 import numpy as np
 from fpdf import FPDF
 
+# ── PDF Font Configuration ──
+# Helvetica does NOT support Vietnamese. Use DejaVu or a Unicode font.
+# fpdf2 supports Unicode via .add_font() with .ttf files.
+_HAS_UNICODE_FONT = False
+try:
+    # Try to use a DejaVuSans font that ships with fpdf2 or is commonly available
+    import os as _os
+    _FONT_DIR = _os.path.join(_os.path.dirname(__file__), ".fonts")
+    _FONT_PATH = _os.path.join(_FONT_DIR, "DejaVuSans.ttf")
+    _FONT_BOLD_PATH = _os.path.join(_FONT_DIR, "DejaVuSans-Bold.ttf")
+    _FONT_ITALIC_PATH = _os.path.join(_FONT_DIR, "DejaVuSans-Oblique.ttf")
+    if _os.path.exists(_FONT_PATH):
+        _HAS_UNICODE_FONT = True
+except Exception:
+    pass
+
 from src.utils.exceptions import handle_error, DataValidationError
 
 logger = logging.getLogger(__name__)
@@ -94,10 +110,26 @@ def get_session_info():
 # ═══════════════════════════════════════════════════════════════
 
 class PDFReport(FPDF):
-    """Custom PDF class for generating nice reports"""
+    """Custom PDF class for generating nice reports with Unicode support."""
+    
+    _STYLES = {"": "", "B": "", "I": "", "BI": ""}
+    
+    def _font_name(self, style: str = "") -> str:
+        if _HAS_UNICODE_FONT:
+            return "DejaVu"
+        return "Helvetica"
+    
+    def _setup_fonts(self):
+        """Register Unicode fonts if available, otherwise fall back to Helvetica."""
+        if _HAS_UNICODE_FONT:
+            self.add_font("DejaVu", "", _FONT_PATH, uni=True)
+            self.add_font("DejaVu", "B", _FONT_BOLD_PATH, uni=True)
+            self.add_font("DejaVu", "I", _FONT_ITALIC_PATH, uni=True)
+            self.add_font("DejaVu", "BI", _FONT_BOLD_PATH, uni=True)
     
     def header(self):
-        self.set_font("Helvetica", "B", 10)
+        self._setup_fonts()
+        self.set_font(self._font_name("B"), "B", 10)
         self.set_text_color(91, 107, 247)
         self.cell(0, 8, "Data Analyst Pro v3.0 - Report", align="C", new_x="LMARGIN", new_y="NEXT")
         self.line(10, self.get_y(), 200, self.get_y())
@@ -105,12 +137,12 @@ class PDFReport(FPDF):
     
     def footer(self):
         self.set_y(-15)
-        self.set_font("Helvetica", "I", 7)
+        self.set_font(self._font_name("I"), "I", 7)
         self.set_text_color(128, 130, 144)
         self.cell(0, 10, f"Page {self.page_no()}/{{nb}}", align="C")
     
     def section_title(self, title):
-        self.set_font("Helvetica", "B", 13)
+        self.set_font(self._font_name("B"), "B", 13)
         self.set_text_color(30, 31, 40)
         self.cell(0, 10, title, new_x="LMARGIN", new_y="NEXT")
         self.set_draw_color(91, 107, 247)
@@ -118,27 +150,27 @@ class PDFReport(FPDF):
         self.ln(4)
     
     def sub_title(self, title):
-        self.set_font("Helvetica", "B", 10)
+        self.set_font(self._font_name("B"), "B", 10)
         self.set_text_color(60, 61, 70)
         self.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
         self.ln(2)
     
     def body_text(self, text):
-        self.set_font("Helvetica", "", 9)
+        self.set_font(self._font_name(""), "", 9)
         self.set_text_color(40, 41, 50)
         self.multi_cell(0, 5, text)
         self.ln(2)
     
     def key_value(self, key, value):
-        self.set_font("Helvetica", "B", 9)
+        self.set_font(self._font_name("B"), "B", 9)
         self.set_text_color(60, 61, 70)
         self.cell(50, 6, key)
-        self.set_font("Helvetica", "", 9)
+        self.set_font(self._font_name(""), "", 9)
         self.set_text_color(40, 41, 50)
         self.cell(0, 6, str(value), new_x="LMARGIN", new_y="NEXT")
     
     def kpi_box(self, label, value):
-        """Draw a KPI card"""
+        """Draw a KPI card."""
         x = self.get_x()
         y = self.get_y()
         w = 42
@@ -147,11 +179,11 @@ class PDFReport(FPDF):
         self.set_fill_color(245, 246, 250)
         self.rect(x, y, w, h, style="DF")
         self.set_xy(x + 2, y + 2)
-        self.set_font("Helvetica", "", 6)
+        self.set_font(self._font_name(""), "", 6)
         self.set_text_color(128, 130, 144)
         self.cell(w - 4, 4, label, align="C")
         self.set_xy(x + 2, y + 8)
-        self.set_font("Helvetica", "B", 10)
+        self.set_font(self._font_name("B"), "B", 10)
         self.set_text_color(30, 31, 40)
         self.cell(w - 4, 8, str(value), align="C")
 
@@ -164,10 +196,11 @@ def generate_pdf_report(df, num_cols, cat_cols, filename="DataReport.pdf"):
     pdf.add_page()
     
     # ── Title ──
-    pdf.set_font("Helvetica", "B", 20)
+    fnt = pdf._font_name("B")
+    pdf.set_font(fnt, "B", 20)
     pdf.set_text_color(91, 107, 247)
     pdf.cell(0, 15, "Data Analysis Report", align="C", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("Helvetica", "", 9)
+    pdf.set_font(fnt, "", 9)
     pdf.set_text_color(128, 130, 144)
     pdf.cell(0, 6, f"Generated: {datetime.now():%Y-%m-%d %H:%M}", align="C", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(8)

@@ -144,6 +144,24 @@ ERROR_NO_CATEGORICAL_COLS = "Need categorical columns"
 ERROR_EMPTY_DATAFRAME = "❌ DataFrame is empty"
 ERROR_WORK_DF_NONE = "❌ Work DF is None"
 
+# ── Performance & Security Limits ──────────────────────────
+MAX_FILE_SIZE_MB = 50                    # Max file upload size (megabytes)
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+MAX_ROWS_UPLOAD = 500_000                # Max rows before warning
+MAX_COLS_UPLOAD = 200                    # Max columns before warning
+N_JOBS_MAX = 4                           # Cap for n_jobs to avoid resource exhaustion
+N_JOBS_DEFAULT = -1                      # Will be clamped to N_JOBS_MAX at runtime
+UPLOAD_TIMEOUT_SECONDS = 300             # Upload timeout
+
+# ── Feature Flags (reduce feature overload) ─────────────────
+FEATURE_FLAGS = {
+    "show_landing_page": True,           # Landing page hero
+    "show_smart_search": True,           # Ctrl+K search bar
+    "show_deep_analysis": True,          # Deep Analysis tab (11 subtabs)
+    "show_compare_tab": True,            # Compare datasets tab
+    "show_ai_insights": True,            # AI Insights tab
+}
+
 # ── Color Scheme ────────────────────────────────────────────
 COLOR_SUCCESS = "#22c55e"
 COLOR_WARNING = "#eab308"

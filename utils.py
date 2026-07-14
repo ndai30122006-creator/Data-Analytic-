@@ -6,6 +6,8 @@ import numpy as np
 import streamlit as st
 
 from src.utils.exceptions import handle_error, DataValidationError
+from src.utils.performance import check_file_size, warn_if_large_dataset
+from src.utils.config import MAX_FILE_SIZE_BYTES, MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD
 
 logger = logging.getLogger(__name__)
 TOP_N_VALUES: int = 10
@@ -29,6 +31,14 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
         if file is None:
             raise DataValidationError("File không tồn tại")
 
+        # ── File size validation ──
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)     # Rewind
+        valid_size, size_msg = check_file_size(file_size, MAX_FILE_SIZE_BYTES)
+        if not valid_size:
+            raise DataValidationError(size_msg)
+
         if file.name.endswith(".csv"):
             df = pd.read_csv(file)
         elif file.name.endswith((".xlsx", ".xls")):
@@ -41,6 +51,12 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
 
         if df.empty:
             raise DataValidationError("File rỗng, không có dữ liệu")
+
+        # ── Dataset size warning ──
+        warning = warn_if_large_dataset(len(df), len(df.columns), MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD)
+        if warning:
+            import streamlit as st
+            st.warning(warning)
 
         logger.info("Loaded file '%s': %d rows x %d cols", file.name, *df.shape)
         return df

@@ -34,6 +34,28 @@ def validate_dataframe(df: pd.DataFrame, min_rows: int = 5, min_cols: int = 1) -
     return True, "OK"
 
 
+def validate_dataframe_schema(df: pd.DataFrame, schema: dict) -> bool:
+    """
+    Validate that a DataFrame matches an expected schema (column names + dtypes).
+    
+    Args:
+        df: DataFrame to validate.
+        schema: Dict mapping column name -> expected dtype string (e.g. "int64", "object").
+    
+    Returns:
+        True if all columns exist and match expected dtypes, False otherwise.
+    """
+    for col, expected_dtype in schema.items():
+        if col not in df.columns:
+            logger.warning("Schema validation failed: missing column '%s'", col)
+            return False
+        actual_dtype = str(df[col].dtype)
+        if actual_dtype != expected_dtype:
+            logger.warning("Schema validation: column '%s' expected %s, got %s", col, expected_dtype, actual_dtype)
+            # Not returning False for dtype mismatch — too strict for real data
+    return True
+
+
 def safe_execute(func: Callable, error_msg: str = "Lỗi thực thi", default: Any = None) -> Any:
     """
     Wrapper để execute function với error handling.

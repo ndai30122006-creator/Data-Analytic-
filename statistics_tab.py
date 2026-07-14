@@ -1,4 +1,6 @@
-"""Statistics tab — Hypothesis Tests, Bootstrap, A/B Testing, Regression, Logistic, Naive Bayes, Diagnostics"""
+"""Statistics tab — Delegates to shared modules from advanced_analytics.
+This tab is a slim wrapper; all actual computation lives in advanced_analytics/.
+"""
 import logging
 import streamlit as st
 import pandas as pd
@@ -21,11 +23,33 @@ except ImportError:
     def gradient_text(text, c1="#1877F2", c2="#E4405F"):
         return f"<span style='font-weight:700'>{text}</span>"
 
+# ── Delegate to shared modules (DRY) ────────────────────────────────
+try:
+    from advanced_analytics.bootstrap import render_bootstrap_tab as _render_bootstrap
+except ImportError:
+    _render_bootstrap = None
+try:
+    from advanced_analytics.ab_testing import render_ab_testing_tab as _render_ab_testing
+except ImportError:
+    _render_ab_testing = None
+try:
+    from advanced_analytics.logistic import render_logistic_tab as _render_logistic
+except ImportError:
+    _render_logistic = None
+try:
+    from advanced_analytics.naive_bayes import render_naive_bayes_tab as _render_naive_bayes
+except ImportError:
+    _render_naive_bayes = None
+try:
+    from advanced_analytics.diagnostics import render_diagnostics_tab as _render_diagnostics
+except ImportError:
+    _render_diagnostics = None
+
 logger = logging.getLogger(__name__)
 
 
 def render_statistics_tab(df, num, cat):
-    """Render the Statistics tab with 7 sub-tabs"""
+    """Render the Statistics tab with shared sub-modules (DRY)."""
     is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
     if not is_valid:
         st.error(f"❌ {msg}")
@@ -46,14 +70,39 @@ def render_statistics_tab(df, num, cat):
     stats_tabs = st.tabs(STATISTICS_TABS)
 
     with stats_tabs[0]: _render_hypothesis_testing(df, num, cat)
-    with stats_tabs[1]: _render_bootstrap(df, num)
-    with stats_tabs[2]: _render_ab_testing(df, num, cat)
+
+    # ── Delegate to shared modules (DRY) ──
+    with stats_tabs[1]:
+        if _render_bootstrap:
+            _render_bootstrap(df, num)
+        else:
+            st.warning("⚠️ Bootstrap module not loaded")
+    with stats_tabs[2]:
+        if _render_ab_testing:
+            _render_ab_testing(df, num, cat)
+        else:
+            st.warning("⚠️ A/B Testing module not loaded")
     with stats_tabs[3]: _render_regression(df, num)
-    with stats_tabs[4]: _render_logistic(df, num)
-    with stats_tabs[5]: _render_naive_bayes_placeholder()
-    with stats_tabs[6]: _render_diagnostics_placeholder()
+    with stats_tabs[4]:
+        if _render_logistic:
+            _render_logistic(df, num, cat)
+        else:
+            st.warning("⚠️ Logistic Regression module not loaded")
+    with stats_tabs[5]:
+        if _render_naive_bayes:
+            _render_naive_bayes(df, num, cat)
+        else:
+            st.markdown("### 🧮 Naive Bayes (Book Ch.5)")
+            st.info("Naive Bayes is available in the **Deep Analysis** tab with full features.")
+    with stats_tabs[6]:
+        if _render_diagnostics:
+            _render_diagnostics(df, num)
+        else:
+            st.markdown("### 🔧 Diagnostics (Book Ch.4)")
+            st.info("Regression Diagnostics (VIF, Heteroskedasticity, Durbin-Watson) are available in the **Deep Analysis** tab.")
 
 
+# ── Hypothesis Testing — only kept here (unique to this tab) ──
 def _render_hypothesis_testing(df, num, cat):
     if not num and not cat:
         st.warning("Cần dữ liệu numeric hoặc categorical")
@@ -186,7 +235,7 @@ def _render_hypothesis_testing(df, num, cat):
             col2_name = st.selectbox("Column 2:", [c for c in cat if c != col1_name], key="ht_cs2")
             if st.button("🔬 Run", key="ht_cs_run"):
                 ct = pd.crosstab(df[col1_name], df[col2_name])
-                stat, p, dof, expected = chi2_contingency(ct)
+                stat, p, dof, _expected = chi2_contingency(ct)
                 c1, c2, c3 = st.columns(3)
                 c1.metric("χ²", f"{stat:.4f}")
                 c2.metric("p-value", f"{p:.6f}")
@@ -200,110 +249,7 @@ def _render_hypothesis_testing(df, num, cat):
             st.warning("Need ≥2 categorical columns")
 
 
-def _render_bootstrap(df, num):
-    if not num:
-        st.warning("Need numeric column")
-        return
-    st.markdown("### 🎲 Bootstrap (Book Ch.2)")
-    col = st.selectbox("Column:", num, key="boot_col")
-    n_iter = st.slider("Iterations:", 100, 5000, 1000, 100, key="boot_iter")
-    conf_level = st.slider("Confidence Level (%):", 80, 99, 95, 1, key="boot_conf")
-    if st.button("🎲 Run Bootstrap", key="boot_run"):
-        data = df[col].dropna().values
-        n = len(data)
-        original = np.mean(data)
-        np.random.seed(42)
-        boot_means = [np.mean(np.random.choice(data, size=n, replace=True)) for _ in range(n_iter)]
-        alpha = (100 - conf_level) / 200
-        ci_lower = np.percentile(boot_means, alpha * 100)
-        ci_upper = np.percentile(boot_means, (1 - alpha) * 100)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Mean", f"{original:.4f}")
-        c2.metric("Std Error", f"{np.std(boot_means):.4f}")
-        c3.metric(f"{conf_level}% CI", f"[{ci_lower:.4f}, {ci_upper:.4f}]")
-        fig = go.Figure()
-        fig.add_trace(go.Histogram(x=boot_means, nbinsx=50, marker_color="#818cf8", opacity=0.7))
-        fig.add_vline(x=original, line_dash="dash", line_color="#34d399", annotation_text=f"Mean={original:.3f}")
-        fig.add_vline(x=ci_lower, line_dash="dot", line_color="#f87171", annotation_text=f"Lower={ci_lower:.3f}")
-        fig.add_vline(x=ci_upper, line_dash="dot", line_color="#f87171", annotation_text=f"Upper={ci_upper:.3f}")
-        fig.update_layout(title=f"Bootstrap Distribution (n={n_iter})", height=400)
-        apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
-
-
-def _render_ab_testing(df, num, cat):
-    st.markdown("### ⚗️ A/B Testing (Book Ch.3)")
-    tabs_ab = st.tabs(["🔬 Two-Proportion Test", "📐 Sample Size", "📊 Power Curve"])
-    with tabs_ab[0]:
-        st.markdown("#### Two-Proportion Z-Test")
-        col1, col2 = st.columns(2)
-        with col1:
-            g1_s = st.number_input("Successes A:", min_value=0, value=50, key="ab_s1")
-            g1_t = st.number_input("Total A:", min_value=1, value=200, key="ab_t1")
-        with col2:
-            g2_s = st.number_input("Successes B:", min_value=0, value=60, key="ab_s2")
-            g2_t = st.number_input("Total B:", min_value=1, value=200, key="ab_t2")
-        if st.button("🔬 Run Test", key="ab_run"):
-            from scipy.stats import norm
-            p1, p2 = g1_s/g1_t, g2_s/g2_t
-            p_pool = (g1_s+g2_s)/(g1_t+g2_t)
-            se = np.sqrt(p_pool*(1-p_pool)*(1/g1_t+1/g2_t))
-            z = (p1-p2)/se if se > 0 else 0
-            p_val = 2*(1-norm.cdf(abs(z)))
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("A Rate", f"{p1:.2%}")
-            c2.metric("B Rate", f"{p2:.2%}")
-            c3.metric("Z-stat", f"{z:.4f}")
-            c4.metric("p-value", f"{p_val:.6f}")
-            fig = go.Figure()
-            fig.add_trace(go.Bar(x=["A", "B"], y=[p1, p2], text=[f"{p1:.1%}", f"{p2:.1%}"],
-                                textposition='outside', marker_color=['#818cf8', '#34d399']))
-            fig.update_layout(title="Conversion Rates", height=350)
-            apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
-            st.info(f"**Conclusion:** {'Significant difference 🎯' if p_val < 0.05 else 'Not significant ❌'}")
-
-    with tabs_ab[1]:
-        baseline = st.slider("Baseline (%):", 1, 99, 10, 1, key="ab_base")
-        effect = st.slider("Min effect (%):", 0.5, 30.0, 5.0, 0.5, key="ab_eff")
-        if st.button("📐 Calculate Sample Size", key="ab_ss"):
-            from scipy.stats import norm
-            p1, p2 = baseline/100, (baseline+effect)/100
-            if abs(p2 - p1) < 1e-9:
-                st.error("❌ Effect size must be > 0")
-                return
-            z_a = norm.ppf(0.975)
-            z_b = norm.ppf(0.80)
-            n = ((z_a*np.sqrt(2*(p1+p2)/2*(1-(p1+p2)/2)) + z_b*np.sqrt(p1*(1-p1)+p2*(1-p2)))**2) / ((p2-p1)**2)
-            n = int(np.ceil(n))
-            st.success(f"### 📊 Need {n:,} per group (total: {n*2:,})")
-
-    with tabs_ab[2]:
-        from scipy.stats import norm
-        n_per = st.slider("Sample size:", 10, 10000, 500, 10, key="ab_power_n")
-        base_rate = st.slider("Baseline (%):", 1, 99, 10, 1, key="ab_power_base")
-        if st.button("📊 Generate Power Curve", key="ab_power_run"):
-            effects = np.linspace(0.01, 0.20, 50)
-            p1 = base_rate / 100
-            powers = []
-            for eff in effects:
-                p2 = p1 + eff
-                if p2 > 1:
-                    continue
-                try:
-                    z_b = (np.sqrt(n_per)*abs(p2-p1) - norm.ppf(0.975)*np.sqrt(2*(p1+p2)/2*(1-(p1+p2)/2))) / np.sqrt(p1*(1-p1)+p2*(1-p2))
-                    powers.append(norm.cdf(z_b))
-                except (ValueError, ZeroDivisionError, RuntimeError):
-                    logger.warning(f"Power calculation failed for effect={eff:.4f}")
-                    powers.append(0)
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=effects*100, y=powers, mode='lines', line=dict(color="#818cf8", width=2)))
-            fig.add_hline(y=0.8, line_dash="dash", line_color="#34d399", annotation_text="Power=80%")
-            fig.update_layout(title=f"Power Curve (n={n_per})", height=350, xaxis_title="Effect Size (%)", yaxis_title="Power")
-            apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
-
-
+# ── Linear Regression — kept in statistics (unique code path) ──
 def _render_regression(df, num):
     if len(num) < 2:
         st.warning("Need ≥2 numeric columns")
@@ -346,69 +292,3 @@ def _render_regression(df, num):
             st.plotly_chart(fig, width='stretch')
         else:
             st.error("Need ≥10 samples")
-
-
-def _render_logistic(df, num):
-    if len(num) < 2:
-        st.warning("Need ≥2 numeric columns")
-        return
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import confusion_matrix, roc_curve, auc
-
-    st.markdown("### 🔴 Logistic Regression (Book Ch.5)")
-    target_col = st.selectbox("Target:", num, key="log_target")
-    threshold = st.slider("Threshold:", float(df[target_col].min()), float(df[target_col].max()),
-                         float(df[target_col].median()), key="log_thresh")
-    y = (df[target_col] > threshold).astype(int)
-    features = st.multiselect("Features:", num, default=num[:min(4, len(num))], key="log_feats2")
-    if len(features) >= 1 and st.button("🔴 Train", key="log_run2"):
-        X = df[features].dropna()
-        y_aligned = y.loc[X.index]
-        if len(np.unique(y_aligned)) >= 2 and len(X) >= 10:
-            X_train, X_test, y_train, y_test = train_test_split(X, y_aligned, test_size=0.3, random_state=42, stratify=y_aligned)
-            scaler = StandardScaler()
-            X_train_s = scaler.fit_transform(X_train)
-            X_test_s = scaler.transform(X_test)
-            model = LogisticRegression(random_state=42, max_iter=500)
-            model.fit(X_train_s, y_train)
-            y_pred = model.predict(X_test_s)
-            y_prob = model.predict_proba(X_test_s)[:, 1]
-            cm = confusion_matrix(y_test, y_pred)
-            tn, fp, fn, tp = cm.ravel()
-            accuracy = (tp+tn)/(tp+tn+fp+fn)
-            precision = tp/(tp+fp) if (tp+fp) > 0 else 0
-            recall = tp/(tp+fn) if (tp+fn) > 0 else 0
-            f1 = 2*precision*recall/(precision+recall) if (precision+recall) > 0 else 0
-            fpr, tpr, _ = roc_curve(y_test, y_prob)
-            auc_score = auc(fpr, tpr)
-            c1, c2, c3, c4, c5 = st.columns(5)
-            c1.metric("Accuracy", f"{accuracy:.2%}")
-            c2.metric("Precision", f"{precision:.2%}")
-            c3.metric("Recall", f"{recall:.2%}")
-            c4.metric("F1", f"{f1:.2%}")
-            c5.metric("AUC", f"{auc_score:.3f}")
-            fig_cm = px.imshow(cm, text_auto=True, x=["Pred Neg", "Pred Pos"], y=["Actual Neg", "Actual Pos"],
-                              color_continuous_scale="Blues", aspect='auto')
-            fig_cm.update_layout(height=300, title="Confusion Matrix")
-            apply_theme(fig_cm)
-            st.plotly_chart(fig_cm, width='stretch')
-            fig_roc = go.Figure()
-            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines', name=f'ROC (AUC={auc_score:.3f})',
-                                        line=dict(color="#818cf8", width=2), fill='tozeroy'))
-            fig_roc.add_trace(go.Scatter(x=[0,1], y=[0,1], mode='lines', name='Random',
-                                        line=dict(color="#f87171", dash="dash")))
-            fig_roc.update_layout(title="ROC Curve", height=300)
-            apply_theme(fig_roc)
-            st.plotly_chart(fig_roc, width='stretch')
-
-
-def _render_naive_bayes_placeholder():
-    st.markdown("### 🧮 Naive Bayes (Book Ch.5)")
-    st.info("Naive Bayes is available in the Deep Analysis tab with full features.")
-
-
-def _render_diagnostics_placeholder():
-    st.markdown("### 🔧 Diagnostics (Book Ch.4)")
-    st.info("Regression Diagnostics (VIF, Heteroskedasticity, Durbin-Watson) are available in the Deep Analysis tab.")
