@@ -1,8 +1,10 @@
-"""AI Auto Insights Module - LLM-powered report generation"""
+"""AI Auto Insights Module - LLM-powered report generation with LangChain integration"""
 import streamlit as st
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+
+from src.core.ai_service import get_ai_service, AIInsight, AIReport
 
 def generate_data_summary(df: pd.DataFrame) -> str:
     """Generate comprehensive data summary for AI analysis"""
@@ -84,140 +86,34 @@ def generate_learning_insights(df: pd.DataFrame, score_col: str, group_col: str 
 def generate_ai_report(df: pd.DataFrame, analysis_type: str = "overview", 
                        score_col: str = None, group_col: str = None) -> Dict[str, Any]:
     """
-    Generate AI-powered insights report
-    In production, this would call an LLM API (OpenAI, Gemini, etc.)
+    Generate AI-powered insights report.
+    Uses LangChain to call LLM API (OpenAI/Gemini) if configured,
+    otherwise falls back to rule-based insights.
     """
+    # Get user's API key from session state if available
+    api_key = st.session_state.get("ai_api_key", None)
+    provider = st.session_state.get("ai_provider", "openai")
     
-    # Generate data summary
-    data_summary = generate_data_summary(df)
+    # Use the AIService
+    service = get_ai_service(api_key, provider)
+    report = service.generate_report(df, analysis_type, score_col, group_col)
     
-    # Generate specific insights based on analysis type
-    if analysis_type == "learning" and score_col:
-        specific_insights = generate_learning_insights(df, score_col, group_col)
-    else:
-        specific_insights = ""
-    
-    # Simulate AI-generated insights (in production, call LLM API)
-    ai_insights = []
-    
-    # Data quality insights
-    missing_pct = (df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100
-    if missing_pct > 10:
-        ai_insights.append({
-            "type": "warning",  
-            "icon": "⚠️",
-            "title": "Chất lượng dữ liệu",
-            "message": f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu. Nên xử lý missing values trước khi phân tích sâu."
-        })
-    elif missing_pct > 0:
-        ai_insights.append({
-            "type": "info",
-            "icon": "ℹ️",
-            "title": "Chất lượng dữ liệu",
-            "message": f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu, ở mức chấp nhận được."
-        })
-    else:
-        ai_insights.append({
-            "type": "success",
-            "icon": "✅",
-            "title": "Chất lượng dữ liệu",
-            "message": "Dữ liệu hoàn toàn không có giá trị thiếu. Rất tốt!"
-        })
-    
-    # Duplicate insights
-    dupes = df.duplicated().sum()
-    if dupes > 0:
-        ai_insights.append({
-            "type": "warning",
-            "icon": "🔁",
-            "title": "Dữ liệu trùng lặp",
-            "message": f"Phát hiện {dupes:,} dòng trùng lặp ({dupes/len(df)*100:.1f}%). Nên xóa để tránh bias."
-        })
-    
-    # Learning analytics insights
-    if analysis_type == "learning" and score_col and score_col in df.columns:
-        scores = pd.to_numeric(df[score_col], errors='coerce').dropna()
-        if len(scores) > 0:
-            pass_rate = (scores >= 5.0).mean() * 100
-            risk_rate = (scores < 4.0).mean() * 100
-            
-            if risk_rate >= 25:
-                ai_insights.append({
-                    "type": "danger",
-                    "icon": "🚨",
-                    "title": "Cảnh báo học tập",
-                    "message": f"Tỷ lệ sinh viên rủi ro ({risk_rate:.1f}%) quá cao. Cần can thiệp sớm và hỗ trợ đặc biệt."
-                })
-            elif pass_rate >= 80:
-                ai_insights.append({
-                    "type": "success",
-                    "icon": "🎯",
-                    "title": "Kết quả học tập",
-                    "message": f"Tỷ lệ đạt khá tốt ({pass_rate:.1f}%). Có thể phân tích thêm yếu tố ảnh hưởng đến kết quả cao."
-                })
-            else:
-                ai_insights.append({
-                    "type": "info",
-                    "icon": "📊",
-                    "title": "Kết quả học tập",
-                    "message": f"Tỷ lệ đạt {pass_rate:.1f}%. Nên kết hợp thêm dữ liệu chuyên cần, bài tập để phân tích sâu hơn."
-                })
-            
-            # Distribution insight
-            skewness = scores.skew()
-            if abs(skewness) > 1:
-                direction = "lệch phải" if skewness > 0 else "lệch trái"
-                ai_insights.append({
-                    "type": "info",
-                    "icon": "📈",
-                    "title": "Phân phối điểm",
-                    "message": f"Phân phối điểm {direction} (skewness={skewness:.2f}). Điểm tập trung ở {'cao' if skewness < 0 else 'thấp'}."
-                })
-    
-    # Correlation insights
-    num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    if len(num_cols) >= 2:
-        corr_matrix = df[num_cols].corr()
-        high_corr = []
-        for i in range(len(corr_matrix.columns)):
-            for j in range(i+1, len(corr_matrix.columns)):
-                corr_val = corr_matrix.iloc[i, j]
-                if abs(corr_val) > 0.7:
-                    high_corr.append({
-                        "cols": f"{corr_matrix.columns[i]} & {corr_matrix.columns[j]}",
-                        "corr": corr_val
-                    })
-        
-        if high_corr:
-            ai_insights.append({
-                "type": "info",
-                "icon": "🔗",
-                "title": "Tương quan mạnh",
-                "message": f"Phát hiện {len(high_corr)} cặp biến có tương quan cao (>0.7): " + 
-                           ", ".join([f"{h['cols']} (r={h['corr']:.2f})" for h in high_corr[:3]])
-            })
-    
-    # Generate recommendations
-    recommendations = []
-    if missing_pct > 10:
-        recommendations.append("Xử lý missing values trước khi phân tích sâu")
-    if dupes > 0:
-        recommendations.append("Loại bỏ dữ liệu trùng lặp")
-    if len(num_cols) >= 2:
-        recommendations.append("Thực hiện phân tích tương quan giữa các biến numeric")
-    if analysis_type == "learning" and score_col:
-        recommendations.append("Phân tích yếu tố ảnh hưởng đến điểm số")
-        recommendations.append("Xây dựng mô hình dự đoán kết quả học tập")
-    
-    if not recommendations:
-        recommendations.append("Tiếp tục khám phá dữ liệu với các công cụ phân tích khác")
-    
+    # Convert to dict for backward compatibility
     return {
-        "summary": data_summary,
-        "specific_insights": specific_insights,
-        "ai_insights": ai_insights,
-        "recommendations": recommendations,
-        "analysis_type": analysis_type
+        "summary": report.summary,
+        "specific_insights": report.specific_insights,
+        "ai_insights": [
+            {
+                "type": ins.type,
+                "icon": ins.icon,
+                "title": ins.title,
+                "message": ins.message,
+            }
+            for ins in report.ai_insights
+        ],
+        "recommendations": report.recommendations,
+        "analysis_type": report.analysis_type,
+        "model_used": report.model_used,
     }
 
 try:
@@ -235,6 +131,31 @@ def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List
     """Render AI Insights tab in Streamlit"""
     st.markdown("### 🤖 AI Auto Insights")
     st.caption("Phân tích tự động bằng AI, tạo báo cáo insights")
+    
+    # AI Provider configuration
+    with st.expander("⚙️ Cấu hình AI", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            provider = st.selectbox(
+                "AI Provider:",
+                ["openai", "gemini"],
+                format_func=lambda x: "OpenAI GPT" if x == "openai" else "Google Gemini",
+                key="ai_provider_config"
+            )
+            st.session_state.ai_provider = provider
+        with col2:
+            api_key = st.text_input(
+                "API Key:",
+                type="password",
+                value=st.session_state.get("ai_api_key", ""),
+                help="Nhập API key của OpenAI hoặc Google Gemini. Để trống để dùng chế độ rule-based.",
+                key="ai_api_key_input"
+            )
+            if api_key:
+                st.session_state.ai_api_key = api_key
+                st.success("✅ API Key đã được lưu trong session")
+            else:
+                st.info("ℹ️ Để trống sẽ dùng chế độ phân tích rule-based (không cần API key)")
     
     # Analysis type selector
     analysis_type = st.selectbox(
@@ -289,6 +210,13 @@ def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List
         st.markdown("---")
         st.markdown("## 📋 Báo cáo Insights")
         
+        # Show which model was used
+        model_used = report.get("model_used", "rule-based")
+        if model_used == "rule-based":
+            st.info("ℹ️ Báo cáo được tạo bằng **rule-based engine** (không dùng LLM). Cấu hình API key để có phân tích AI mạnh hơn.")
+        else:
+            st.success(f"✅ Báo cáo được tạo bằng **{model_used}**")
+        
         # Summary section
         with st.expander("📊 Tóm tắt dữ liệu", expanded=True):
             st.markdown(report['summary'])
@@ -321,6 +249,7 @@ def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List
         report_text = f"""
 # AI Insights Report
 Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
+Model: {model_used}
 
 ## Summary
 {report['summary']}
@@ -342,4 +271,4 @@ Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
             report_text,
             f"ai_insights_{pd.Timestamp.now():%Y%m%d_%H%M}.md",
             "text/markdown"
-        ) 
+        )

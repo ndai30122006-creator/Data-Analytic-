@@ -1,12 +1,12 @@
-"""Database models and session management using SQLAlchemy."""
+"""Database models and session management using SQLAlchemy + bcrypt."""
 import logging
 import os
 from datetime import datetime, timezone
 from typing import Optional
+import bcrypt
 
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker
-from passlib.context import CryptContext
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +20,6 @@ engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_threa
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 class User(Base):
     """User account model."""
@@ -29,7 +27,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
-    password_hash = Column(String(128), nullable=False)
+    password_hash = Column(String(128), nullable=False)  # bcrypt hash (60 chars)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     is_active = Column(Boolean, default=True)
     api_key_ai = Column(String(128), nullable=True)  # Optional AI API key
@@ -50,13 +48,23 @@ def get_user(username: str) -> Optional[User]:
         session.close()
 
 
+def _hash_password(password: str) -> str:
+    """Hash password using bcrypt (salt included)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def _verify_password(password: str, password_hash: str) -> bool:
+    """Verify a password against its bcrypt hash."""
+    return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+
+
 def create_user(username: str, password: str) -> User:
-    """Create a new user with hashed password."""
+    """Create a new user with bcrypt-hashed password."""
     session = SessionLocal()
     try:
         user = User(
             username=username,
-            password_hash=pwd_context.hash(password),
+            password_hash=_hash_password(password),
         )
         session.add(user)
         session.commit()
@@ -72,7 +80,7 @@ def verify_user_password(username: str, password: str) -> Optional[User]:
     user = get_user(username)
     if not user:
         return None
-    if not pwd_context.verify(password, user.password_hash):
+    if not _verify_password(password, user.password_hash):
         return None
     return user
 

@@ -1,8 +1,52 @@
-.venv/
+# ── Python ──
 __pycache__/
-*.pyc
-.pytest_cache/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.whl
+*.egg
+
+# ── Virtual Environment ──
+.venv/
+venv/
+env/
+ENV/
+
+# ── IDE / Editor ──
 .vscode/
-.streamlit/secrets.toml
-saved_session.pkl
-.fonts/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+*.log
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+
+# ── Project Specific ──
+*.db
+*.sqlite3
+logs/
+.jwt_secret
+.env
+.env.local
+.env.production
+
+# ── Coverage ──
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ── Reports ──
+*.md.html
+reports/
+
+# ── Test Artifacts ──
+test_output/
+.pytest_cache/

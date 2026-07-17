@@ -2,7 +2,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from fastapi import FastAPI, HTTPException, Depends, status, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,25 +12,66 @@ from pydantic import BaseModel
 import jwt
 
 from src.core.database import create_user, verify_user_password, get_user, update_api_key
+from src.utils.security import (
+    get_jwt_secret_key,
+    get_jwt_algorithm,
+    get_access_token_expire_minutes,
+    get_cors_origins,
+    validate_environment,
+)
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Learning Analytics API", version="1.2.0")
+app = FastAPI(title="Learning Analytics API", version="1.3.0")
 
 # ── Configuration ──
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "change-me-in-production-use-env-var")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))
+SECRET_KEY = get_jwt_secret_key()
+ALGORITHM = get_jwt_algorithm()
+ACCESS_TOKEN_EXPIRE_MINUTES = get_access_token_expire_minutes()
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60"))
 
-pwd_context = None  # Handled by database module
+# ── Redis-based rate limiter (falls back to in-memory) ──
+try:
+    import redis.asyncio as aioredis
+    REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    _redis = aioredis.from_url(REDIS_URL, decode_responses=True)
+    _redis_available = True
+    logger.info("Redis rate limiter configured: %s", REDIS_URL)
+except ImportError:
+    _redis = None
+    _redis_available = False
+    logger.warning("redis not installed; falling back to in-memory rate limiter. pip install redis")
+except Exception as exc:
+    _redis = None
+    _redis_available = False
+    logger.warning("Redis connection failed: %s; falling back to in-memory rate limiter", exc)
 
-# ── Simple in-memory rate limiter ──
+# ── In-memory fallback rate limiter ──
 _request_counts: Dict[str, list] = {}
 
-def _check_rate_limit(client_ip: str) -> bool:
-    """Simple sliding-window rate limiter."""
-    now = timezone.now()
+async def _check_rate_limit_redis(client_ip: str) -> bool:
+    """Sliding-window rate limiter using Redis."""
+    if not _redis_available:
+        return _check_rate_limit_memory(client_ip)
+    try:
+        key = f"ratelimit:{client_ip}"
+        now = datetime.now(timezone.utc).timestamp()
+        window = 60  # seconds
+        
+        # Remove old entries and add current
+        await _redis.zremrangebyscore(key, 0, now - window)
+        await _redis.zadd(key, {str(now): now})
+        await _redis.expire(key, window)
+        
+        count = await _redis.zcard(key)
+        return count <= RATE_LIMIT_PER_MINUTE
+    except Exception as exc:
+        logger.error("Redis rate limit check failed: %s", exc)
+        return _check_rate_limit_memory(client_ip)
+
+def _check_rate_limit_memory(client_ip: str) -> bool:
+    """Simple sliding-window rate limiter (in-memory fallback)."""
+    now = datetime.now(timezone.utc)
     if client_ip not in _request_counts:
         _request_counts[client_ip] = []
     _request_counts[client_ip] = [
@@ -42,6 +83,37 @@ def _check_rate_limit(client_ip: str) -> bool:
     _request_counts[client_ip].append(now)
     return True
 
+async def check_rate_limit(request: Request) -> None:
+    """Dependency: check rate limit for the current request."""
+    client_ip = request.client.host if request.client else "unknown"
+    allowed = await _check_rate_limit_redis(client_ip)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Please try again later.",
+        )
+
+# ── CORS Configuration ──
+cors_origins = get_cors_origins()
+allow_all_cors = os.environ.get("CORS_ALLOW_ALL", "false").lower() == "true"
+
+if allow_all_cors:
+    logger.warning("CORS_ALLOW_ALL is enabled. This is insecure for production.")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
 # ── Global exception handler ──
 @app.exception_handler(Exception)
@@ -54,14 +126,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error. Please try again later."}
     )
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ── Models ─────────────────────────────────────────────────
 class LoginRequest(BaseModel):
@@ -132,7 +196,7 @@ async def get_current_user(authorization: str = Header(...)) -> str:
 # ── Endpoints ──────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"message": "Learning Analytics API", "version": "1.2.0"}
+    return {"message": "Learning Analytics API", "version": "1.3.0"}
 
 @app.post("/auth/login", response_model=LoginResponse)
 async def login(request: LoginRequest, req: Request):
@@ -164,9 +228,19 @@ async def register(request: RegisterRequest, req: Request):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 6 characters",
         )
+    if not request.username or not request.username.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username cannot be empty",
+        )
     try:
         user = create_user(request.username, request.password)
         return {"message": f"User {user.username} registered successfully"}
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
     except Exception as exc:
         if "UNIQUE constraint" in str(exc):
             raise HTTPException(
@@ -189,6 +263,11 @@ async def update_ai_api_key(
     username: str = Depends(get_current_user),
 ):
     """Update user's AI API key (for OpenAI/Gemini)."""
+    if not request.api_key or not request.api_key.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="API key cannot be empty",
+        )
     ok = update_api_key(username, request.api_key)
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -203,6 +282,16 @@ async def run_analysis(
     request: AnalysisRequest,
     username: str = Depends(get_current_user),
 ):
+    if not request.dataset_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="dataset_name is required",
+        )
+    if not request.analysis_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="analysis_type is required",
+        )
     return {
         "status": "success",
         "username": username,
@@ -214,6 +303,17 @@ async def run_analysis(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/env/validate")
+async def validate_env():
+    """Validate environment configuration and return warnings."""
+    warnings = validate_environment()
+    return {
+        "status": "warning" if warnings else "ok",
+        "warnings": warnings,
+        "cors_origins": cors_origins if not allow_all_cors else ["*"],
+        "rate_limiter": "redis" if _redis_available else "in-memory",
+    }
 
 if __name__ == "__main__":
     import uvicorn
