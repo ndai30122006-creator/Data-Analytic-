@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 from .base import apply_theme, insight_card
 
 
-def render_ab_testing_tab(df, num, cat):
+def render_ab_testing_tab(df, num, cat, key_prefix="da"):
     try:
         from scipy import stats as scipy_stats
     except ImportError:
