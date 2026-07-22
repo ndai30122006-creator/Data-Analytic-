@@ -123,8 +123,9 @@ def run_bootstrap(data: np.ndarray, n_iter: int = 1000, conf_level: int = 95,
     """
     n = len(data)
     original = stat_func(data)
-    np.random.seed(42)
-    boot_stats = [stat_func(np.random.choice(data, size=n, replace=True)) for _ in range(n_iter)]
+    # Use a seeded RandomState for reproducibility without affecting global state
+    rng = np.random.RandomState(42)
+    boot_stats = [stat_func(rng.choice(data, size=n, replace=True)) for _ in range(n_iter)]
     boot_stats = np.array(boot_stats)
     alpha = (100 - conf_level) / 200
     ci_lower = np.percentile(boot_stats, alpha * 100)

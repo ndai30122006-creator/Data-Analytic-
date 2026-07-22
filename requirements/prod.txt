@@ -1,0 +1,11 @@
+# ── Production Dependencies (pinned versions) ──
+# Install with: pip install -r requirements/prod.txt
+# For Docker, use requirements/base.txt
+
+-r base.txt
+
+# Production-specific: database driver for PostgreSQL
+# psycopg2-binary>=2.9.0
+
+# Production-specific: async worker for uvicorn
+uvicorn[standard]>=0.24.0

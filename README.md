@@ -100,10 +100,20 @@ Mở trình duyệt tại `http://localhost:8501`
 > ⚠️ **Cảnh báo:** Các tài khoản dưới đây chỉ dành cho **mục đích demo / phát triển**.  
 > **Không sử dụng trong môi trường production.** Thay đổi mật khẩu hoặc tích hợp xác thực thực tế trước khi triển khai công khai.
 
-Sử dụng một trong các tài khoản demo:
-- **admin** / `admin123` *(demo — hãy đổi mật khẩu nếu deploy thật)*
-- **user** / `user123` *(demo)*
-- **teacher** / `teacher123` *(demo)*
+Credentials được cấu hình qua biến môi trường (xem `.env.example`):
+
+```bash
+# Mặc định (DEMO_MODE=true) — chỉ dùng cho development
+DEMO_ADMIN_USERNAME=admin
+DEMO_ADMIN_PASSWORD=admin123
+DEMO_USER_USERNAME=user
+DEMO_USER_PASSWORD=user123
+DEMO_TEACHER_USERNAME=teacher
+DEMO_TEACHER_PASSWORD=teacher123
+```
+
+> **Cho production:** Set `DEMO_MODE=false` và tạo user qua API `/auth/register`.  
+> **Luôn** thay đổi mật khẩu và JWT_SECRET_KEY trước khi deploy thật.
 
 ## 🐳 Deploy với Docker (Production)
 

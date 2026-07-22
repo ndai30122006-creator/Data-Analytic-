@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for layer caching
-COPY requirements.txt .
+COPY requirements/base.txt requirements/base.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements/base.txt
 
 # ── Stage 1: Backend API ──────────────────────────────────────────────────────
 FROM base as backend
