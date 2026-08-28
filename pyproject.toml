@@ -58,7 +58,7 @@ addopts = "-v --tb=short"
 asyncio_mode = "auto"
 
 [tool.coverage.run]
-source = ["src", "advanced_analytics"]
+source = ["src"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
