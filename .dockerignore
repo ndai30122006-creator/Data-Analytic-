@@ -12,7 +12,7 @@ build/
 *.whl
 *.egg
 .venv/
-.venv-1/
+.venv-*/
 venv/
 env/
 ENV/

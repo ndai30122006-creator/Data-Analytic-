@@ -1,6 +1,4 @@
-"""Statistics tab — Delegates to shared modules from advanced_analytics.
-This tab is a slim wrapper; all actual computation lives in advanced_analytics/.
-"""
+"""Statistics tab — core statistical workflows that are not duplicated elsewhere."""
 import logging
 import streamlit as st
 import pandas as pd
@@ -11,7 +9,7 @@ import plotly.graph_objects as go
 from src.utils.config import MIN_ROWS_VALIDATION
 from src.utils.validators import validate_dataframe
 from src.utils.helpers import apply_theme
-from src.utils.exceptions import handle_error, DataValidationError
+from src.utils.exceptions import handle_error
 
 try:
     from src.ui.theme import metric_card, status_badge, gradient_text
@@ -23,33 +21,11 @@ except ImportError:
     def gradient_text(text, c1="#1877F2", c2="#E4405F"):
         return f"<span style='font-weight:700'>{text}</span>"
 
-# ── Delegate to shared modules (DRY) with unique key_prefix ──
-try:
-    from src.analytics.bootstrap import render_bootstrap_tab as _render_bootstrap
-except ImportError:
-    _render_bootstrap = None
-try:
-    from src.analytics.ab_testing import render_ab_testing_tab as _render_ab_testing
-except ImportError:
-    _render_ab_testing = None
-try:
-    from src.analytics.logistic import render_logistic_tab as _render_logistic
-except ImportError:
-    _render_logistic = None
-try:
-    from src.analytics.naive_bayes import render_naive_bayes_tab as _render_naive_bayes
-except ImportError:
-    _render_naive_bayes = None
-try:
-    from src.analytics.diagnostics import render_diagnostics_tab as _render_diagnostics
-except ImportError:
-    _render_diagnostics = None
-
 logger = logging.getLogger(__name__)
 
 
 def render_statistics_tab(df, num, cat):
-    """Render the Statistics tab with shared sub-modules (DRY)."""
+    """Render the Statistics tab with non-duplicated core workflows."""
     is_valid, msg = validate_dataframe(df, min_rows=MIN_ROWS_VALIDATION)
     if not is_valid:
         st.error(f"❌ {msg}")
@@ -61,7 +37,7 @@ def render_statistics_tab(df, num, cat):
             <h1 style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #5b6bf7, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
             📈 Statistics for Data Scientists
             </h1>
-            <p style="color: var(--fg-muted);">Hypothesis Testing · Bootstrap · A/B Testing · Logistic · Naive Bayes · Diagnostics</p>
+            <p style="color: var(--fg-muted);">Hypothesis Testing · Linear Regression</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -70,36 +46,7 @@ def render_statistics_tab(df, num, cat):
     stats_tabs = st.tabs(STATISTICS_TABS)
 
     with stats_tabs[0]: _render_hypothesis_testing(df, num, cat)
-
-    # ── Delegate to shared modules (DRY) — pass key_prefix="st" to avoid duplicates ──
-    with stats_tabs[1]:
-        if _render_bootstrap:
-            _render_bootstrap(df, num, key_prefix="st")
-        else:
-            st.warning("⚠️ Bootstrap module not loaded")
-    with stats_tabs[2]:
-        if _render_ab_testing:
-            _render_ab_testing(df, num, cat, key_prefix="st")
-        else:
-            st.warning("⚠️ A/B Testing module not loaded")
-    with stats_tabs[3]: _render_regression(df, num)
-    with stats_tabs[4]:
-        if _render_logistic:
-            _render_logistic(df, num, cat)
-        else:
-            st.warning("⚠️ Logistic Regression module not loaded")
-    with stats_tabs[5]:
-        if _render_naive_bayes:
-            _render_naive_bayes(df, num, cat, key_prefix="st")
-        else:
-            st.markdown("### 🧮 Naive Bayes (Book Ch.5)")
-            st.info("Naive Bayes is available in the **Deep Analysis** tab with full features.")
-    with stats_tabs[6]:
-        if _render_diagnostics:
-            _render_diagnostics(df, num, key_prefix="st")
-        else:
-            st.markdown("### 🔧 Diagnostics (Book Ch.4)")
-            st.info("Regression Diagnostics (VIF, Heteroskedasticity, Durbin-Watson) are available in the **Deep Analysis** tab.")
+    with stats_tabs[1]: _render_regression(df, num)
 
 
 # ── Hypothesis Testing — only kept here (unique to this tab) ──

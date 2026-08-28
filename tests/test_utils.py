@@ -101,7 +101,7 @@ class TestConfigConstants:
         assert MIN_ROWS_VALIDATION >= 1
         assert MAX_FILE_SIZE_MB >= 1
         assert len(MAIN_TABS) >= 5
-        assert len(STATISTICS_TABS) >= 4
+        assert len(STATISTICS_TABS) >= 2
         assert N_JOBS_MAX >= 1
         assert "show_landing_page" in FEATURE_FLAGS
 

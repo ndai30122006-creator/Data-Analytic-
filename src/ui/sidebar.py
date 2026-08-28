@@ -123,20 +123,13 @@ def render_sidebar():
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Quick action buttons
-                act_col1, act_col2 = st.columns(2)
-                with act_col1:
-                    if st.button("💾 Save", use_container_width=True, key="sidebar_save"):
-                        ok, msg = save_session_state()
-                        st.success(msg) if ok else st.error(msg)
-                with act_col2:
-                    if st.button("🔄 Reset", use_container_width=True, key="sidebar_reset"):
-                        st.session_state.df = None
-                        st.session_state.filename = ""
-                        st.session_state.datasets = {}
-                        st.session_state.cleaned_df = None
-                        st.session_state.file_uploader_key += 1
-                        st.rerun()
+                if st.button("🔄 Reset", use_container_width=True, key="sidebar_reset"):
+                    st.session_state.df = None
+                    st.session_state.filename = ""
+                    st.session_state.datasets = {}
+                    st.session_state.cleaned_df = None
+                    st.session_state.file_uploader_key += 1
+                    st.rerun()
 
                 # Delete button for selected dataset
                 if selected_dataset != "-- Chọn --":

@@ -304,44 +304,31 @@ docker compose restart
 
 ## 🏗️ Cấu trúc dự án
 
-> ⚠️ **Legacy layout:** Mã nguồn hiện tại tồn tại song song ở 2 nơi — root và `src/`.  
-> **Khuyến nghị:** Các module mới nên đặt trong `src/` package. Dịch chuyển dần code cũ ra khỏi root khi có thời gian.
-
 ```
 project1/
-├── app.py                  # Main Streamlit application (entry point)
-├── sidebar.py              # Sidebar component (to migrate → src/ui/)
-├── components.py           # Reusable UI components (to migrate → src/ui/)
-├── config.py               # Configuration constants (to migrate → src/utils/)
-├── utils.py                # Utility functions (to migrate → src/utils/)
-├── report_utils.py         # PDF report generation
-├── landing.py              # Landing page (to migrate → src/ui/tabs/)
-├── overview_tab.py         # Overview tab (to migrate → src/ui/tabs/)
-├── statistics_tab.py       # Statistics tab (to migrate → src/ui/tabs/)
-├── analytics_tab.py        # Analytics tab (to migrate → src/ui/tabs/)
-├── learn_analytics.py      # Learning analytics tab
-├── compare_datasets.py     # Compare datasets tab
-├── ai_insights.py          # AI-powered insights & reporting
-├── advanced_analytics/     # Deep analysis package (advanced modules)
-├── api.py                  # FastAPI backend
-├── report_utils.py         # PDF report generation
-│
-├── src/                    # 📦 New package structure (recommended)
+├── app.py                  # Streamlit frontend entry point
+├── api.py                  # FastAPI backend entry point
+├── run_public.py           # Public Streamlit runner
+├── src/                    # Application package
 │   ├── ui/
-│   │   ├── sidebar.py      # Refactored sidebar
+│   │   ├── sidebar.py      # Sidebar, session and export controls
 │   │   ├── theme.py        # Theme configuration
 │   │   └── tabs/           # Tab components
+│   ├── analytics/          # Deep analysis modules
 │   ├── utils/
 │   │   ├── exceptions.py   # Error handling
 │   │   ├── helpers.py      # Helper functions
 │   │   ├── config.py       # Configuration
 │   │   └── validators.py   # Data validation
 │   ├── core/
-│   │   └── analytics_engine.py
+│   │   ├── analytics_engine.py
+│   │   ├── database.py
+│   │   └── ai_service.py
+│   ├── services/           # Session and report services
 │   └── api/
-│
-├── .streamlit/
-│   └── config.toml         # Streamlit configuration
+├── tests/                  # Automated tests
+├── migrations/             # Alembic migrations
+├── requirements/           # Split dependency files
 ├── Dockerfile              # Multi-stage Docker build
 ├── docker-compose.yml      # Docker Compose configuration
 ├── nginx.conf              # Nginx reverse proxy config

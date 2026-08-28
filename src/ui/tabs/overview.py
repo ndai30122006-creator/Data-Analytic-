@@ -137,25 +137,18 @@ def render_overview_tab(df, num, cat):
     # ── Export ──
     st.markdown("### 📤 Export")
     fmt = st.radio("Format:", ["CSV", "Excel"], horizontal=True)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        if fmt == "CSV":
-            st.download_button("📥 Download CSV", convert_df_to_csv(df),
-                             f"data_{datetime.now():%Y%m%d}.csv", "text/csv",
-                             use_container_width=True)
-        else:
-            out = BytesIO()
-            with pd.ExcelWriter(out, engine="openpyxl") as w:
-                df.to_excel(w, index=False, sheet_name="Data")
-            st.download_button("📥 Download Excel", out.getvalue(),
-                             f"data_{datetime.now():%Y%m%d}.xlsx",
-                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                             use_container_width=True)
-    with col_b:
-        if st.button("🔄 Reset Session", use_container_width=True):
-            for k in list(st.session_state.keys()):
-                del st.session_state[k]
-            st.rerun()
+    if fmt == "CSV":
+        st.download_button("📥 Download CSV", convert_df_to_csv(df),
+                         f"data_{datetime.now():%Y%m%d}.csv", "text/csv",
+                         use_container_width=True)
+    else:
+        out = BytesIO()
+        with pd.ExcelWriter(out, engine="openpyxl") as w:
+            df.to_excel(w, index=False, sheet_name="Data")
+        st.download_button("📥 Download Excel", out.getvalue(),
+                         f"data_{datetime.now():%Y%m%d}.xlsx",
+                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                         use_container_width=True)
 
     # ── Data Dictionary & Column Profiler ──
     with st.expander("📖 Data Dictionary & Column Profiler", expanded=False):

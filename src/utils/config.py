@@ -106,16 +106,10 @@ MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_LEARNING_ANALYTICS, TAB_STATISTICS, TA
 
 # ── Statistics Sub-tabs ─────────────────────────────────────
 STATS_TAB_HYPOTHESIS = "🔬 Hypothesis Testing"
-STATS_TAB_BOOTSTRAP = "🎲 Bootstrap"
-STATS_TAB_ABTESTING = "⚗️ A/B Testing"
 STATS_TAB_REGRESSION = "📈 Regression"
-STATS_TAB_LOGISTIC = "🔴 Logistic"
-STATS_TAB_NAIVEBAYES = "🧮 Naive Bayes"
-STATS_TAB_DIAGNOSTICS = "🔧 Diagnostics"
 
 STATISTICS_TABS: List[str] = [
-    STATS_TAB_HYPOTHESIS, STATS_TAB_BOOTSTRAP, STATS_TAB_ABTESTING,
-    STATS_TAB_REGRESSION, STATS_TAB_LOGISTIC, STATS_TAB_NAIVEBAYES, STATS_TAB_DIAGNOSTICS
+    STATS_TAB_HYPOTHESIS, STATS_TAB_REGRESSION
 ]
 
 # ── Analytics Sub-tabs ──────────────────────────────────────
