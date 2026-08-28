@@ -5,11 +5,11 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from helpers import apply_theme, guess_learning_column
-from components import render_kpi_card
+from src.utils.helpers import apply_theme, guess_learning_column
+from src.ui.components import render_kpi_card
 
 try:
-    from theme_config import metric_card, status_badge, gradient_text
+    from src.ui.theme import metric_card, status_badge, gradient_text
 except ImportError:
     def metric_card(title, value, change="", icon="📊", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'

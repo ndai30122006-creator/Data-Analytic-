@@ -8,13 +8,13 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from config import MIN_ROWS_VALIDATION
-from utils import validate_dataframe
-from helpers import apply_theme
+from src.utils.config import MIN_ROWS_VALIDATION
+from src.utils.validators import validate_dataframe
+from src.utils.helpers import apply_theme
 from src.utils.exceptions import handle_error, DataValidationError
 
 try:
-    from theme_config import metric_card, status_badge, gradient_text
+    from src.ui.theme import metric_card, status_badge, gradient_text
 except ImportError:
     def metric_card(title, value, change="", icon="📊", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
@@ -25,23 +25,23 @@ except ImportError:
 
 # ── Delegate to shared modules (DRY) with unique key_prefix ──
 try:
-    from advanced_analytics.bootstrap import render_bootstrap_tab as _render_bootstrap
+    from src.analytics.bootstrap import render_bootstrap_tab as _render_bootstrap
 except ImportError:
     _render_bootstrap = None
 try:
-    from advanced_analytics.ab_testing import render_ab_testing_tab as _render_ab_testing
+    from src.analytics.ab_testing import render_ab_testing_tab as _render_ab_testing
 except ImportError:
     _render_ab_testing = None
 try:
-    from advanced_analytics.logistic import render_logistic_tab as _render_logistic
+    from src.analytics.logistic import render_logistic_tab as _render_logistic
 except ImportError:
     _render_logistic = None
 try:
-    from advanced_analytics.naive_bayes import render_naive_bayes_tab as _render_naive_bayes
+    from src.analytics.naive_bayes import render_naive_bayes_tab as _render_naive_bayes
 except ImportError:
     _render_naive_bayes = None
 try:
-    from advanced_analytics.diagnostics import render_diagnostics_tab as _render_diagnostics
+    from src.analytics.diagnostics import render_diagnostics_tab as _render_diagnostics
 except ImportError:
     _render_diagnostics = None
 
@@ -66,7 +66,7 @@ def render_statistics_tab(df, num, cat):
     </div>
     """, unsafe_allow_html=True)
 
-    from config import STATISTICS_TABS
+    from src.utils.config import STATISTICS_TABS
     stats_tabs = st.tabs(STATISTICS_TABS)
 
     with stats_tabs[0]: _render_hypothesis_testing(df, num, cat)

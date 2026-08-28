@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-from helpers import apply_theme
+from src.utils.helpers import apply_theme
 
 
 def render_compare_tab():

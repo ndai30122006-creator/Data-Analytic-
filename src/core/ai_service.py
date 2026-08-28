@@ -175,7 +175,7 @@ Format your response as JSON with these keys:
                                        score_col: Optional[str] = None,
                                        group_col: Optional[str] = None) -> AIReport:
         """Generate insights using rule-based logic (fallback when no LLM)."""
-        from ai_insights import generate_data_summary, generate_learning_insights
+        from src.ui.tabs.ai_insights import generate_data_summary, generate_learning_insights
 
         data_summary = generate_data_summary(df)
         specific_insights = ""

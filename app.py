@@ -53,24 +53,24 @@ def _safe_import(module_name: str, attr: str, *,
 
 
 # ── Safe imports for every render_* function ──
-render_theme, _ = _safe_import("theme_config", "render_theme")
-render_sidebar, _ = _safe_import("sidebar", "render_sidebar")
-render_landing_page, _ = _safe_import("landing", "render_landing_page")
-render_overview_tab, _ = _safe_import("overview_tab", "render_overview_tab")
+render_theme, _ = _safe_import("src.ui.theme", "render_theme")
+render_sidebar, _ = _safe_import("src.ui.sidebar", "render_sidebar")
+render_landing_page, _ = _safe_import("src.ui.tabs.landing", "render_landing_page")
+render_overview_tab, _ = _safe_import("src.ui.tabs.overview", "render_overview_tab")
 render_learning_analytics_tab, _ = _safe_import(
-    "learning_analytics", "render_learning_analytics_tab")
+    "src.ui.tabs.learning", "render_learning_analytics_tab")
 render_statistics_tab, _ = _safe_import(
-    "statistics_tab", "render_statistics_tab")
+    "src.ui.tabs.statistics", "render_statistics_tab")
 render_compare_tab, _ = _safe_import(
-    "compare_datasets", "render_compare_tab")
+    "src.ui.tabs.compare", "render_compare_tab")
 render_analytics_tab, _ = _safe_import(
-    "analytics_tab", "render_analytics_tab")
+    "src.ui.tabs.analytics", "render_analytics_tab")
 render_ai_insights_tab, _ = _safe_import(
-    "ai_insights", "render_ai_insights_tab")
+    "src.ui.tabs.ai_insights", "render_ai_insights_tab")
 
 # Deep analysis – no fallback because we show a different UI in that case
 render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
-    "advanced_analytics", "render_deep_analysis_tab", fallback=False)
+    "src.analytics", "render_deep_analysis_tab", fallback=False)
 if not DEEP_ANALYSIS_AVAIL:
     logger.warning("Advanced analytics module not available")
 
@@ -166,7 +166,7 @@ def main() -> None:
                 found = True
         # Search through tab names
         try:
-            from config import MAIN_TABS
+            from src.utils.config import MAIN_TABS
             matching_tabs = [t for t in MAIN_TABS if query_lower in t.lower()]
             if matching_tabs:
                 st.info(f"📑 **Tab phù hợp:** {', '.join(matching_tabs)}")
@@ -198,7 +198,7 @@ def main() -> None:
         df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
         try:
-            from config import MAIN_TABS, TAB_DEEP_ANALYSIS
+            from src.utils.config import MAIN_TABS, TAB_DEEP_ANALYSIS
         except Exception as exc:
             logger.error("Failed to import MAIN_TABS from config: %s", exc,
                           exc_info=True)
