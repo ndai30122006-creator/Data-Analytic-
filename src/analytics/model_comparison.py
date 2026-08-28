@@ -89,7 +89,7 @@ def render_model_comparison_tab(df, num):
                     cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=cv_folds, scoring='r2', n_jobs=safe_n_jobs(1))
                     cv_mean = cv_scores.mean()
                     cv_std = cv_scores.std()
-                except:
+                except Exception:
                     cv_mean = cv_std = 0
 
                 model.fit(X_train_scaled, y_train)

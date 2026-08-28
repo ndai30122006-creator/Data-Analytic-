@@ -129,7 +129,7 @@ def _render_power_analysis(scipy_stats):
                          z_alpha * np.sqrt(2 * p_pool * (1 - p_pool))) / \
                          np.sqrt(p1 * (1 - p1) + p2 * (1 - p2))
                 powers.append(scipy_stats.norm.cdf(z_beta))
-            except:
+            except Exception:
                 powers.append(0)
 
         fig = go.Figure()

@@ -3,6 +3,15 @@ import logging
 import os
 from datetime import datetime, timezone
 from typing import Optional
+
+# Load .env if present (so DEMO_MODE / DATABASE_URL from .env are respected)
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 import bcrypt
 
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Integer
@@ -33,10 +42,24 @@ class User(Base):
     api_key_ai = Column(String(128), nullable=True)  # Optional AI API key
 
 
+class Dataset(Base):
+    """Dataset metadata model — stores per-user dataset info for API."""
+
+    __tablename__ = "datasets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), index=True, nullable=False)
+    dataset_name = Column(String(128), nullable=False)
+    rows = Column(Integer, nullable=True)
+    cols = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 def init_db():
-    """Create all tables."""
+    """Create all tables and optionally seed demo users."""
     Base.metadata.create_all(bind=engine)
     logger.info("Database initialized: %s", DATABASE_URL)
+    _ensure_demo_users()
 
 
 def get_user(username: str) -> Optional[User]:
@@ -97,6 +120,95 @@ def update_api_key(username: str, api_key: str) -> bool:
         return True
     finally:
         session.close()
+
+
+def delete_user(username: str) -> bool:
+    """Delete a user by username. Returns True if deleted."""
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter(User.username == username).first()
+        if not user:
+            return False
+        session.delete(user)
+        session.commit()
+        logger.info("User deleted: %s", username)
+        return True
+    finally:
+        session.close()
+
+
+# ── Dataset helpers ──
+
+def create_dataset(username: str, dataset_name: str, rows: int = 0, cols: int = 0) -> Dataset:
+    """Persist dataset metadata for a user."""
+    session = SessionLocal()
+    try:
+        ds = Dataset(username=username, dataset_name=dataset_name, rows=rows, cols=cols)
+        session.add(ds)
+        session.commit()
+        session.refresh(ds)
+        logger.info("Dataset created: %s/%s (%sx%s)", username, dataset_name, rows, cols)
+        return ds
+    finally:
+        session.close()
+
+
+def list_datasets(username: str) -> list[Dataset]:
+    """Return all datasets for a user."""
+    session = SessionLocal()
+    try:
+        return session.query(Dataset).filter(Dataset.username == username).all()
+    finally:
+        session.close()
+
+
+def get_dataset(username: str, dataset_name: str) -> Optional[Dataset]:
+    """Look up a single dataset by user + name."""
+    session = SessionLocal()
+    try:
+        return session.query(Dataset).filter(
+            Dataset.username == username, Dataset.dataset_name == dataset_name
+        ).first()
+    finally:
+        session.close()
+
+
+def delete_dataset(username: str, dataset_name: str) -> bool:
+    """Delete a dataset. Returns True if deleted."""
+    session = SessionLocal()
+    try:
+        ds = session.query(Dataset).filter(
+            Dataset.username == username, Dataset.dataset_name == dataset_name
+        ).first()
+        if not ds:
+            return False
+        session.delete(ds)
+        session.commit()
+        return True
+    finally:
+        session.close()
+
+
+def _ensure_demo_users():
+    """Auto-create demo users when DEMO_MODE=true (env)."""
+    if os.environ.get("DEMO_MODE", "false").lower() != "true":
+        return
+    demo_accounts = [
+        (os.environ.get("DEMO_ADMIN_USERNAME", "admin"), os.environ.get("DEMO_ADMIN_PASSWORD", "admin123")),
+        (os.environ.get("DEMO_USER_USERNAME", "user"), os.environ.get("DEMO_USER_PASSWORD", "user123")),
+        (os.environ.get("DEMO_TEACHER_USERNAME", "teacher"), os.environ.get("DEMO_TEACHER_PASSWORD", "teacher123")),
+    ]
+    for uname, pwd in demo_accounts:
+        if not uname or not pwd:
+            continue
+        try:
+            existing = get_user(uname)
+            if existing is None:
+                create_user(uname, pwd)
+                logger.info("Demo user auto-created: %s", uname)
+        except Exception as exc:
+            # Unique constraint race or other DB error — log and continue
+            logger.warning("Failed to auto-create demo user %s: %s", uname, exc)
 
 
 # Initialize on import

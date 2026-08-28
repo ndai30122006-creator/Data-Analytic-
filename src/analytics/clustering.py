@@ -128,5 +128,5 @@ def _render_hierarchical(X, X_scaled, cols):
             ax.set_title("Dendrogram")
             st.pyplot(fig)
             plt.close()
-        except:
+        except Exception:
             pass

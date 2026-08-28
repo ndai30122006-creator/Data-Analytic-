@@ -108,7 +108,7 @@ def _render_drift(df, num):
                     "p-value": round(p, 6),
                     "Drift": "⚠️ Yes" if p < 0.05 else "✅ No"
                 })
-            except:
+            except Exception:
                 pass
 
     if drift_results:
