@@ -1,10 +1,10 @@
 """Landing page — hero section, KPI metrics, quick-start guide, and CTA when no data is loaded."""
 import streamlit as st
 
-from components import render_quick_start_tutorial
+from src.ui.components import render_quick_start_tutorial
 
 try:
-    from theme_config import metric_card, gradient_text, status_badge
+    from src.ui.theme import metric_card, gradient_text, status_badge
 except ImportError:
     # Fallback stubs if theme_config is unavailable
     def metric_card(title, value, change="", icon="📊", color="primary"):

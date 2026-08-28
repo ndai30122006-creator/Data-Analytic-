@@ -8,9 +8,11 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-from utils import load_and_process_data, compute_data_quality_score
-from components import render_sidebar_stats
-from report_utils import save_session_state, load_session_state, has_saved_session, get_session_info, generate_pdf_report
+from src.utils.helpers import load_and_process_data
+from src.utils.validators import compute_data_quality_score
+from src.ui.components import render_sidebar_stats
+from src.services.session_service import save_session_state, load_session_state, has_saved_session, get_session_info
+from src.services.report_service import generate_pdf_report
 
 
 def render_sidebar():

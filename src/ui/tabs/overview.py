@@ -7,16 +7,16 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from config import MIN_ROWS_VALIDATION, MAX_DISPLAY_ROWS
-from utils import validate_dataframe
-from components import (
+from src.utils.config import MIN_ROWS_VALIDATION, MAX_DISPLAY_ROWS
+from src.utils.validators import validate_dataframe
+from src.ui.components import (
     render_data_dictionary, render_column_profiler,
     render_data_quality_report
 )
-from helpers import convert_df_to_csv, sparkline, apply_theme
+from src.utils.helpers import convert_df_to_csv, sparkline, apply_theme
 
 try:
-    from theme_config import metric_card, status_badge, gradient_text
+    from src.ui.theme import metric_card, status_badge, gradient_text
 except ImportError:
     def metric_card(title, value, change="", icon="📊", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'

@@ -7,12 +7,12 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from config import (
+from src.utils.config import (
     MIN_ROWS_VALIDATION, PARAM_GRIDS, PROFILER_TABS,
     ERROR_NO_NUMERIC_COLS, ERROR_EMPTY_DATAFRAME, ERROR_WORK_DF_NONE
 )
-from utils import validate_dataframe
-from helpers import apply_theme
+from src.utils.validators import validate_dataframe
+from src.utils.helpers import apply_theme
 from src.utils.exceptions import handle_error, ModelTrainingError, DataValidationError
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def render_analytics_tab(df: pd.DataFrame, num: List[str], cat: List[str]) -> No
         st.error(f"❌ {msg}")
         return
 
-    from config import ANALYTICS_TABS
+    from src.utils.config import ANALYTICS_TABS
     an_tabs = st.tabs(ANALYTICS_TABS)
 
     with an_tabs[0]: _render_anomaly(df, num)

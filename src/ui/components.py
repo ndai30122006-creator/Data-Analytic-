@@ -6,7 +6,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from utils import get_column_stats, compute_data_quality_score, generate_data_dictionary
+from src.utils.validators import get_column_stats, compute_data_quality_score, generate_data_dictionary
 
 
 def render_kpi_card(container: st.delta_generator.DeltaGenerator, label: str, value: str, delta: Optional[str] = None) -> None:

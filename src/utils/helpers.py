@@ -1,15 +1,20 @@
 """Helper functions extracted from app.py"""
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, Callable
+import logging
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import streamlit as st
 from io import BytesIO
 from datetime import datetime
 
 from src.utils.config import CHART_THEME
+from src.utils.exceptions import handle_error, DataValidationError
+from src.utils.performance import check_file_size, warn_if_large_dataset
+from src.utils.config import MAX_FILE_SIZE_BYTES, MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD
 
-# ── Constants ──
+logger = logging.getLogger(__name__)
 SPARKLINE_DEFAULT_COLOR: str = '#5b6bf7'
 SPARKLINE_DEFAULT_HEIGHT: int = 40
 
@@ -99,3 +104,64 @@ def guess_learning_column(columns: List[str], keywords: List[str]) -> Optional[s
         if any(keyword in name for keyword in keywords):
             return col
     return None
+
+
+@st.cache_data(hash_funcs={"streamlit.runtime.uploaded_file_manager.UploadedFile": lambda f: (f.name, f.size)})
+def load_and_process_data(file) -> Optional[pd.DataFrame]:
+    """
+    Load và cache dữ liệu từ file upload (CSV/Excel).
+
+    Args:
+        file: Uploaded file object từ Streamlit file_uploader
+
+    Returns:
+        pd.DataFrame nếu thành công, None nếu lỗi
+
+    Raises:
+        Không raise — tất cả exception được catch và xử lý qua handle_error()
+    """
+    try:
+        if file is None:
+            raise DataValidationError("File không tồn tại")
+
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        valid_size, size_msg = check_file_size(file_size, MAX_FILE_SIZE_BYTES)
+        if not valid_size:
+            raise DataValidationError(size_msg)
+
+        if file.name.endswith(".csv"):
+            df = pd.read_csv(file)
+        elif file.name.endswith((".xlsx", ".xls")):
+            df = pd.read_excel(file, engine="openpyxl")
+        else:
+            raise DataValidationError(
+                f"Định dạng '{file.name.split('.')[-1]}' không hỗ trợ. "
+                "Chấp nhận: .csv, .xlsx, .xls"
+            )
+
+        if df.empty:
+            raise DataValidationError("File rỗng, không có dữ liệu")
+
+        warning = warn_if_large_dataset(len(df), len(df.columns), MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD)
+        if warning:
+            st.warning(warning)
+
+        logger.info("Loaded file '%s': %d rows x %d cols", file.name, *df.shape)
+        return df
+
+    except DataValidationError as e:
+        handle_error(e, "load_and_process_data")
+        return None
+    except pd.errors.EmptyDataError:
+        handle_error(DataValidationError("File CSV rỗng"), "load_and_process_data")
+        return None
+    except pd.errors.ParserError as e:
+        handle_error(DataValidationError(f"Lỗi parse file: {e}"), "load_and_process_data")
+        return None
+    except Exception as e:
+        logger.error("Unexpected error loading file '%s': %s", getattr(file, 'name', 'unknown'), e, exc_info=True)
+        st.error(f"❌ **Lỗi đọc file:** {str(e)}")
+        st.caption("💡 Kiểm tra file có bị hỏng hoặc không đúng định dạng")
+        return None
