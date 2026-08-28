@@ -128,7 +128,10 @@ class PDFReport(FPDF):
             self.add_font("DejaVu", "BI", _FONT_BOLD_PATH, uni=True)
     
     def header(self):
-        self._setup_fonts()
+        # _setup_fonts is guarded internally to run only once per document
+        if not getattr(self, '_fonts_registered', False):
+            self._setup_fonts()
+            self._fonts_registered = True
         self.set_font(self._font_name("B"), "B", 10)
         self.set_text_color(91, 107, 247)
         self.cell(0, 8, "Data Analyst Pro v3.0 - Report", align="C", new_x="LMARGIN", new_y="NEXT")
@@ -322,6 +325,9 @@ def generate_pdf_report(df, num_cols, cat_cols, filename="DataReport.pdf"):
         unique = df[col].nunique()
         pdf.body_text(f"  • {col} ({dtype}) — {unique:,} unique, {missing:,} missing")
     
-    # Save to bytes
-    pdf_bytes = pdf.output(dest="S").encode("latin-1")
-    return pdf_bytes
+    # Save to bytes — fpdf2 returns bytes directly from output()
+    raw = pdf.output()
+    if isinstance(raw, str):
+        # Legacy fpdf (<2) returns a str; encode to bytes
+        return raw.encode("latin-1")
+    return raw

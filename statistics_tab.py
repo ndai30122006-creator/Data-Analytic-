@@ -85,7 +85,7 @@ def render_statistics_tab(df, num, cat):
     with stats_tabs[3]: _render_regression(df, num)
     with stats_tabs[4]:
         if _render_logistic:
-            _render_logistic(df, num, cat, key_prefix="st")
+            _render_logistic(df, num, cat)
         else:
             st.warning("⚠️ Logistic Regression module not loaded")
     with stats_tabs[5]:

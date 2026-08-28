@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 TOP_N_VALUES: int = 10
 
 
-@st.cache_data
+@st.cache_data(hash_funcs={"streamlit.runtime.uploaded_file_manager.UploadedFile": lambda f: (f.name, f.size)})
 def load_and_process_data(file) -> Optional[pd.DataFrame]:
     """
     Load và cache dữ liệu từ file upload (CSV/Excel).
@@ -71,7 +71,7 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
         handle_error(DataValidationError(f"Lỗi parse file: {e}"), "load_and_process_data")
         return None
     except Exception as e:
-        logger.error("Unexpected error loading file '{}': {}", getattr(file, 'name', 'unknown'), e, exc_info=True)
+        logger.error("Unexpected error loading file '%s': %s", getattr(file, 'name', 'unknown'), e, exc_info=True)
         st.error(f"❌ **Lỗi đọc file:** {str(e)}")
         st.caption("💡 Kiểm tra file có bị hỏng hoặc không đúng định dạng")
         return None
@@ -248,6 +248,6 @@ def safe_execute(func: Callable, error_msg: str = "Lỗi thực thi", default: A
     try:
         return func()
     except Exception as e:
-        logger.error("safe_execute failed [{}] | Context: {} | Detail: {}", type(e).__name__, error_msg, str(e), exc_info=True)
+        logger.error("safe_execute failed [%s] | Context: %s | Detail: %s", type(e).__name__, error_msg, str(e), exc_info=True)
         st.error(f"❌ {error_msg}: {str(e)}")
         return default

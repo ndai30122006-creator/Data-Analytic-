@@ -20,36 +20,36 @@ def render_ab_testing_tab(df, num, cat, key_prefix="da"):
     tabs = st.tabs(["🔬 Two-Proportion Test", "📐 Sample Size Calculator", "📊 Power Analysis"])
 
     with tabs[0]:
-        _render_two_proportion_test(df, cat, scipy_stats)
+        _render_two_proportion_test(df, cat, scipy_stats, key_prefix)
 
     with tabs[1]:
-        _render_sample_size_calculator(scipy_stats)
+        _render_sample_size_calculator(scipy_stats, key_prefix)
 
     with tabs[2]:
-        _render_power_analysis(scipy_stats)
+        _render_power_analysis(scipy_stats, key_prefix)
 
 
-def _render_two_proportion_test(df, cat, scipy_stats):
+def _render_two_proportion_test(df, cat, scipy_stats, key_prefix="da"):
     st.markdown("#### 🔬 Two-Proportion Z-Test")
     if not cat:
         st.warning("Cần cột categorical")
         return
-    grp_col = st.selectbox("Cột nhóm (2 groups):", cat, key="da_ab_grp")
+    grp_col = st.selectbox("Cột nhóm (2 groups):", cat, key=f"{key_prefix}_ab_grp")
     grps = df[grp_col].dropna().unique()[:5]
     if len(grps) < 2:
         st.warning("Cần ít nhất 2 nhóm")
         return
     col1, col2 = st.columns(2)
     with col1:
-        g1 = st.selectbox("Group A:", grps, key="da_ab_g1")
-        g1_success = st.number_input("Successes A:", min_value=0, value=50, key="da_ab_s1")
-        g1_total = st.number_input("Total A:", min_value=1, value=200, key="da_ab_t1")
+        g1 = st.selectbox("Group A:", grps, key=f"{key_prefix}_ab_g1")
+        g1_success = st.number_input("Successes A:", min_value=0, value=50, key=f"{key_prefix}_ab_s1")
+        g1_total = st.number_input("Total A:", min_value=1, value=200, key=f"{key_prefix}_ab_t1")
     with col2:
-        g2 = st.selectbox("Group B:", [g for g in grps if g != g1], key="da_ab_g2")
-        g2_success = st.number_input("Successes B:", min_value=0, value=60, key="da_ab_s2")
-        g2_total = st.number_input("Total B:", min_value=1, value=200, key="da_ab_t2")
+        g2 = st.selectbox("Group B:", [g for g in grps if g != g1], key=f"{key_prefix}_ab_g2")
+        g2_success = st.number_input("Successes B:", min_value=0, value=60, key=f"{key_prefix}_ab_s2")
+        g2_total = st.number_input("Total B:", min_value=1, value=200, key=f"{key_prefix}_ab_t2")
 
-    if st.button("🔬 Run A/B Test", key="da_ab_run"):
+    if st.button("🔬 Run A/B Test", key=f"{key_prefix}_ab_run"):
         p1 = g1_success / g1_total
         p2 = g2_success / g2_total
         p_pool = (g1_success + g2_success) / (g1_total + g2_total)

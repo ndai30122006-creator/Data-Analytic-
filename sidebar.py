@@ -8,7 +8,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-from utils import load_and_process_data
+from utils import load_and_process_data, compute_data_quality_score
 from components import render_sidebar_stats
 from report_utils import save_session_state, load_session_state, has_saved_session, get_session_info, generate_pdf_report
 
@@ -93,7 +93,10 @@ def render_sidebar():
                 df = st.session_state.df
                 rows = len(df)
                 cols = len(df.columns)
-                quality_pct = 95.2  # simplified; real quality from render_sidebar_stats
+                try:
+                    quality_pct = compute_data_quality_score(df)["overall"]
+                except Exception:
+                    quality_pct = 0.0
 
                 st.markdown(f"""
                 <div style="
@@ -206,18 +209,24 @@ def render_sidebar():
                             df, num_cols, cat_cols,
                             filename=st.session_state.get("filename", "dataset")
                         )
-                        st.download_button(
-                            "📥 Download PDF Report",
-                            pdf_bytes,
-                            f"report_{datetime.now():%Y%m%d_%H%M}.pdf",
-                            "application/pdf",
-                            key="dl_pdf"
-                        )
-                        st.success("✅ PDF Report generated!")
+                        st.session_state["_pdf_bytes"] = pdf_bytes
+                        st.session_state["_pdf_filename"] = f"report_{datetime.now():%Y%m%d_%H%M}.pdf"
+                        st.success("✅ PDF Report generated! Click the button below to download.")
                     except Exception as e:
                         logger.error("PDF generation failed: %s", e, exc_info=True)
                         st.error(f"❌ **Lỗi tạo PDF:** {str(e)}")
                         st.caption("💡 Kiểm tra lại dữ liệu hoặc thử lại sau")
+
+            # Render download button outside of the generate-button callback
+            # so it persists across reruns
+            if st.session_state.get("_pdf_bytes"):
+                st.download_button(
+                    "📥 Download PDF Report",
+                    st.session_state["_pdf_bytes"],
+                    st.session_state.get("_pdf_filename", "report.pdf"),
+                    "application/pdf",
+                    key="dl_pdf"
+                )
 
         # ── Bottom spacer ──
         st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
