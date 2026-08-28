@@ -2,7 +2,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, status, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +14,6 @@ import jwt
 from src.core.database import (
     create_user,
     verify_user_password,
-    get_user,
     update_api_key,
     delete_user,
     list_datasets as db_list_datasets,

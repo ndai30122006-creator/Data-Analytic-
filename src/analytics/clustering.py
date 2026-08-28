@@ -1,4 +1,5 @@
 """Clustering — K-Means, DBSCAN, Hierarchical (Book Ch.6)"""
+import pandas as pd
 import streamlit as st
 import numpy as np
 import plotly.express as px
