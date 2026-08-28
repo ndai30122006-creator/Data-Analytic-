@@ -118,35 +118,51 @@ DEMO_TEACHER_PASSWORD=teacher123
 ## 🐳 Deploy với Docker (Production)
 
 ### Prerequisites
-- Docker >= 20.10
-- Docker Compose >= 2.0
+- **Docker Desktop** (bao gồm Docker Engine + Compose plugin) — kiểm tra: `docker --version` và `docker compose version`
 
-### 1. Build và Start
+### 1. Cấu hình biến môi trường
+```bash
+copy .env.example .env    # Windows
+# cp .env.example .env    # Linux/macOS
+```
+- Tạo `JWT_SECRET_KEY` mạnh: `python -c "import secrets; print(secrets.token_hex(32))"`
+- Cho production: đặt `DEMO_MODE=false`, `ALLOWED_ORIGINS=https://your-domain.com`
+- Nếu chưa có `.env`, containers vẫn chạy ở chế độ development fallback (JWT tự sinh)
+
+### 2. Build và Start
 ```bash
 # Development mode (không có Nginx)
-docker-compose up --build
+docker compose up --build
 
-# Production mode (với Nginx reverse proxy)
-docker-compose --profile production up --build -d
+# Production mode (với Nginx reverse proxy trên port 80/443)
+docker compose --profile production up --build -d
 ```
 
-### 2. Truy cập
-- **Frontend:** http://localhost:8501
+### 3. Truy cập
+- **Frontend (Streamlit):** http://localhost:8501
 - **Backend API:** http://localhost:8000
-- **API Docs:** http://localhost:8000/docs
+- **API Docs (Swagger):** http://localhost:8000/docs
 - **Health Check:** http://localhost:8000/health
+- **Ứng dụng qua Nginx:** http://localhost
 
-### 3. Dừng services
+### 4. Dừng services
 ```bash
-docker-compose down
+docker compose down       # dừng nhưng GIỮ volume data
+docker compose down -v    # xoá luôn volume data (mất users.db)
 ```
 
-### 4. Xem logs
+### 5. Xem logs
 ```bash
-docker-compose logs -f
-docker-compose logs -f frontend
-docker-compose logs -f backend
+docker compose logs -f
+docker compose logs -f frontend
+docker compose logs -f backend
 ```
+
+### Ghi chú
+- **Multi-stage build:** image `learning-analytics-backend` (FastAPI, cổng 8000) và `learning-analytics-frontend` (Streamlit, cổng 8501).
+- **Dữ liệu SQLite** (`users.db`) lưu trong Docker volume `app_data` → **không mất khi `docker compose down`**.
+- **Healthcheck** dùng `curl` (đã cài sẵn trong image) chống unhealthy giả.
+- `.dockerignore` loại bỏ `.venv`, `.git`, `tests`, secrets khỏi Docker context → build nhanh, image gọn.
 
 ## 📋 Requirements
 
@@ -276,14 +292,14 @@ pip install xgboost
 
 ### Docker issues
 ```bash
-# Rebuild images
-docker-compose build --no-cache
+# Rebuild images (bỏ cache)
+docker compose build --no-cache
 
 # Check logs
-docker-compose logs
+docker compose logs
 
 # Restart services
-docker-compose restart
+docker compose restart
 ```
 
 ## 🏗️ Cấu trúc dự án

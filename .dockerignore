@@ -1,0 +1,57 @@
+# ── Git / CI ───────────────────────────────────────────────
+.git
+.gitignore
+.github
+
+# ── Python / Virtual Envs (kèm cả .venv-1) ───────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.whl
+*.egg
+.venv/
+.venv-1/
+venv/
+env/
+ENV/
+
+# ── IDE / Editor ──────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+logs/
+
+# ── Env & Secrets (KHÔNG BAO GIỜ nấu vào image) ──────────
+.env
+.env.*
+.jwt_secret
+*.db
+*.sqlite3
+
+# ── Tests / Chất lượng mã ─────────────────────────────────
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ── Tài liệu / Báo cáo / Dữ liệu runtime ──────────────────
+docs/
+reports/
+data/
+ssl/
+*.md.html
+task_progress.md
