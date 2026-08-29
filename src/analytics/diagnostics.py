@@ -60,7 +60,7 @@ def render_diagnostics_tab(df, num):
                 vif_data["Tolerance"] = 1 / vif_data["VIF"]
                 vif_data["Severe? (VIF>10)"] = vif_data["VIF"].apply(lambda x: "⚠️ Yes" if x > 10 else "✅ No")
                 vif_data["Moderate? (VIF>5)"] = vif_data["VIF"].apply(lambda x: "⚠️ Yes" if x > 5 else "✅ No")
-                st.dataframe(vif_data.style.highlight_max(axis=0, color='#f8717140'), width="stretch")
+                st.dataframe(vif_data.style.highlight_max(axis=0, color='#f8717140'), use_container_width=True)
                 max_vif = vif_data["VIF"].max()
                 if max_vif > 10:
                     insight_card("⚠️", "Severe Multicollinearity",
@@ -93,7 +93,7 @@ def render_diagnostics_tab(df, num):
                     fig.update_layout(title="Residuals vs Fitted Values",
                                      xaxis_title="Fitted Values", yaxis_title="Residuals", height=350)
                     apply_theme(fig)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
                 except Exception as e:
                     st.warning(f"Breusch-Pagan test không khả dụng: {e}")
 
@@ -112,7 +112,7 @@ def render_diagnostics_tab(df, num):
                 fig.update_layout(title="Distribution of Residuals", height=300,
                                  xaxis_title="Residual", yaxis_title="Frequency")
                 apply_theme(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
             with tabs[3]:
                 st.markdown("#### 📋 Residual Analysis")
@@ -128,7 +128,7 @@ def render_diagnostics_tab(df, num):
                     "Feature": ["Intercept"] + features,
                     "Coefficient": [model.intercept_] + list(model.coef_)
                 })
-                st.dataframe(coef_df, width="stretch")
+                st.dataframe(coef_df, use_container_width=True)
                 fig = make_subplots(rows=1, cols=2,
                                    subplot_titles=("Q-Q Plot (Normality)", "Residuals vs Fitted"))
                 (osm, osr), (slope, intercept, _r) = probplot(residuals, dist="norm")
@@ -141,4 +141,4 @@ def render_diagnostics_tab(df, num):
                 fig.add_hline(y=0, line_dash="dash", line_color="#f87171", row=1, col=2)
                 fig.update_layout(height=400, title="Regression Diagnostics")
                 apply_theme(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)

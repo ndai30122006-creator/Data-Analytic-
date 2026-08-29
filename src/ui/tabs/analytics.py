@@ -71,7 +71,7 @@ def _render_anomaly(df: pd.DataFrame, num: List[str]) -> None:
             fig = px.scatter(X, x=ac[0], y=ac[1], color=X["A"].map({1: "Normal", -1: "Anomaly"}),
                            title="Anomalies", color_discrete_map={"Normal": "#818cf8", "Anomaly": "#ef4444"})
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
@@ -98,23 +98,23 @@ def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
                     f.metric("Max", f"{df[c_].max():,.4f}")
                     fig = px.histogram(df, x=c_, nbins=30, title="Distribution")
                     apply_theme(fig)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
                 else:
                     vc = df[c_].value_counts().head(15)
                     fig = px.bar(x=vc.index.astype(str), y=vc.values, title="Top 15",
                                color=vc.values, color_continuous_scale="Viridis")
                     apply_theme(fig)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
     with pt[1]:
         if num:
             sc = st.selectbox("Column:", num, key="pd_")
             fig = px.histogram(df, x=sc, nbins=50, marginal="box", title=f"Distribution of {sc}")
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
             fig2 = px.box(df, y=sc, title=f"Box Plot — {sc}")
             apply_theme(fig2)
-            st.plotly_chart(fig2, width='stretch')
+            st.plotly_chart(fig2, use_container_width=True)
 
     with pt[2]:
         if len(num) >= 2:
@@ -123,7 +123,7 @@ def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
                            zmin=-1, zmax=1, title="Correlation Matrix", aspect='auto')
             fig.update_layout(height=600)
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
@@ -149,7 +149,7 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
             "Missing": missing_cols.values,
             "Missing %": [f"{v/len(work_df)*100:.1f}%" for v in missing_cols.values]
         })
-        st.dataframe(missing_df, width='stretch', hide_index=True)
+        st.dataframe(missing_df, use_container_width=True, hide_index=True)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -281,12 +281,12 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🔄 Reset to Original", width="stretch"):
+        if st.button("🔄 Reset to Original", use_container_width=True):
             st.session_state.cleaned_df = df.copy()
             st.success("✅ Reset")
             st.rerun()
     with col2:
-        if st.button("💾 Save Cleaned Data", width="stretch"):
+        if st.button("💾 Save Cleaned Data", use_container_width=True):
             st.session_state.df = work_df.copy()
             st.success("✅ Saved")
             st.rerun()
@@ -438,7 +438,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
             result_df = pd.DataFrame(results)
             if "Train R²" in result_df.columns:
                 result_df = result_df.sort_values("Test R²", ascending=False) if result_df["Test R²"].dtype != 'object' else result_df
-            st.dataframe(result_df, width='stretch', hide_index=True)
+            st.dataframe(result_df, use_container_width=True, hide_index=True)
             if best_overall["name"]:
                 st.success(f"🏆 **Best: {best_overall['name']}** — Test R² = {best_overall['score']:.4f}")
 
@@ -450,7 +450,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
                 fig.add_trace(go.Bar(name="Test", x=df_plot["Model"], y=df_plot["Test R²"], marker_color="#34d399"))
                 fig.update_layout(title="AutoML Results", barmode='group', height=350)
                 apply_theme(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
         except MemoryError:
             handle_error(MemoryError(), "_render_automl - Dataset quá lớn")
         except Exception as e:

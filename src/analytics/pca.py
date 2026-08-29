@@ -72,7 +72,7 @@ def _render_pca(X_scaled, cols):
     fig.add_hline(y=0.8, line_dash="dash", line_color="#f87171", row=1, col=2)
     fig.update_layout(height=350)
     apply_theme(fig)
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
     pca_2d = PCA(n_components=2)
     X_pca_2d = pca_2d.fit_transform(X_scaled)
@@ -82,13 +82,13 @@ def _render_pca(X_scaled, cols):
                     title=f"PCA 2D ({var_text})",
                     opacity=0.6, color_discrete_sequence=["#818cf8"])
     apply_theme(fig)
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
     loadings = pd.DataFrame(pca.components_[:min(4, len(cols))].T,
                            columns=[f"PC{i+1}" for i in range(min(4, len(cols)))],
                            index=cols)
     st.markdown("#### 📋 Loadings")
-    st.dataframe(loadings, width="stretch")
+    st.dataframe(loadings, use_container_width=True)
 
 
 def _render_tsne(X_scaled, cols):
@@ -101,4 +101,4 @@ def _render_tsne(X_scaled, cols):
                     title=f"t-SNE (perplexity={perplexity})",
                     opacity=0.6, color_discrete_sequence=["#34d399"])
     apply_theme(fig)
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)

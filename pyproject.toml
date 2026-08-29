@@ -7,14 +7,13 @@ name = "learning-analytics"
 version = "3.0.0"
 description = "Learning Analytics Thống kê — Practical Statistics for Data Scientists Edition"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 keywords = ["analytics", "statistics", "machine-learning", "education", "streamlit"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Education",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Information Analysis",

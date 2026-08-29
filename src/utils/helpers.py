@@ -9,10 +9,12 @@ import streamlit as st
 from io import BytesIO
 from datetime import datetime
 
-from src.utils.config import CHART_THEME
-from src.utils.exceptions import handle_error, DataValidationError
+from src.utils.config import (
+    get_chart_theme, get_chart_mode,
+    MAX_FILE_SIZE_BYTES, MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD,
+)
+from src.utils.exceptions import DataValidationError, handle_error
 from src.utils.performance import check_file_size, warn_if_large_dataset
-from src.utils.config import MAX_FILE_SIZE_BYTES, MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD
 
 logger = logging.getLogger(__name__)
 SPARKLINE_DEFAULT_COLOR: str = '#5b6bf7'
@@ -32,22 +34,25 @@ def convert_df_to_csv(df: pd.DataFrame) -> bytes:
     return df.to_csv(index=False).encode("utf-8")
 
 
-def apply_theme(fig: go.Figure) -> go.Figure:
+def apply_theme(fig: go.Figure, mode: Optional[str] = None) -> go.Figure:
     """
-    Apply consistent dark theme to a Plotly figure.
+    Apply consistent chart theme (light/dark aware) to a Plotly figure.
 
     Args:
         fig: Plotly figure object to theme
+        mode: "light" or "dark"; defaults to the active session theme mode.
 
     Returns:
-        The same figure with CHART_THEME layout applied (mutated in-place)
+        The same figure with the chart theme layout applied (mutated in-place)
 
     Raises:
         ValueError: If fig is None
     """
     if fig is None:
         raise ValueError("Figure cannot be None")
-    fig.update_layout(**CHART_THEME)
+    if mode is None:
+        mode = get_chart_mode()
+    fig.update_layout(**get_chart_theme(mode))
     return fig
 
 

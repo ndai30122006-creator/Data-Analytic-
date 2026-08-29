@@ -1,4 +1,4 @@
-"""Reusable UI Components for Data Analyst Pro v3.0 — Practical Statistics Edition"""
+"""Reusable UI Components — Pro Max Data-Dense Edition"""
 from typing import List, Optional, Any, Dict
 import streamlit as st
 import pandas as pd
@@ -7,6 +7,19 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from src.utils.validators import get_column_stats, compute_data_quality_score, generate_data_dictionary
+from src.utils.config import get_chart_theme
+
+# Lucide SVG icons (Pro Max: no emoji as icons)
+_LUCIDE = {
+    "chart": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></svg>',
+    "check": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    "alert": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    "info": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="12" y1="8" x2="12" y2="12"/></svg>',
+}
+
+
+def _lucide(name: str) -> str:
+    return _LUCIDE.get(name, _LUCIDE["info"])
 
 
 def render_kpi_card(container: st.delta_generator.DeltaGenerator, label: str, value: str, delta: Optional[str] = None) -> None:
@@ -31,44 +44,41 @@ def render_kpi_card(container: st.delta_generator.DeltaGenerator, label: str, va
     ''', unsafe_allow_html=True)
 
 
+def render_skeleton_card(height: str = "84px") -> None:
+    """Pro Max: skeleton loader for data-dense cards (shimmer)."""
+    st.markdown(f'<div class="skeleton skeleton-card" style="height:{height}"></div>', unsafe_allow_html=True)
+
+
 def render_insight_card(icon: str, title: str, msg: str, type: str = "info") -> None:
     """
-    Render a styled insight card with icon and color-coded type.
-
-    Args:
-        icon: Emoji or icon string (e.g. "📊", "✅")
-        title: Card title text
-        msg: Card body/content text
-        type: Card variant — "info", "success", "warning", "danger", or "good" (default "info")
-
-    Returns:
-        None — renders HTML directly into Streamlit
+    Render insight card — Pro Max a11y: icon + border (not color-only), SVG preferred.
+    type: info | success | warning | danger | good
     """
+    # Map emoji fallback to Lucide for a11y
+    svg = ""
+    if icon.strip() in ("📊", "✅", "⚠️", "❌", "ℹ️", "🎯", "📦"):
+        map_icon = {"📊": "chart", "✅": "check", "⚠️": "alert", "❌": "alert", "ℹ️": "info"}.get(icon.strip(), "info")
+        svg = _lucide(map_icon) + " "
+        icon = ""
+    title_html = f"{svg}{icon} {title}".strip()
     st.markdown(
-        f'<div class="insight-card insight-{type}">'
-        f'<strong>{icon} {title}</strong><br>{msg}</div>',
+        f'<div class="insight-card insight-{type}" role="status">'
+        f'<strong>{title_html}</strong><br><span style="overflow-wrap:break-word">{msg}</span></div>',
         unsafe_allow_html=True
     )
 
 
 def render_data_dictionary(df: pd.DataFrame) -> None:
     """
-    Render a Data Dictionary table with download button.
-
-    Displays metadata for each column (type, dtype, missing %, unique count, sample).
-    Includes a CSV download button for the dictionary.
-
-    Args:
-        df: Input DataFrame to analyze
-
-    Returns:
-        None — renders table + download button into Streamlit
+    Render Data Dictionary — Pro Max: overflow-x-auto wrapper + sticky header.
     """
-    st.markdown("### 📖 Data Dictionary")
-    st.caption("Metadata chi tiết về từng cột trong dataset")
+    st.markdown("### Data Dictionary")
+    st.caption("Metadata chi tiết từng cột — cuộn ngang nếu bảng rộng")
 
     dict_df = generate_data_dictionary(df)
-    st.dataframe(dict_df, width="stretch")
+    st.markdown('<div class="dataframe-wrapper">', unsafe_allow_html=True)
+    st.dataframe(dict_df, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     csv = dict_df.to_csv(index=False).encode('utf-8')
     st.download_button(
@@ -96,8 +106,8 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
     Returns:
         None — renders selectbox + stats + chart into Streamlit
     """
-    st.markdown("### 🔍 Column Profiler")
-    st.caption("Phân tích chi tiết từng cột")
+    st.markdown("### Column Profiler")
+    st.caption("Phân tích chi tiết từng cột — chọn cột để xem thống kê")
 
     all_cols = df.columns.tolist()
     selected_col = st.selectbox("Chọn cột để phân tích:", all_cols, key="profiler_col")
@@ -112,7 +122,7 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
         c4.metric("Unique", f"{stats['unique']:,}")
 
         if selected_col in num_cols:
-            st.markdown("#### 📊 Numeric Statistics")
+            st.markdown("#### Numeric Statistics")
             r1c1, r1c2, r1c3 = st.columns(3)
             r1c1.metric("Min", f"{stats['min']:,.4f}")
             r1c2.metric("Max", f"{stats['max']:,.4f}")
@@ -126,18 +136,22 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
                              title=f"Distribution of {selected_col}",
                              marginal="box")
             fig.update_traces(marker_line_width=0, opacity=0.8)
-            st.plotly_chart(fig, width='stretch')
+            fig.update_layout(template="plotly_white", **get_chart_theme())
+            st.plotly_chart(fig, use_container_width=True)
         else:
-            st.markdown("#### 📊 Categorical Statistics")
+            st.markdown("#### Categorical Statistics")
+            st.markdown('<div class="dataframe-wrapper">', unsafe_allow_html=True)
             st.dataframe(
                 df[selected_col].value_counts().head(20).to_frame(),
-                width='stretch'
+                use_container_width=True
             )
+            st.markdown('</div>', unsafe_allow_html=True)
             vc = df[selected_col].value_counts().head(15)
             fig = px.bar(x=vc.index.astype(str), y=vc.values,
                         title=f"Top 15 values in {selected_col}",
-                        color=vc.values, color_continuous_scale="Viridis")
-            st.plotly_chart(fig, width='stretch')
+                        color=vc.values, color_continuous_scale="Blues")
+            fig.update_layout(template="plotly_white", **get_chart_theme())
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def render_data_quality_report(df: pd.DataFrame) -> None:
@@ -155,17 +169,17 @@ def render_data_quality_report(df: pd.DataFrame) -> None:
     Returns:
         None — renders metrics + gauge + issues into Streamlit
     """
-    st.markdown("### ✅ Data Quality Report")
-    st.caption("Đánh giá tổng thể chất lượng dữ liệu")
+    st.markdown("### Data Quality Report")
+    st.caption("Đánh giá tổng thể chất lượng dữ liệu — Pro Max palette")
 
     quality = compute_data_quality_score(df)
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("📦 Completeness", f"{quality['completeness']}%")
-    c2.metric("🎯 Uniqueness", f"{quality['uniqueness']}%")
-    c3.metric("✅ Validity", f"{quality['validity']}%")
-    c4.metric("🏆 Overall Score", f"{quality['overall']}%",
-             delta="Tốt ✅" if quality['overall'] >= 80 else "Trung bình ⚠️" if quality['overall'] >= 60 else "Kém ❌")
+    c1.metric("Completeness", f"{quality['completeness']}%")
+    c2.metric("Uniqueness", f"{quality['uniqueness']}%")
+    c3.metric("Validity", f"{quality['validity']}%")
+    c4.metric("Overall Score", f"{quality['overall']}%",
+             delta="Tốt" if quality['overall'] >= 80 else "Trung bình" if quality['overall'] >= 60 else "Kém")
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",
@@ -175,37 +189,38 @@ def render_data_quality_report(df: pd.DataFrame) -> None:
         delta={'reference': 80},
         gauge={
             'axis': {'range': [None, 100]},
-            'bar': {'color': "#818cf8"},
+            'bar': {'color': "#1E40AF"},
             'steps': [
-                {'range': [0, 40], 'color': "#f87171"},
-                {'range': [40, 70], 'color': "#fbbf24"},
-                {'range': [70, 100], 'color': "#34d399"}
+                {'range': [0, 40], 'color': "#DC2626"},
+                {'range': [40, 70], 'color': "#D97706"},
+                {'range': [70, 100], 'color': "#059669"}
             ],
             'threshold': {
-                'line': {'color': "white", 'width': 4},
+                'line': {'color': "#1E3A8A", 'width': 3},
                 'thickness': 0.75,
                 'value': 80
             }
         }
     ))
-    fig.update_layout(height=300)
-    st.plotly_chart(fig, width='stretch')
+    fig.update_layout(height=280, **get_chart_theme())
+    st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("#### 📌 Vấn đề phát hiện")
+    st.markdown("#### Vấn đề phát hiện")
     issues: List[str] = []
     if quality['dup_rows'] > 0:
-        issues.append(f"⚠️ {quality['dup_rows']:,} dòng trùng lặp")
+        issues.append(f"{quality['dup_rows']:,} dòng trùng lặp")
     if quality['outlier_count'] > 0:
-        issues.append(f"⚠️ {quality['outlier_count']:,} giá trị ngoại lai")
+        issues.append(f"{quality['outlier_count']:,} giá trị ngoại lai")
     if quality['filled_cells'] < quality['total_cells']:
         missing = quality['total_cells'] - quality['filled_cells']
-        issues.append(f"⚠️ {missing:,} giá trị thiếu")
+        issues.append(f"{missing:,} giá trị thiếu")
 
     if not issues:
-        issues.append("✅ Dữ liệu sạch, không phát hiện vấn đề!")
+        issues.append("Dữ liệu sạch, không phát hiện vấn đề!")
 
     for issue in issues:
-        render_insight_card("📊", "", issue, "good" if "✅" in issue else "warning")
+        is_ok = "sạch" in issue
+        render_insight_card("check" if is_ok else "alert", "", issue, "good" if is_ok else "warning")
 
 
 def render_quick_start_tutorial() -> None:
@@ -306,28 +321,14 @@ def render_confusion_matrix(cm: np.ndarray, labels: List[str]) -> go.Figure:
 
 def render_roc_curve(fpr: np.ndarray, tpr: np.ndarray, auc_score: float) -> go.Figure:
     """
-    Render an ROC curve as a Plotly line chart.
-
-    Args:
-        fpr: False positive rates (1D numpy array from sklearn.metrics.roc_curve)
-        tpr: True positive rates (1D numpy array from sklearn.metrics.roc_curve)
-        auc_score: Area Under the Curve score (float, 0-1)
-
-    Returns:
-        Plotly Figure with ROC curve + diagonal reference line
-
-    Example:
-        >>> from sklearn.metrics import roc_curve, auc
-        >>> fpr, tpr, _ = roc_curve(y_test, y_prob)
-        >>> auc_score = auc(fpr, tpr)
-        >>> fig = render_roc_curve(fpr, tpr, auc_score)
+    Render ROC curve — Pro Max palette (blue primary #1E40AF, danger dash).
     """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines',
                             name=f'ROC (AUC={auc_score:.3f})',
-                            line=dict(color="#818cf8", width=2)))
+                            line=dict(color="#1E40AF", width=2)))
     fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines',
-                            name='Random', line=dict(color="#f87171", dash="dash")))
+                            name='Random', line=dict(color="#DC2626", dash="dash")))
     fig.update_layout(title="ROC Curve", xaxis_title="False Positive Rate",
-                     yaxis_title="True Positive Rate", height=400)
+                     yaxis_title="True Positive Rate", height=400, **get_chart_theme())
     return fig

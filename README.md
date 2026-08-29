@@ -2,7 +2,7 @@
 
 **Nền tảng phân tích dữ liệu học tập** — Phân tích điểm số, nhóm rủi ro, kiểm định thống kê và học máy cho sinh viên ngành Thống kê.
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.29%2B-red)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-green)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)

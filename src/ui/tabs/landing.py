@@ -1,20 +1,22 @@
-"""Landing page — hero section, KPI metrics, quick-start guide, and CTA when no data is loaded."""
+"""Landing page — Pro Max Data-Dense + Bento Grid, Lucide icons (no emoji)."""
 import streamlit as st
 
 from src.ui.components import render_quick_start_tutorial
 
 try:
-    from src.ui.theme import metric_card, gradient_text, status_badge
+    from src.ui.theme import metric_card, gradient_text, status_badge, icon
 except ImportError:
-    # Fallback stubs if theme_config is unavailable
-    def metric_card(title, value, change="", icon="📊", color="primary"):
+    def metric_card(title, value, change="", icon="chart", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
 
-    def gradient_text(text, color1="#1877F2", color2="#E4405F"):
+    def gradient_text(text, color1="#1E40AF", color2="#D97706"):
         return f"<span style='font-weight:700'>{text}</span>"
 
     def status_badge(text, status="primary"):
         return f"<span>{text}</span>"
+
+    def icon(name, size=""):
+        return ""
 
 
 def render_landing_page() -> None:
@@ -23,43 +25,52 @@ def render_landing_page() -> None:
     # ═══════════════════════════════════════════════════
     # HERO SECTION
     # ═══════════════════════════════════════════════════
-    st.markdown("""
+    # Hero — Pro Max: subtle, data-dense, blue→amber accent, Fira Sans
+    st.markdown(f"""
     <div style="
         text-align: center;
-        padding: 3.5rem 1rem 2rem;
-        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
-        border-radius: var(--radius-lg);
+        padding: 2.5rem 1rem 1.5rem;
+        background: var(--card);
         border: 1px solid var(--border-light);
-        margin-bottom: 1.5rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 12px;
+        box-shadow: var(--shadow-sm);
     ">
-        <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem;">
-            🎓 Learning Analytics Thống kê
+        <div style="display:flex;justify-content:center;margin-bottom:8px">{icon("graduation")}</div>
+        <h1 style="font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; font-family: var(--font-display);">
+            Learning Analytics <span style="color: var(--primary);">Thống kê</span>
         </h1>
-        <p style="font-size: 1.05rem; color: var(--text-secondary); max-width: 560px; margin: 0 auto 0.5rem;">
+        <p style="font-size: 0.92rem; color: var(--text-secondary); max-width: 560px; margin: 6px auto 0; line-height: 1.5;">
             Phân tích dữ liệu học tập, điểm số, nhóm rủi ro và kiểm định thống kê
         </p>
-        <p style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0;">
-            Practical Statistics for Data Scientists, 2nd Ed
+        <p style="font-size: 0.78rem; color: var(--text-tertiary); margin: 4px 0 0;">
+            Practical Statistics for Data Scientists, 2nd Ed — <span style="color:var(--accent);font-weight:600">Pro Max Data-Dense</span>
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════
-    # KPI METRIC CARDS  —  row of 4
+    # CAPABILITY CARDS  —  what you can do with this tool
     # ═══════════════════════════════════════════════════
-    kpis = [
-        ("Total Students", "1,250", "↑ 5.3%", "👥"),
-        ("Avg Score",      "87.4",  "↑ 2.1%", "📚"),
-        ("Courses",        "24",    "→ 0%",   "🎯"),
-        ("Graduation",     "94.2%", "↑ 1.8%", "🎓"),
+    # Capability cards — Pro Max Bento: Lucide icons, compact
+    caps = [
+        ("upload", "Upload dữ liệu", "CSV / Excel — nhiều file cùng lúc, 50MB", "primary"),
+        ("chart", "Khám phá", "Dashboard tổng quan, profiling, quality", "success"),
+        ("trending", "Thống kê & ML", "T-test, ANOVA, Bootstrap, Regression, PCA", "info"),
+        ("sparkles", "AI Insights", "Tóm tắt & khuyến nghị tự động", "accent"),
     ]
-    cols = st.columns(4)
-    for i, (label, value, change, icon) in enumerate(kpis):
-        with cols[i]:
-            st.markdown(metric_card(label, value, change, icon),
-                        unsafe_allow_html=True)
+    cap_cols = st.columns(4)
+    for i, (ic, title, desc, color) in enumerate(caps):
+        with cap_cols[i]:
+            st.markdown(f"""
+            <div class="feature-card tone-{color} animate-fade-in" style="display:flex;flex-direction:column;gap:6px;min-height:132px;">
+                <div style="color: var(--{color if color!='accent' else 'accent'});">{icon(ic)}</div>
+                <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary)">{title}</div>
+                <div style="color:var(--text-secondary);font-size:0.80rem;line-height:1.4;overflow-wrap:break-word">{desc}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='sp-md'></div>", unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════
     # QUICK START GUIDE  (step-by-step)
@@ -105,22 +116,12 @@ def render_landing_page() -> None:
     cta_col1, cta_col2, cta_col3 = st.columns([1, 2, 1])
     with cta_col2:
         st.markdown("""
-        <div style="
-            background: var(--primary-color);
-            color: #fff;
-            border-radius: var(--radius-md);
-            padding: 0.75rem 1.5rem;
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
-            cursor: default;
-        ">
+        <div class="cta-banner animate-fade-in">
             📥 Upload dữ liệu từ sidebar để bắt đầu
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='sp-md'></div>", unsafe_allow_html=True)
 
     # Feature badges row
     badge_cols = st.columns(5)

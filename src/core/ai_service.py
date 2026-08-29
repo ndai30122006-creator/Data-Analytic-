@@ -295,8 +295,18 @@ _ai_service: Optional[AIService] = None
 
 
 def get_ai_service(api_key: Optional[str] = None, provider: str = "openai") -> AIService:
-    """Get or create the singleton AI service instance."""
+    """Get or create singleton — recreates if api_key/provider changes (fix stale cache)."""
     global _ai_service
+    # Recreate when params differ, so st.session_state.ai_api_key changes take effect
     if _ai_service is None:
         _ai_service = AIService(api_key, provider)
+    elif api_key is not None and (api_key != _ai_service.api_key or provider.lower() != _ai_service.provider):
+        logger.info("AI service params changed (provider=%s); recreating singleton", provider)
+        _ai_service = AIService(api_key, provider)
     return _ai_service
+
+
+def reset_ai_service() -> None:
+    """For tests: clear singleton."""
+    global _ai_service
+    _ai_service = None

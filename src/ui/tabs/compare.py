@@ -41,7 +41,7 @@ def render_compare_tab():
                   df2.isnull().sum().sum(),
                   round(df2.memory_usage(deep=True).sum() / 1024 / 1024, 2)]
         }
-        st.dataframe(pd.DataFrame(comp_data), width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(comp_data), use_container_width=True, hide_index=True)
 
         st.markdown("#### 🔗 So sánh columns")
         cols1 = set(df1.columns)
@@ -87,7 +87,7 @@ def render_compare_tab():
                             f"{ds2} - Std": round(s2.std(), 4),
                         })
                 if stat_comp:
-                    st.dataframe(pd.DataFrame(stat_comp), width='stretch', hide_index=True)
+                    st.dataframe(pd.DataFrame(stat_comp), use_container_width=True, hide_index=True)
                     if st.button("📊 Vẽ biểu đồ so sánh", key="plot_compare"):
                         for col in common_num[:5]:
                             fig = go.Figure()
@@ -95,4 +95,4 @@ def render_compare_tab():
                             fig.add_trace(go.Box(y=df2[col].dropna(), name=ds2, marker_color="#34d399"))
                             fig.update_layout(title=f"Compare: {col}", height=300)
                             apply_theme(fig)
-                            st.plotly_chart(fig, width='stretch')
+                            st.plotly_chart(fig, use_container_width=True)

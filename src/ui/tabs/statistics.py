@@ -88,7 +88,7 @@ def _render_hypothesis_testing(df, num, cat):
                             fig.add_trace(go.Violin(y=s2, name=g2, box_visible=True, meanline_visible=True))
                             fig.update_layout(title=f"{val_col}: {g1} vs {g2} (p={p:.4f}, d={abs(cohens_d):.3f})")
                             apply_theme(fig)
-                            st.plotly_chart(fig, width='stretch')
+                            st.plotly_chart(fig, use_container_width=True)
                         else:
                             st.error("Need ≥2 values per group")
                     except Exception as e:
@@ -139,7 +139,7 @@ def _render_hypothesis_testing(df, num, cat):
                     st.info(f"**Conclusion:** {'Groups differ 🎯' if p < SIGNIFICANCE_LEVEL else 'No difference ❌'}")
                     fig = px.box(df, x=grp_col, y=val_col, title=f"ANOVA: {val_col} by {grp_col}")
                     apply_theme(fig)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
     elif "Mann-Whitney" in test_type:
         if len(num) >= 1 and len(cat) >= 1:
@@ -174,7 +174,7 @@ def _render_hypothesis_testing(df, num, cat):
                     st.info(f"**Conclusion:** {'Groups differ 🎯' if p < SIGNIFICANCE_LEVEL else 'No difference ❌'}")
                     fig = px.box(df, x=grp_col, y=val_col, title=f"Kruskal-Wallis: {val_col} by {grp_col}")
                     apply_theme(fig)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
     elif "Chi-Square" in test_type:
         if len(cat) >= 2:
@@ -191,7 +191,7 @@ def _render_hypothesis_testing(df, num, cat):
                 fig = px.imshow(ct, text_auto=True, title="Contingency Table",
                                color_continuous_scale="Viridis", aspect='auto')
                 apply_theme(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
         else:
             st.warning("Need ≥2 categorical columns")
 
@@ -227,7 +227,7 @@ def _render_regression(df, num):
             c3.metric("Intercept", f"{model.intercept_:.4f}")
             c4.metric("Features", f"{len(features)}")
             coef_df = pd.DataFrame({"Feature": features, "Coefficient": model.coef_})
-            st.dataframe(coef_df, width='stretch')
+            st.dataframe(coef_df, use_container_width=True)
             y_pred = model.predict(X_test_s)
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=y_test, y=y_pred, mode='markers', marker=dict(color="#818cf8", size=6, opacity=0.6)))
@@ -236,6 +236,6 @@ def _render_regression(df, num):
             fig.update_layout(title=f"Actual vs Predicted (R²={test_r2:.4f})",
                             xaxis_title="Actual", yaxis_title="Predicted", height=350)
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         else:
             st.error("Need ≥10 samples")

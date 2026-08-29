@@ -79,9 +79,9 @@ def _render_kmeans(X, X_scaled, cols, scaler):
                                         mode='markers', marker=dict(symbol='x', size=12, color='red'),
                                         name="Centroids"))
                 apply_theme(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
             profile = X.groupby("Cluster")[cols].agg(["mean", "std", "count"]).round(2)
-            st.dataframe(profile, width="stretch")
+            st.dataframe(profile, use_container_width=True)
 
 
 def _render_dbscan(X, X_scaled, cols):
@@ -102,7 +102,7 @@ def _render_dbscan(X, X_scaled, cols):
                             title=f"DBSCAN (eps={eps})",
                             color_discrete_sequence=px.colors.qualitative.Set2 + ["#000"])
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_hierarchical(X, X_scaled, cols):
@@ -119,7 +119,7 @@ def _render_hierarchical(X, X_scaled, cols):
                             title=f"Hierarchical (K={n_clusters})",
                             color_discrete_sequence=px.colors.qualitative.Set2)
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         try:
             import matplotlib.pyplot as plt
             linkage_matrix = scipy_linkage(X_scaled, method=linkage)

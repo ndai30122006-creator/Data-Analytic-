@@ -58,7 +58,7 @@ def render_bootstrap_tab(df, num, key_prefix="da"):
             fig.update_layout(title=f"Bootstrap Distribution of {stat_choice} (n_iter={n_iter})",
                             height=400, xaxis_title=stat_choice, yaxis_title="Frequency")
             apply_theme(fig)
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
             insight_card("💡", "Interpretation",
                         f"Với {conf_level}% confidence, {stat_choice.lower()} nằm trong khoảng "

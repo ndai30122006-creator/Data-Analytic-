@@ -213,7 +213,7 @@ async def get_current_user(authorization: str = Header(...)) -> str:
 async def root():
     return {"message": "Learning Analytics API", "version": "1.3.0"}
 
-@app.post("/auth/login", response_model=LoginResponse)
+@app.post("/auth/login", response_model=LoginResponse, dependencies=[Depends(check_rate_limit)])
 async def login(request: LoginRequest, req: Request):
     """Authenticate user via SQLite DB and return JWT token."""
     user = verify_user_password(request.username, request.password)
@@ -235,7 +235,7 @@ async def login(request: LoginRequest, req: Request):
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
 
-@app.post("/auth/register")
+@app.post("/auth/register", dependencies=[Depends(check_rate_limit)])
 async def register(request: RegisterRequest, req: Request):
     """Register a new user (persisted to SQLite)."""
     if len(request.password) < 6:
@@ -438,7 +438,7 @@ def _dispatch_analysis(analysis_type: str, params: Dict[str, Any]) -> Dict[str, 
     raise ValueError(f"Unknown analysis_type: {analysis_type}")
 
 
-@app.post("/analysis/run")
+@app.post("/analysis/run", dependencies=[Depends(check_rate_limit)])
 async def run_analysis(
     request: AnalysisRequest,
     username: str = Depends(get_current_user),
