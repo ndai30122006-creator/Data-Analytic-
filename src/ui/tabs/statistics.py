@@ -189,7 +189,7 @@ def _render_hypothesis_testing(df, num, cat):
                 c3.metric("DoF", dof)
                 st.info(f"**Conclusion:** {'Variables are related 🎯' if p < SIGNIFICANCE_LEVEL else 'No relationship ❌'}")
                 fig = px.imshow(ct, text_auto=True, title="Contingency Table",
-                               color_continuous_scale="Viridis", aspect='auto')
+                               color_continuous_scale="Blues", aspect='auto')
                 apply_theme(fig)
                 st.plotly_chart(fig, use_container_width=True)
         else:
@@ -205,7 +205,7 @@ def _render_regression(df, num):
     from sklearn.preprocessing import StandardScaler
     from sklearn.model_selection import train_test_split
 
-    st.markdown("### 📈 Linear Regression (Book Ch.4)")
+    st.markdown("###  Linear Regression (Book Ch.4)")
     target = st.selectbox("Target:", num, key="reg_target")
     features = st.multiselect("Features:", [c for c in num if c != target],
                             default=[c for c in num if c != target][:min(3, len(num)-1)], key="reg_feats")
@@ -230,7 +230,7 @@ def _render_regression(df, num):
             st.dataframe(coef_df, use_container_width=True)
             y_pred = model.predict(X_test_s)
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=y_test, y=y_pred, mode='markers', marker=dict(color="#818cf8", size=6, opacity=0.6)))
+            fig.add_trace(go.Scatter(x=y_test, y=y_pred, mode='markers', marker=dict(color="#1E40AF", size=6, opacity=0.6)))
             fig.add_trace(go.Scatter(x=[y_test.min(), y_test.max()], y=[y_test.min(), y_test.max()],
                                     mode='lines', line=dict(color="#f87171", dash="dash"), name="Perfect Fit"))
             fig.update_layout(title=f"Actual vs Predicted (R²={test_r2:.4f})",

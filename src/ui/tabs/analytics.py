@@ -69,7 +69,7 @@ def _render_anomaly(df: pd.DataFrame, num: List[str]) -> None:
         if len(ac) >= 2:
             X["A"] = p
             fig = px.scatter(X, x=ac[0], y=ac[1], color=X["A"].map({1: "Normal", -1: "Anomaly"}),
-                           title="Anomalies", color_discrete_map={"Normal": "#818cf8", "Anomaly": "#ef4444"})
+                           title="Anomalies", color_discrete_map={"Normal": "#1E40AF", "Anomaly": "#ef4444"})
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
 
@@ -102,7 +102,7 @@ def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
                 else:
                     vc = df[c_].value_counts().head(15)
                     fig = px.bar(x=vc.index.astype(str), y=vc.values, title="Top 15",
-                               color=vc.values, color_continuous_scale="Viridis")
+                               color=vc.values, color_continuous_scale="Blues")
                     apply_theme(fig)
                     st.plotly_chart(fig, use_container_width=True)
 
@@ -217,7 +217,7 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
     st.markdown("---")
 
     # Outliers
-    st.markdown("#### 📊 Outliers")
+    st.markdown("####  Outliers")
     num_cols_clean = work_df.select_dtypes(include=[np.number]).columns.tolist()
     if num_cols_clean:
         outlier_col = st.selectbox("Column:", num_cols_clean, key="outlier_col")
@@ -446,7 +446,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
             valid_results = [r for r in results if isinstance(r.get("Train R²"), (int, float))]
             if valid_results:
                 df_plot = pd.DataFrame(valid_results)
-                fig.add_trace(go.Bar(name="Train", x=df_plot["Model"], y=df_plot["Train R²"], marker_color="#818cf8"))
+                fig.add_trace(go.Bar(name="Train", x=df_plot["Model"], y=df_plot["Train R²"], marker_color="#1E40AF"))
                 fig.add_trace(go.Bar(name="Test", x=df_plot["Model"], y=df_plot["Test R²"], marker_color="#34d399"))
                 fig.update_layout(title="AutoML Results", barmode='group', height=350)
                 apply_theme(fig)
