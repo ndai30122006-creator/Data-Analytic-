@@ -1,16 +1,18 @@
 """Unit tests for API endpoints (api.py)"""
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 # Mock database before importing api
-with patch('src.core.database.init_db'):
+with patch("src.core.database.init_db"):
     from api import app
 
 
@@ -39,40 +41,33 @@ class TestHealthEndpoint:
 class TestAuthEndpoints:
     """Tests for authentication endpoints."""
 
-    @patch('api.create_user')
+    @patch("api.create_user")
     def test_register_success(self, mock_create_user):
         """Test successful user registration."""
         mock_user = MagicMock()
         mock_user.username = "newuser"
         mock_create_user.return_value = mock_user
 
-        response = client.post("/auth/register", json={
-            "username": "newuser",
-            "password": "securepass123"
-        })
+        response = client.post("/auth/register", json={"username": "newuser", "password": "securepass123"})
         assert response.status_code == 200
         data = response.json()
         assert "registered successfully" in data["message"]
 
     def test_register_short_password(self):
         """Test registration with short password."""
-        response = client.post("/auth/register", json={
-            "username": "testuser",
-            "password": "12345"  # Less than 6 characters
-        })
+        response = client.post(
+            "/auth/register", json={"username": "testuser", "password": "12345"}  # Less than 6 characters
+        )
         assert response.status_code == 400
         data = response.json()
         assert "Password must be at least 6 characters" in data["detail"]
 
     def test_register_empty_username(self):
         """Test registration with empty username."""
-        response = client.post("/auth/register", json={
-            "username": "",
-            "password": "securepass123"
-        })
+        response = client.post("/auth/register", json={"username": "", "password": "securepass123"})
         assert response.status_code == 400
 
-    @patch('api.verify_user_password')
+    @patch("api.verify_user_password")
     def test_login_success(self, mock_verify):
         """Test successful login."""
         mock_user = MagicMock()
@@ -80,38 +75,29 @@ class TestAuthEndpoints:
         mock_user.is_active = True
         mock_verify.return_value = mock_user
 
-        response = client.post("/auth/login", json={
-            "username": "testuser",
-            "password": "correctpass"
-        })
+        response = client.post("/auth/login", json={"username": "testuser", "password": "correctpass"})
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
         assert data["token_type"] == "bearer"
         assert data["username"] == "testuser"
 
-    @patch('api.verify_user_password')
+    @patch("api.verify_user_password")
     def test_login_invalid_credentials(self, mock_verify):
         """Test login with invalid credentials."""
         mock_verify.return_value = None
 
-        response = client.post("/auth/login", json={
-            "username": "testuser",
-            "password": "wrongpass"
-        })
+        response = client.post("/auth/login", json={"username": "testuser", "password": "wrongpass"})
         assert response.status_code == 401
 
-    @patch('api.verify_user_password')
+    @patch("api.verify_user_password")
     def test_login_disabled_account(self, mock_verify):
         """Test login with disabled account."""
         mock_user = MagicMock()
         mock_user.is_active = False
         mock_verify.return_value = mock_user
 
-        response = client.post("/auth/login", json={
-            "username": "disabled_user",
-            "password": "pass123"
-        })
+        response = client.post("/auth/login", json={"username": "disabled_user", "password": "pass123"})
         assert response.status_code == 403
 
     def test_verify_without_token(self):
@@ -122,10 +108,7 @@ class TestAuthEndpoints:
 
     def test_verify_with_invalid_token(self):
         """Test verify endpoint with invalid token."""
-        response = client.get(
-            "/auth/verify",
-            headers={"Authorization": "Bearer invalid_token_here"}
-        )
+        response = client.get("/auth/verify", headers={"Authorization": "Bearer invalid_token_here"})
         assert response.status_code == 401
 
 
@@ -141,24 +124,17 @@ class TestApiKeyEndpoint:
     def test_update_api_key_empty(self):
         """Test updating with empty API key."""
         # First get a valid token
-        with patch('api.verify_user_password') as mock_verify:
+        with patch("api.verify_user_password") as mock_verify:
             mock_user = MagicMock()
             mock_user.username = "testuser"
             mock_user.is_active = True
             mock_verify.return_value = mock_user
 
-            login_resp = client.post("/auth/login", json={
-                "username": "testuser",
-                "password": "pass123"
-            })
+            login_resp = client.post("/auth/login", json={"username": "testuser", "password": "pass123"})
             token = login_resp.json()["access_token"]
 
             # Try with empty API key
-            response = client.post(
-                "/auth/api-key",
-                json={"api_key": ""},
-                headers={"Authorization": f"Bearer {token}"}
-            )
+            response = client.post("/auth/api-key", json={"api_key": ""}, headers={"Authorization": f"Bearer {token}"})
             assert response.status_code == 400
 
 
@@ -167,40 +143,30 @@ class TestAnalysisEndpoint:
 
     def test_run_analysis_without_auth(self):
         """Test running analysis without authentication."""
-        response = client.post("/analysis/run", json={
-            "dataset_name": "test",
-            "analysis_type": "overview"
-        })
+        response = client.post("/analysis/run", json={"dataset_name": "test", "analysis_type": "overview"})
         # FastAPI returns 422 for missing required header
         assert response.status_code in (401, 422)
 
     def test_run_analysis_missing_fields(self):
         """Test running analysis with missing required fields."""
-        with patch('api.verify_user_password') as mock_verify:
+        with patch("api.verify_user_password") as mock_verify:
             mock_user = MagicMock()
             mock_user.username = "testuser"
             mock_user.is_active = True
             mock_verify.return_value = mock_user
 
-            login_resp = client.post("/auth/login", json={
-                "username": "testuser",
-                "password": "pass123"
-            })
+            login_resp = client.post("/auth/login", json={"username": "testuser", "password": "pass123"})
             token = login_resp.json()["access_token"]
 
             # Missing dataset_name (FastAPI validates via Pydantic - returns 422)
             response = client.post(
-                "/analysis/run",
-                json={"analysis_type": "overview"},
-                headers={"Authorization": f"Bearer {token}"}
+                "/analysis/run", json={"analysis_type": "overview"}, headers={"Authorization": f"Bearer {token}"}
             )
             assert response.status_code in (400, 422)
 
             # Missing analysis_type
             response = client.post(
-                "/analysis/run",
-                json={"dataset_name": "test"},
-                headers={"Authorization": f"Bearer {token}"}
+                "/analysis/run", json={"dataset_name": "test"}, headers={"Authorization": f"Bearer {token}"}
             )
             assert response.status_code in (400, 422)
 

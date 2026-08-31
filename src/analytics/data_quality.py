@@ -1,12 +1,14 @@
 """Advanced Data Quality (Book Ch.1)"""
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import streamlit as st
 
 from .base import insight_card
 
 try:
     from scipy import stats as scipy_stats
+
     SCIPY_AVAIL = True
 except Exception:
     SCIPY_AVAIL = False
@@ -76,13 +78,15 @@ def _render_duplicates(df):
 
 
 def _render_schema(df):
-    schema = pd.DataFrame({
-        "Column": df.columns,
-        "Type": df.dtypes.astype(str),
-        "Non-Null": df.count().values,
-        "Null%": (df.isnull().sum().values / len(df) * 100).round(1).astype(str) + "%",
-        "Unique": df.nunique().values
-    })
+    schema = pd.DataFrame(
+        {
+            "Column": df.columns,
+            "Type": df.dtypes.astype(str),
+            "Non-Null": df.count().values,
+            "Null%": (df.isnull().sum().values / len(df) * 100).round(1).astype(str) + "%",
+            "Unique": df.nunique().values,
+        }
+    )
     st.dataframe(schema, use_container_width=True)
 
 
@@ -103,11 +107,14 @@ def _render_drift(df, num):
         if len(a) > 1 and len(b) > 1 and SCIPY_AVAIL:
             try:
                 stat, p = scipy_stats.ks_2samp(a, b)
-                drift_results.append({
-                    "Column": c, "KS Stat": round(stat, 4),
-                    "p-value": round(p, 6),
-                    "Drift": "⚠️ Yes" if p < 0.05 else "✅ No"
-                })
+                drift_results.append(
+                    {
+                        "Column": c,
+                        "KS Stat": round(stat, 4),
+                        "p-value": round(p, 6),
+                        "Drift": "⚠️ Yes" if p < 0.05 else "✅ No",
+                    }
+                )
             except Exception:
                 pass
 
@@ -115,8 +122,11 @@ def _render_drift(df, num):
         st.dataframe(pd.DataFrame(drift_results), use_container_width=True)
         n_drift = sum(1 for r in drift_results if r["Drift"] == "⚠️ Yes")
         if n_drift > 0:
-            insight_card("⚠️", f"{n_drift} drifted columns",
-                        f"{n_drift}/{len(drift_results)} columns have different distributions",
-                        "warning" if n_drift <= len(drift_results)/2 else "danger")
+            insight_card(
+                "⚠️",
+                f"{n_drift} drifted columns",
+                f"{n_drift}/{len(drift_results)} columns have different distributions",
+                "warning" if n_drift <= len(drift_results) / 2 else "danger",
+            )
         else:
             insight_card("✅", "No drift detected", "Data is stable", "good")

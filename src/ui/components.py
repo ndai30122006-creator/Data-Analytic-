@@ -1,13 +1,15 @@
 """Reusable UI Components — Pro Max Data-Dense Edition"""
-from typing import List, Optional, Any, Dict
-import streamlit as st
-import pandas as pd
+
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
-from src.utils.validators import get_column_stats, compute_data_quality_score, generate_data_dictionary
 from src.utils.config import get_chart_theme
+from src.utils.validators import compute_data_quality_score, generate_data_dictionary, get_column_stats
 
 # Lucide SVG icons (Pro Max: no emoji as icons)
 _LUCIDE = {
@@ -22,7 +24,9 @@ def _lucide(name: str) -> str:
     return _LUCIDE.get(name, _LUCIDE["info"])
 
 
-def render_kpi_card(container: st.delta_generator.DeltaGenerator, label: str, value: str, delta: Optional[str] = None) -> None:
+def render_kpi_card(
+    container: st.delta_generator.DeltaGenerator, label: str, value: str, delta: Optional[str] = None
+) -> None:
     """
     Render a KPI metric card inside a Streamlit container.
 
@@ -35,13 +39,16 @@ def render_kpi_card(container: st.delta_generator.DeltaGenerator, label: str, va
     Returns:
         None — renders HTML directly into the container
     """
-    container.markdown(f'''
+    container.markdown(
+        f"""
     <div class="kpi-card">
         <div class="kpi-label">{label}</div>
         <div class="kpi-value">{value}</div>
         {f'<div class="kpi-delta">{delta}</div>' if delta else ''}
     </div>
-    ''', unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_skeleton_card(height: str = "84px") -> None:
@@ -64,7 +71,7 @@ def render_insight_card(icon: str, title: str, msg: str, type: str = "info") -> 
     st.markdown(
         f'<div class="insight-card insight-{type}" role="status">'
         f'<strong>{title_html}</strong><br><span style="overflow-wrap:break-word">{msg}</span></div>',
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -78,15 +85,10 @@ def render_data_dictionary(df: pd.DataFrame) -> None:
     dict_df = generate_data_dictionary(df)
     st.markdown('<div class="dataframe-wrapper">', unsafe_allow_html=True)
     st.dataframe(dict_df, use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    csv = dict_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        "📥 Download Data Dictionary (CSV)",
-        csv,
-        "data_dictionary.csv",
-        "text/csv"
-    )
+    csv = dict_df.to_csv(index=False).encode("utf-8")
+    st.download_button("📥 Download Data Dictionary (CSV)", csv, "data_dictionary.csv", "text/csv")
 
 
 def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List[str]) -> None:
@@ -132,24 +134,23 @@ def render_column_profiler(df: pd.DataFrame, num_cols: List[str], cat_cols: List
             r2c2.metric("Std", f"{stats['std']:,.4f}")
             r2c3.metric("IQR", f"{stats['iqr']:,.4f}")
 
-            fig = px.histogram(df, x=selected_col, nbins=50,
-                             title=f"Distribution of {selected_col}",
-                             marginal="box")
+            fig = px.histogram(df, x=selected_col, nbins=50, title=f"Distribution of {selected_col}", marginal="box")
             fig.update_traces(marker_line_width=0, opacity=0.8)
             fig.update_layout(template="plotly_white", **get_chart_theme())
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.markdown("#### Categorical Statistics")
             st.markdown('<div class="dataframe-wrapper">', unsafe_allow_html=True)
-            st.dataframe(
-                df[selected_col].value_counts().head(20).to_frame(),
-                use_container_width=True
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.dataframe(df[selected_col].value_counts().head(20).to_frame(), use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
             vc = df[selected_col].value_counts().head(15)
-            fig = px.bar(x=vc.index.astype(str), y=vc.values,
-                        title=f"Top 15 values in {selected_col}",
-                        color=vc.values, color_continuous_scale="Blues")
+            fig = px.bar(
+                x=vc.index.astype(str),
+                y=vc.values,
+                title=f"Top 15 values in {selected_col}",
+                color=vc.values,
+                color_continuous_scale="Blues",
+            )
             fig.update_layout(template="plotly_white", **get_chart_theme())
             st.plotly_chart(fig, use_container_width=True)
 
@@ -178,41 +179,42 @@ def render_data_quality_report(df: pd.DataFrame) -> None:
     c1.metric("Completeness", f"{quality['completeness']}%")
     c2.metric("Uniqueness", f"{quality['uniqueness']}%")
     c3.metric("Validity", f"{quality['validity']}%")
-    c4.metric("Overall Score", f"{quality['overall']}%",
-             delta="Tốt" if quality['overall'] >= 80 else "Trung bình" if quality['overall'] >= 60 else "Kém")
+    c4.metric(
+        "Overall Score",
+        f"{quality['overall']}%",
+        delta="Tốt" if quality["overall"] >= 80 else "Trung bình" if quality["overall"] >= 60 else "Kém",
+    )
 
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=quality['overall'],
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Data Quality Score"},
-        delta={'reference': 80},
-        gauge={
-            'axis': {'range': [None, 100]},
-            'bar': {'color': "#1E40AF"},
-            'steps': [
-                {'range': [0, 40], 'color': "#DC2626"},
-                {'range': [40, 70], 'color': "#D97706"},
-                {'range': [70, 100], 'color': "#059669"}
-            ],
-            'threshold': {
-                'line': {'color': "#1E3A8A", 'width': 3},
-                'thickness': 0.75,
-                'value': 80
-            }
-        }
-    ))
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=quality["overall"],
+            domain={"x": [0, 1], "y": [0, 1]},
+            title={"text": "Data Quality Score"},
+            delta={"reference": 80},
+            gauge={
+                "axis": {"range": [None, 100]},
+                "bar": {"color": "#1E40AF"},
+                "steps": [
+                    {"range": [0, 40], "color": "#DC2626"},
+                    {"range": [40, 70], "color": "#D97706"},
+                    {"range": [70, 100], "color": "#059669"},
+                ],
+                "threshold": {"line": {"color": "#1E3A8A", "width": 3}, "thickness": 0.75, "value": 80},
+            },
+        )
+    )
     fig.update_layout(height=280, **get_chart_theme())
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("#### Vấn đề phát hiện")
     issues: List[str] = []
-    if quality['dup_rows'] > 0:
+    if quality["dup_rows"] > 0:
         issues.append(f"{quality['dup_rows']:,} dòng trùng lặp")
-    if quality['outlier_count'] > 0:
+    if quality["outlier_count"] > 0:
         issues.append(f"{quality['outlier_count']:,} giá trị ngoại lai")
-    if quality['filled_cells'] < quality['total_cells']:
-        missing = quality['total_cells'] - quality['filled_cells']
+    if quality["filled_cells"] < quality["total_cells"]:
+        missing = quality["total_cells"] - quality["filled_cells"]
         issues.append(f"{missing:,} giá trị thiếu")
 
     if not issues:
@@ -312,9 +314,9 @@ def render_confusion_matrix(cm: np.ndarray, labels: List[str]) -> go.Figure:
         >>> fig = render_confusion_matrix(cm, ["Negative", "Positive"])
         >>> st.plotly_chart(fig)
     """
-    fig = px.imshow(cm, text_auto=True, x=labels, y=labels,
-                    color_continuous_scale="Blues", aspect='auto',
-                    title="Confusion Matrix")
+    fig = px.imshow(
+        cm, text_auto=True, x=labels, y=labels, color_continuous_scale="Blues", aspect="auto", title="Confusion Matrix"
+    )
     fig.update_layout(height=400)
     return fig
 
@@ -324,11 +326,15 @@ def render_roc_curve(fpr: np.ndarray, tpr: np.ndarray, auc_score: float) -> go.F
     Render ROC curve — Pro Max palette (blue primary #1E40AF, danger dash).
     """
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines',
-                            name=f'ROC (AUC={auc_score:.3f})',
-                            line=dict(color="#1E40AF", width=2)))
-    fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines',
-                            name='Random', line=dict(color="#DC2626", dash="dash")))
-    fig.update_layout(title="ROC Curve", xaxis_title="False Positive Rate",
-                     yaxis_title="True Positive Rate", height=400, **get_chart_theme())
+    fig.add_trace(
+        go.Scatter(x=fpr, y=tpr, mode="lines", name=f"ROC (AUC={auc_score:.3f})", line=dict(color="#1E40AF", width=2))
+    )
+    fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#DC2626", dash="dash")))
+    fig.update_layout(
+        title="ROC Curve",
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        height=400,
+        **get_chart_theme(),
+    )
     return fig

@@ -1,14 +1,16 @@
 """Feature Engineering — Creation, Scaling, Selection (Book Ch.6)"""
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
+import streamlit as st
 
 from .base import apply_theme
 
 try:
-    from sklearn.preprocessing import StandardScaler, MinMaxScaler
     from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
+    from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
     SKLEARN_AVAIL = True
 except Exception:
     SKLEARN_AVAIL = False
@@ -31,9 +33,9 @@ def render_feature_engineering_tab(df, num, cat):
 
 
 def _render_create_features(df, num):
-    feat_type = st.selectbox("Feature type:", [
-        "Interaction", "Polynomial", "Binning", "Ratio", "Rolling Stats"
-    ], key="fe_type")
+    feat_type = st.selectbox(
+        "Feature type:", ["Interaction", "Polynomial", "Binning", "Ratio", "Rolling Stats"], key="fe_type"
+    )
 
     if feat_type == "Interaction" and len(num) >= 2:
         c1 = st.selectbox("Col 1:", num, key="fe_i1")
@@ -41,8 +43,12 @@ def _render_create_features(df, num):
         op = st.selectbox("Op:", ["*", "/", "+", "-"], key="fe_op")
         new_name = st.text_input("Name:", f"{c1}_{op}_{c2}", key="fe_iname")
         if st.button("➕ Create", key="fe_i_create"):
-            ops = {"*": lambda a, b: a * b, "/": lambda a, b: a / b.replace(0, np.nan),
-                   "+": lambda a, b: a + b, "-": lambda a, b: a - b}
+            ops = {
+                "*": lambda a, b: a * b,
+                "/": lambda a, b: a / b.replace(0, np.nan),
+                "+": lambda a, b: a + b,
+                "-": lambda a, b: a - b,
+            }
             df[new_name] = ops[op](df[c1], df[c2])
             st.success(f"✅ Created '{new_name}'")
             st.dataframe(df[[c1, c2, new_name]].head(10), use_container_width=True)
@@ -58,8 +64,7 @@ def _render_create_features(df, num):
         c = st.selectbox("Col:", num, key="fe_bc")
         n_bins = st.slider("Bins:", 2, 10, 4, key="fe_bn")
         if st.button("➕ Create", key="fe_b_create"):
-            df[f"{c}_bin"] = pd.qcut(df[c].rank(method='first'), q=n_bins,
-                                    labels=[f"Q{i+1}" for i in range(n_bins)])
+            df[f"{c}_bin"] = pd.qcut(df[c].rank(method="first"), q=n_bins, labels=[f"Q{i+1}" for i in range(n_bins)])
             st.success(f"✅ Created '{c}_bin'")
 
     elif feat_type == "Ratio" and len(num) >= 2:
@@ -82,13 +87,13 @@ def _render_scale_encode(df, num):
     st.markdown("#### 📐 Scaling & Encoding")
     if not num:
         return
-    scale_cols = st.multiselect("Scale:", num, default=num[:min(3, len(num))], key="fe_sc")
+    scale_cols = st.multiselect("Scale:", num, default=num[: min(3, len(num))], key="fe_sc")
     scaler_type = st.selectbox("Method:", ["StandardScaler", "MinMaxScaler"], key="fe_st")
     if st.button("📐 Scale", key="fe_scale_run") and scale_cols:
         s = StandardScaler() if "Standard" in scaler_type else MinMaxScaler()
         scaled = s.fit_transform(df[scale_cols])
         for i, c in enumerate(scale_cols):
-            suffix = '_zscore' if 'Standard' in scaler_type else '_minmax'
+            suffix = "_zscore" if "Standard" in scaler_type else "_minmax"
             df[f"{c}{suffix}"] = scaled[:, i]
         st.success(f"✅ Scaled {len(scale_cols)} columns")
 
@@ -110,9 +115,15 @@ def _render_feature_selection(df, num):
         _X_selected = selector.fit_transform(X, y)
         result = pd.DataFrame({"Feature": features, "Score": selector.scores_})
         result = result.sort_values("Score", ascending=True)
-        fig = px.bar(result, x="Score", y="Feature", orientation='h',
-                    title=f"Feature Scores ({method})",
-                    color="Score", color_continuous_scale="Viridis")
+        fig = px.bar(
+            result,
+            x="Score",
+            y="Feature",
+            orientation="h",
+            title=f"Feature Scores ({method})",
+            color="Score",
+            color_continuous_scale="Viridis",
+        )
         apply_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
         selected = result.nlargest(k, "Score")

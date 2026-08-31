@@ -1,18 +1,20 @@
 """Unit tests for security utilities (src/utils/security.py)"""
+
 import os
 import sys
 import tempfile
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
 from src.utils.security import (
     generate_secret_key,
-    get_jwt_secret_key,
+    get_access_token_expire_minutes,
     get_cors_origins,
     get_jwt_algorithm,
-    get_access_token_expire_minutes,
+    get_jwt_secret_key,
     validate_environment,
 )
 
@@ -49,8 +51,9 @@ class TestSecretKey:
 
             # Monkeypatch the secret_file path
             import src.utils.security as security_mod
+
             original_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            
+
             # Test that reading from file works
             with open(secret_file) as f:
                 read_key = f.read().strip()

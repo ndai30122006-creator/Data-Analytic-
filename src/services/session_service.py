@@ -1,16 +1,18 @@
 """Session state management service"""
+
 import logging
 import os
 import pickle
 from datetime import datetime
-from typing import Optional, Dict, Any
-import pandas as pd
+from typing import Any, Dict, Optional
 
+import pandas as pd
 import streamlit as st
 
 logger = logging.getLogger(__name__)
 
 SESSION_FILE = "saved_session.pkl"
+
 
 def save_session_state() -> tuple[bool, str]:
     """Save current session state to pickle file"""
@@ -30,6 +32,7 @@ def save_session_state() -> tuple[bool, str]:
     except Exception as e:
         logger.error("Unexpected session save error: %s", e, exc_info=True)
         return False, f"❌ Save failed: unexpected error"
+
 
 def load_session_state() -> tuple[bool, str]:
     """Load session state from pickle file"""
@@ -55,9 +58,11 @@ def load_session_state() -> tuple[bool, str]:
         logger.error("Unexpected session load error: %s", e, exc_info=True)
         return False, f"❌ Load failed: unexpected error"
 
+
 def has_saved_session() -> bool:
     """Check if a saved session exists"""
     return os.path.exists(SESSION_FILE)
+
 
 def get_session_info() -> Optional[Dict[str, Any]]:
     """Get info about saved session"""

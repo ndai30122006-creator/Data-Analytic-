@@ -1,5 +1,6 @@
 """Configuration constants for Data Analyst Pro v3.0 — Practical Statistics Edition"""
-from typing import Dict, Any, List
+
+from typing import Any, Dict, List
 
 # ── Validation Constants ────────────────────────────────────
 MIN_ROWS_VALIDATION = 10
@@ -36,36 +37,30 @@ AUTOML_N_ITER_RANDOMIZED = 10
 # ── Hyperparameter Grids ────────────────────────────────────
 PARAM_GRIDS = {
     "Random Forest": {
-        'model__n_estimators': [50, 100, 200],
-        'model__max_depth': [5, 10, None],
-        'model__min_samples_split': [2, 5, 10],
-        'model__min_samples_leaf': [1, 2, 4]
+        "model__n_estimators": [50, 100, 200],
+        "model__max_depth": [5, 10, None],
+        "model__min_samples_split": [2, 5, 10],
+        "model__min_samples_leaf": [1, 2, 4],
     },
     "XGBoost": {
-        'model__n_estimators': [50, 100, 200],
-        'model__max_depth': [3, 6, 10],
-        'model__learning_rate': [0.01, 0.05, 0.1],
-        'model__subsample': [0.8, 1.0]
+        "model__n_estimators": [50, 100, 200],
+        "model__max_depth": [3, 6, 10],
+        "model__learning_rate": [0.01, 0.05, 0.1],
+        "model__subsample": [0.8, 1.0],
     },
     "Gradient Boosting": {
-        'model__n_estimators': [50, 100, 200],
-        'model__max_depth': [3, 5, 7],
-        'model__learning_rate': [0.01, 0.05, 0.1],
-        'model__min_samples_split': [2, 5]
+        "model__n_estimators": [50, 100, 200],
+        "model__max_depth": [3, 5, 7],
+        "model__learning_rate": [0.01, 0.05, 0.1],
+        "model__min_samples_split": [2, 5],
     },
-    "Ridge": {
-        'model__alpha': [0.01, 0.1, 1.0, 10.0, 100.0],
-        'model__solver': ['auto', 'svd', 'cholesky']
-    },
-    "Lasso": {
-        'model__alpha': [0.001, 0.01, 0.1, 1.0, 10.0],
-        'model__selection': ['cyclic', 'random']
-    },
+    "Ridge": {"model__alpha": [0.01, 0.1, 1.0, 10.0, 100.0], "model__solver": ["auto", "svd", "cholesky"]},
+    "Lasso": {"model__alpha": [0.001, 0.01, 0.1, 1.0, 10.0], "model__selection": ["cyclic", "random"]},
     "Logistic Regression": {
-        'model__C': [0.01, 0.1, 1.0, 10.0, 100.0],
-        'model__solver': ['lbfgs', 'liblinear'],
-        'model__max_iter': [100, 200, 500]
-    }
+        "model__C": [0.01, 0.1, 1.0, 10.0, 100.0],
+        "model__solver": ["lbfgs", "liblinear"],
+        "model__max_iter": [100, 200, 500],
+    },
 }
 
 # ── Chart Theme ─────────────────────────────────────────────
@@ -74,30 +69,30 @@ FONT_FAMILY = "'Fira Sans', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-ser
 
 # Light-mode chart theme — Pro Max blue data (#1E40AF) + amber (#D97706) highlights
 CHART_THEME_LIGHT: Dict[str, Any] = dict(
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor="rgba(0,0,0,0)",
+    paper_bgcolor="rgba(0,0,0,0)",
     font=dict(family=FONT_FAMILY, size=12, color="#475569"),
-    title=dict(font=dict(size=15, color="#1E3A8A"), x=0.5, xanchor='center'),
-    xaxis=dict(gridcolor='rgba(30,64,175,0.08)', zerolinecolor='rgba(30,64,175,0.12)'),
-    yaxis=dict(gridcolor='rgba(30,64,175,0.08)', zerolinecolor='rgba(30,64,175,0.12)'),
+    title=dict(font=dict(size=15, color="#1E3A8A"), x=0.5, xanchor="center"),
+    xaxis=dict(gridcolor="rgba(30,64,175,0.08)", zerolinecolor="rgba(30,64,175,0.12)"),
+    yaxis=dict(gridcolor="rgba(30,64,175,0.08)", zerolinecolor="rgba(30,64,175,0.12)"),
     hoverlabel=dict(bgcolor="#FFFFFF", font_size=11, font_family="Fira Sans"),
     margin=dict(l=40, r=20, t=40, b=40),
-    legend=dict(font=dict(size=11), bgcolor='rgba(0,0,0,0)'),
-    colorway=['#1E40AF', '#3B82F6', '#D97706', '#059669', '#0284C7', '#DC2626', '#7C3AED']
+    legend=dict(font=dict(size=11), bgcolor="rgba(0,0,0,0)"),
+    colorway=["#1E40AF", "#3B82F6", "#D97706", "#059669", "#0284C7", "#DC2626", "#7C3AED"],
 )
 
 # Dark-mode chart theme — Pro Max dark (light blue / amber)
 CHART_THEME_DARK: Dict[str, Any] = dict(
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor="rgba(0,0,0,0)",
+    paper_bgcolor="rgba(0,0,0,0)",
     font=dict(family=FONT_FAMILY, size=12, color="#CBD5E1"),
-    title=dict(font=dict(size=15, color="#F1F5F9"), x=0.5, xanchor='center'),
-    xaxis=dict(gridcolor='rgba(255,255,255,0.06)', zerolinecolor='rgba(255,255,255,0.1)'),
-    yaxis=dict(gridcolor='rgba(255,255,255,0.06)', zerolinecolor='rgba(255,255,255,0.1)'),
+    title=dict(font=dict(size=15, color="#F1F5F9"), x=0.5, xanchor="center"),
+    xaxis=dict(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)"),
+    yaxis=dict(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)"),
     hoverlabel=dict(bgcolor="#111D33", font_size=11, font_family="Fira Sans"),
     margin=dict(l=40, r=20, t=40, b=40),
-    legend=dict(font=dict(size=11), bgcolor='rgba(0,0,0,0)'),
-    colorway=['#60A5FA', '#38BDF8', '#FBBF24', '#34D399', '#22D3EE', '#F87171', '#A78BFA']
+    legend=dict(font=dict(size=11), bgcolor="rgba(0,0,0,0)"),
+    colorway=["#60A5FA", "#38BDF8", "#FBBF24", "#34D399", "#22D3EE", "#F87171", "#A78BFA"],
 )
 
 # Back-compat alias (dark theme was the only theme before mode-aware charts).
@@ -139,7 +134,7 @@ CHART_COLORS: Dict[str, str] = {
 
 # ── UI Constants ────────────────────────────────────────────
 SPARKLINE_HEIGHT = 40
-SPARKLINE_COLOR = '#5b6bf7'
+SPARKLINE_COLOR = "#5b6bf7"
 KPI_COLUMNS = 4
 
 # ── Session State Keys ──────────────────────────────────────
@@ -157,15 +152,21 @@ TAB_ANALYTICS = "🔬 Analytics"
 TAB_AI_INSIGHTS = "🤖 AI Insights"
 TAB_DEEP_ANALYSIS = "🧠 Deep Analysis"
 
-MAIN_TABS: List[str] = [TAB_OVERVIEW, TAB_LEARNING_ANALYTICS, TAB_STATISTICS, TAB_COMPARE, TAB_ANALYTICS, TAB_AI_INSIGHTS, TAB_DEEP_ANALYSIS]
+MAIN_TABS: List[str] = [
+    TAB_OVERVIEW,
+    TAB_LEARNING_ANALYTICS,
+    TAB_STATISTICS,
+    TAB_COMPARE,
+    TAB_ANALYTICS,
+    TAB_AI_INSIGHTS,
+    TAB_DEEP_ANALYSIS,
+]
 
 # ── Statistics Sub-tabs ─────────────────────────────────────
 STATS_TAB_HYPOTHESIS = "🔬 Hypothesis Testing"
 STATS_TAB_REGRESSION = "📈 Regression"
 
-STATISTICS_TABS: List[str] = [
-    STATS_TAB_HYPOTHESIS, STATS_TAB_REGRESSION
-]
+STATISTICS_TABS: List[str] = [STATS_TAB_HYPOTHESIS, STATS_TAB_REGRESSION]
 
 # ── Analytics Sub-tabs ──────────────────────────────────────
 ANALYTICS_TAB_ANOMALY = "🔍 Anomaly"
@@ -173,7 +174,12 @@ ANALYTICS_TAB_PROFILING = "📊 Profiling"
 ANALYTICS_TAB_CLEANING = "🧹 Cleaning"
 ANALYTICS_TAB_CLASSIFICATION = "🎯 Classification"
 
-ANALYTICS_TABS: List[str] = [ANALYTICS_TAB_ANOMALY, ANALYTICS_TAB_PROFILING, ANALYTICS_TAB_CLEANING, ANALYTICS_TAB_CLASSIFICATION]
+ANALYTICS_TABS: List[str] = [
+    ANALYTICS_TAB_ANOMALY,
+    ANALYTICS_TAB_PROFILING,
+    ANALYTICS_TAB_CLEANING,
+    ANALYTICS_TAB_CLASSIFICATION,
+]
 
 # ── Profiler Sub-tabs ───────────────────────────────────────
 PROFILER_TAB_COLUMNS = "📋 Columns"
@@ -194,27 +200,27 @@ ERROR_EMPTY_DATAFRAME = "❌ DataFrame is empty"
 ERROR_WORK_DF_NONE = "❌ Work DF is None"
 
 # ── Performance & Security Limits ──────────────────────────
-MAX_FILE_SIZE_MB = 50                    # Max file upload size (megabytes)
+MAX_FILE_SIZE_MB = 50  # Max file upload size (megabytes)
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
-MAX_ROWS_UPLOAD = 500_000                # Max rows before warning
-MAX_COLS_UPLOAD = 200                    # Max columns before warning
-N_JOBS_MAX = 4                           # Cap for n_jobs to avoid resource exhaustion
-N_JOBS_DEFAULT = -1                      # Will be clamped to N_JOBS_MAX at runtime
-UPLOAD_TIMEOUT_SECONDS = 300             # Upload timeout
+MAX_ROWS_UPLOAD = 500_000  # Max rows before warning
+MAX_COLS_UPLOAD = 200  # Max columns before warning
+N_JOBS_MAX = 4  # Cap for n_jobs to avoid resource exhaustion
+N_JOBS_DEFAULT = -1  # Will be clamped to N_JOBS_MAX at runtime
+UPLOAD_TIMEOUT_SECONDS = 300  # Upload timeout
 
 # ── Sample Limits for Heavy Algorithms ────────────────────
-MAX_BOOTSTRAP_SAMPLES = 5000             # Max rows for bootstrap resampling
-MAX_ML_SAMPLES = 5000                    # Max rows for ML models (AutoML, Model Comparison)
-MAX_CLUSTERING_SAMPLES = 5000            # Max rows for clustering
-SAMPLING_STRATEGY = "random"             # "random" or "head" — how to subsample
+MAX_BOOTSTRAP_SAMPLES = 5000  # Max rows for bootstrap resampling
+MAX_ML_SAMPLES = 5000  # Max rows for ML models (AutoML, Model Comparison)
+MAX_CLUSTERING_SAMPLES = 5000  # Max rows for clustering
+SAMPLING_STRATEGY = "random"  # "random" or "head" — how to subsample
 
 # ── Feature Flags (reduce feature overload) ─────────────────
 FEATURE_FLAGS = {
-    "show_landing_page": True,           # Landing page hero
-    "show_smart_search": True,           # Ctrl+K search bar
-    "show_deep_analysis": True,          # Deep Analysis tab (11 subtabs)
-    "show_compare_tab": True,            # Compare datasets tab
-    "show_ai_insights": True,            # AI Insights tab
+    "show_landing_page": True,  # Landing page hero
+    "show_smart_search": True,  # Ctrl+K search bar
+    "show_deep_analysis": True,  # Deep Analysis tab (11 subtabs)
+    "show_compare_tab": True,  # Compare datasets tab
+    "show_ai_insights": True,  # AI Insights tab
 }
 
 # ── Color Scheme (Pro Max Data-Dense) ───────────────────────

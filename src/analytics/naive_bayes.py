@@ -1,16 +1,18 @@
 """Naive Bayes Classification (Book Ch.5)"""
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
+import streamlit as st
 
 from .base import apply_theme, insight_card, validate_df
 
 try:
+    from sklearn.metrics import auc, confusion_matrix, roc_curve
+    from sklearn.model_selection import train_test_split
     from sklearn.naive_bayes import GaussianNB
     from sklearn.preprocessing import StandardScaler
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import confusion_matrix, roc_curve, auc
+
     SKLEARN_AVAIL = True
 except Exception:
     SKLEARN_AVAIL = False
@@ -30,8 +32,13 @@ def render_naive_bayes_tab(df, num, cat):
     target_col = st.selectbox("Chọn biến mục tiêu:", target_options, key="nb_target")
 
     if target_col in num:
-        threshold = st.slider("Threshold:", float(df[target_col].min()), float(df[target_col].max()),
-                            float(df[target_col].median()), key="nb_thresh")
+        threshold = st.slider(
+            "Threshold:",
+            float(df[target_col].min()),
+            float(df[target_col].max()),
+            float(df[target_col].median()),
+            key="nb_thresh",
+        )
         y = (df[target_col] > threshold).astype(int)
     else:
         vals = df[target_col].dropna().unique()[:10]
@@ -41,14 +48,13 @@ def render_naive_bayes_tab(df, num, cat):
         pos_class = st.selectbox("Positive class:", vals, key="nb_pos")
         y = (df[target_col] == pos_class).astype(int)
 
-    features = st.multiselect("Chọn features:", num, default=num[:min(4, len(num))], key="nb_feats")
+    features = st.multiselect("Chọn features:", num, default=num[: min(4, len(num))], key="nb_feats")
 
     if len(features) >= 1 and st.button("🧮 Train Naive Bayes", key="nb_run"):
         with st.spinner("Đang huấn luyện..."):
             X = df[features].dropna()
             y_aligned = y.loc[X.index]
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y_aligned, test_size=0.3, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y_aligned, test_size=0.3, random_state=42)
             scaler = StandardScaler()
             X_train_scaled = scaler.fit_transform(X_train)
             X_test_scaled = scaler.transform(X_test)
@@ -78,19 +84,27 @@ def render_naive_bayes_tab(df, num, cat):
             c4.metric("F1-Score", f"{f1:.2%}")
             c5.metric("AUC", f"{auc_score:.3f}")
 
-            fig = px.imshow(cm, text_auto=True,
-                          x=["Pred Neg", "Pred Pos"],
-                          y=["Actual Neg", "Actual Pos"],
-                          color_continuous_scale="Purples", aspect='auto')
+            fig = px.imshow(
+                cm,
+                text_auto=True,
+                x=["Pred Neg", "Pred Pos"],
+                y=["Actual Neg", "Actual Pos"],
+                color_continuous_scale="Purples",
+                aspect="auto",
+            )
             fig.update_layout(height=350, title="Confusion Matrix — Naive Bayes")
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
 
             st.markdown("#### 📋 Class Priors")
-            priors = pd.DataFrame({
-                "Class": ["Negative (0)", "Positive (1)"],
-                "Prior Probability": gnb.class_prior_,
-                "Theta (mean)": [gnb.theta_[0, 0] if gnb.theta_.shape[1] > 0 else 0,
-                                gnb.theta_[1, 0] if gnb.theta_.shape[1] > 0 else 0]
-            })
+            priors = pd.DataFrame(
+                {
+                    "Class": ["Negative (0)", "Positive (1)"],
+                    "Prior Probability": gnb.class_prior_,
+                    "Theta (mean)": [
+                        gnb.theta_[0, 0] if gnb.theta_.shape[1] > 0 else 0,
+                        gnb.theta_[1, 0] if gnb.theta_.shape[1] > 0 else 0,
+                    ],
+                }
+            )
             st.dataframe(priors, use_container_width=True)

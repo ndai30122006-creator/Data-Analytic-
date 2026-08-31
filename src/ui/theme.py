@@ -13,8 +13,9 @@ Design tokens (exact spec):
   * Dataframe: no vertical gridlines, larger padding, faded header.
 """
 
+from typing import Any, Dict
+
 import streamlit as st
-from typing import Dict, Any
 
 from src.utils.config import set_chart_mode
 
@@ -24,31 +25,55 @@ from src.utils.config import set_chart_mode
 
 COLORS = {
     "light": {
-        "primary": "#2563EB", "primary_hover": "#1D4ED8",
-        "primary_light": "#EFF6FF", "secondary": "#EC4899",
-        "secondary_hover": "#DB2777", "success": "#10B981",
-        "warning": "#F59E0B", "danger": "#EF4444", "info": "#06B6D4",
-        "bg_primary": "#F8FAFC", "bg_secondary": "#FFFFFF",
-        "bg_tertiary": "#F1F5F9", "bg_hover": "#EFF6FF",
-        "text_primary": "#1E293B", "text_secondary": "#475569",
-        "text_tertiary": "#64748B", "text_inverse": "#FFFFFF",
-        "border": "#CBD5E1", "border_light": "#E2E8F0",
-        "chart_bg": "#FFFFFF", "chart_grid": "#E2E8F0",
-        "sidebar_bg": "#1E293B", "sidebar_text": "#FFFFFF",
+        "primary": "#2563EB",
+        "primary_hover": "#1D4ED8",
+        "primary_light": "#EFF6FF",
+        "secondary": "#EC4899",
+        "secondary_hover": "#DB2777",
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "danger": "#EF4444",
+        "info": "#06B6D4",
+        "bg_primary": "#F8FAFC",
+        "bg_secondary": "#FFFFFF",
+        "bg_tertiary": "#F1F5F9",
+        "bg_hover": "#EFF6FF",
+        "text_primary": "#1E293B",
+        "text_secondary": "#475569",
+        "text_tertiary": "#64748B",
+        "text_inverse": "#FFFFFF",
+        "border": "#CBD5E1",
+        "border_light": "#E2E8F0",
+        "chart_bg": "#FFFFFF",
+        "chart_grid": "#E2E8F0",
+        "sidebar_bg": "#1E293B",
+        "sidebar_text": "#FFFFFF",
     },
     "dark": {
-        "primary": "#2563EB", "primary_hover": "#3B82F6",
-        "primary_light": "#1E3A8A", "secondary": "#EC4899",
-        "secondary_hover": "#DB2777", "success": "#10B981",
-        "warning": "#F59E0B", "danger": "#EF4444", "info": "#06B6D4",
-        "bg_primary": "#F8FAFC", "bg_secondary": "#FFFFFF",
-        "bg_tertiary": "#F1F5F9", "bg_hover": "#EFF6FF",
-        "text_primary": "#1E293B", "text_secondary": "#475569",
-        "text_tertiary": "#64748B", "text_inverse": "#FFFFFF",
-        "border": "#CBD5E1", "border_light": "#E2E8F0",
-        "chart_bg": "#FFFFFF", "chart_grid": "#E2E8F0",
-        "sidebar_bg": "#1E293B", "sidebar_text": "#FFFFFF",
-    }
+        "primary": "#2563EB",
+        "primary_hover": "#3B82F6",
+        "primary_light": "#1E3A8A",
+        "secondary": "#EC4899",
+        "secondary_hover": "#DB2777",
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "danger": "#EF4444",
+        "info": "#06B6D4",
+        "bg_primary": "#F8FAFC",
+        "bg_secondary": "#FFFFFF",
+        "bg_tertiary": "#F1F5F9",
+        "bg_hover": "#EFF6FF",
+        "text_primary": "#1E293B",
+        "text_secondary": "#475569",
+        "text_tertiary": "#64748B",
+        "text_inverse": "#FFFFFF",
+        "border": "#CBD5E1",
+        "border_light": "#E2E8F0",
+        "chart_bg": "#FFFFFF",
+        "chart_grid": "#E2E8F0",
+        "sidebar_bg": "#1E293B",
+        "sidebar_text": "#FFFFFF",
+    },
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -464,6 +489,7 @@ def icon(name: str = "chart", size: str = "") -> str:
 # PUBLIC API — keep function names used across the app
 # ═══════════════════════════════════════════════════════════
 
+
 def get_light_mode_css() -> str:
     """Return the global CSS stylesheet."""
     return _CSS
@@ -474,15 +500,14 @@ def get_dark_mode_css() -> str:
     return _CSS
 
 
-def metric_card(title: str, value: str, change: str = "", icon: str = "📊",
-                color: str = "primary") -> str:
+def metric_card(title: str, value: str, change: str = "", icon: str = "📊", color: str = "primary") -> str:
     """Return an HTML metric card component."""
     tone = "" if color in ("primary", "neutral") else f"tone-{color}"
     change_html = ""
     if change:
         cls = "badge-success" if "↑" in change else ("badge-danger" if "↓" in change else "badge-neutral")
         change_html = f'<span class="badge {cls}">{change}</span>'
-    return f'''
+    return f"""
     <div class="metric-card {tone} animate-fade-in">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <span class="metric-label">{title}</span>
@@ -491,7 +516,7 @@ def metric_card(title: str, value: str, change: str = "", icon: str = "📊",
         <div class="metric-value">{value}</div>
         {change_html}
     </div>
-    '''
+    """
 
 
 def status_badge(text: str, status: str = "primary") -> str:

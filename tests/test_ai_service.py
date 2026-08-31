@@ -1,14 +1,16 @@
 """Unit tests for AI Service (src/core/ai_service.py)"""
+
 import os
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 
-from src.core.ai_service import AIService, AIInsight, AIReport
+from src.core.ai_service import AIInsight, AIReport, AIService
 
 
 class TestAIServiceInitialization:
@@ -43,11 +45,13 @@ class TestAIServiceRuleBased:
     @pytest.fixture
     def sample_df(self):
         np.random.seed(42)
-        return pd.DataFrame({
-            "student_id": [f"S{i:03d}" for i in range(1, 101)],
-            "score": np.random.normal(6.5, 1.5, 100).clip(0, 10),
-            "attendance": np.random.uniform(60, 100, 100),
-        })
+        return pd.DataFrame(
+            {
+                "student_id": [f"S{i:03d}" for i in range(1, 101)],
+                "score": np.random.normal(6.5, 1.5, 100).clip(0, 10),
+                "attendance": np.random.uniform(60, 100, 100),
+            }
+        )
 
     def test_generate_overview_report(self, service, sample_df):
         """Test generating overview report with rule-based insights."""
@@ -60,10 +64,7 @@ class TestAIServiceRuleBased:
 
     def test_generate_learning_report(self, service, sample_df):
         """Test generating learning analytics report."""
-        report = service.generate_report(
-            sample_df, analysis_type="learning",
-            score_col="score", group_col=None
-        )
+        report = service.generate_report(sample_df, analysis_type="learning", score_col="score", group_col=None)
         assert isinstance(report, AIReport)
         assert report.analysis_type == "learning"
         assert len(report.ai_insights) > 0
@@ -71,10 +72,7 @@ class TestAIServiceRuleBased:
     def test_generate_learning_report_with_group(self, service, sample_df):
         """Test generating learning report with group column."""
         sample_df["class"] = np.random.choice(["A", "B"], 100)
-        report = service.generate_report(
-            sample_df, analysis_type="learning",
-            score_col="score", group_col="class"
-        )
+        report = service.generate_report(sample_df, analysis_type="learning", score_col="score", group_col="class")
         assert isinstance(report, AIReport)
         assert len(report.recommendations) > 0
 
@@ -103,10 +101,7 @@ class TestAIServiceRuleBased:
 
     def test_missing_score_column(self, service, sample_df):
         """Test learning report with non-existent score column."""
-        report = service.generate_report(
-            sample_df, analysis_type="learning",
-            score_col="nonexistent"
-        )
+        report = service.generate_report(sample_df, analysis_type="learning", score_col="nonexistent")
         assert isinstance(report, AIReport)
 
     def test_recommendations_not_empty(self, service, sample_df):
@@ -131,10 +126,12 @@ class TestAIServiceEdgeCases:
     def test_dataframe_with_duplicates(self):
         """Test with dataframe containing many duplicates."""
         service = AIService(api_key="")
-        df = pd.DataFrame({
-            "score": [5.0] * 50 + [8.0] * 50,
-            "class": ["A"] * 50 + ["B"] * 50,
-        })
+        df = pd.DataFrame(
+            {
+                "score": [5.0] * 50 + [8.0] * 50,
+                "class": ["A"] * 50 + ["B"] * 50,
+            }
+        )
         report = service.generate_report(df, analysis_type="learning", score_col="score")
         assert isinstance(report, AIReport)
         # Should have a warning about duplicate-like data
@@ -142,10 +139,12 @@ class TestAIServiceEdgeCases:
     def test_prompt_building(self):
         """Test that prompt is built correctly."""
         service = AIService(api_key="")
-        df = pd.DataFrame({
-            "num_col": [1.0, 2.0, 3.0],
-            "cat_col": ["a", "b", "c"],
-        })
+        df = pd.DataFrame(
+            {
+                "num_col": [1.0, 2.0, 3.0],
+                "cat_col": ["a", "b", "c"],
+            }
+        )
         prompt = service._build_prompt(df, "overview")
         assert "Rows: 3" in prompt
         assert "num_col" in prompt
@@ -155,10 +154,12 @@ class TestAIServiceEdgeCases:
     def test_prompt_with_learning(self):
         """Test learning-specific prompt content."""
         service = AIService(api_key="")
-        df = pd.DataFrame({
-            "score": [7.0, 6.0, 4.0, 8.0, 5.0],
-            "class": ["A", "A", "B", "B", "A"],
-        })
+        df = pd.DataFrame(
+            {
+                "score": [7.0, 6.0, 4.0, 8.0, 5.0],
+                "class": ["A", "A", "B", "B", "A"],
+            }
+        )
         prompt = service._build_prompt(df, "learning", score_col="score", group_col="class")
         assert "Pass rate" in prompt
         assert "Risk rate" in prompt

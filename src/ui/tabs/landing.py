@@ -1,11 +1,13 @@
 """Landing page — Pro Max Data-Dense + Bento Grid, Lucide icons (no emoji)."""
+
 import streamlit as st
 
 from src.ui.components import render_quick_start_tutorial
 
 try:
-    from src.ui.theme import metric_card, gradient_text, status_badge, icon
+    from src.ui.theme import gradient_text, icon, metric_card, status_badge
 except ImportError:
+
     def metric_card(title, value, change="", icon="chart", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
 
@@ -26,7 +28,8 @@ def render_landing_page() -> None:
     # HERO SECTION
     # ═══════════════════════════════════════════════════
     # Hero — Pro Max: subtle, data-dense, blue→amber accent, Fira Sans
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div style="
         text-align: center;
         padding: 2.5rem 1rem 1.5rem;
@@ -47,7 +50,9 @@ def render_landing_page() -> None:
             Practical Statistics for Data Scientists, 2nd Ed — <span style="color:var(--accent);font-weight:600">Pro Max Data-Dense</span>
         </p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # ═══════════════════════════════════════════════════
     # CAPABILITY CARDS  —  what you can do with this tool
@@ -62,13 +67,16 @@ def render_landing_page() -> None:
     cap_cols = st.columns(4)
     for i, (ic, title, desc, color) in enumerate(caps):
         with cap_cols[i]:
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <div class="feature-card tone-{color} animate-fade-in" style="display:flex;flex-direction:column;gap:6px;min-height:132px;">
                 <div style="color: var(--{color if color!='accent' else 'accent'});">{icon(ic)}</div>
                 <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary)">{title}</div>
                 <div style="color:var(--text-secondary);font-size:0.80rem;line-height:1.4;overflow-wrap:break-word">{desc}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
     st.markdown("<div class='sp-md'></div>", unsafe_allow_html=True)
 
@@ -87,7 +95,8 @@ def render_landing_page() -> None:
     ]
     for i, (num, title, desc, _) in enumerate(steps):
         with step_cols[i]:
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <div style="
                 background: var(--bg-secondary);
                 border: 1px solid var(--border-light);
@@ -106,7 +115,9 @@ def render_landing_page() -> None:
                 <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">{title}</div>
                 <div style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.4;">{desc}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
     st.markdown("<div style='height: 1.5rem'></div>", unsafe_allow_html=True)
 
@@ -115,11 +126,14 @@ def render_landing_page() -> None:
     # ═══════════════════════════════════════════════════
     _, cta_col2, _ = st.columns([1, 2, 1])
     with cta_col2:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="cta-banner animate-fade-in">
             📥 Upload dữ liệu từ sidebar để bắt đầu
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("<div class='sp-md'></div>", unsafe_allow_html=True)
 
@@ -138,7 +152,7 @@ def render_landing_page() -> None:
                 f"<div style='text-align:center; padding:0.25rem 0;'>"
                 f"{status_badge(f'{ic} {label}', color)}"
                 f"</div>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
     st.markdown("<div style='height: 1rem'></div>", unsafe_allow_html=True)

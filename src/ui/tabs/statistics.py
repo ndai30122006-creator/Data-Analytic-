@@ -1,25 +1,31 @@
 """Statistics tab — core statistical workflows that are not duplicated elsewhere."""
+
 import logging
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 from src.utils.config import MIN_ROWS_VALIDATION
-from src.utils.validators import validate_dataframe
-from src.utils.helpers import apply_theme
 from src.utils.exceptions import handle_error
+from src.utils.helpers import apply_theme
+from src.utils.validators import validate_dataframe
 
 try:
-    from src.ui.theme import metric_card, status_badge, gradient_text
+    from src.ui.theme import gradient_text, metric_card, status_badge
 except ImportError:
+
     def metric_card(title, value, change="", icon="📊", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
+
     def status_badge(text, status="primary"):
         return f"<span>{text}</span>"
+
     def gradient_text(text, c1="#1877F2", c2="#E4405F"):
         return f"<span style='font-weight:700'>{text}</span>"
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +37,8 @@ def render_statistics_tab(df, num, cat):
         st.error(f"❌ {msg}")
         return
 
-    st.markdown("""
+    st.markdown(
+        """
     <div class="hero-bg" style="padding: 1.5rem 1rem; margin-bottom: 0.5rem;">
         <div class="hero" style="text-align: center;">
             <h1 style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #5b6bf7, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
@@ -40,13 +47,18 @@ def render_statistics_tab(df, num, cat):
             <p style="color: var(--fg-muted);">Hypothesis Testing · Linear Regression</p>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     from src.utils.config import STATISTICS_TABS
+
     stats_tabs = st.tabs(STATISTICS_TABS)
 
-    with stats_tabs[0]: _render_hypothesis_testing(df, num, cat)
-    with stats_tabs[1]: _render_regression(df, num)
+    with stats_tabs[0]:
+        _render_hypothesis_testing(df, num, cat)
+    with stats_tabs[1]:
+        _render_regression(df, num)
 
 
 # ── Hypothesis Testing — only kept here (unique to this tab) ──
@@ -54,12 +66,21 @@ def _render_hypothesis_testing(df, num, cat):
     if not num and not cat:
         st.warning("Cần dữ liệu numeric hoặc categorical")
         return
-    from scipy.stats import ttest_ind, ttest_1samp, ttest_rel, f_oneway, mannwhitneyu, kruskal, chi2_contingency
+    from scipy.stats import chi2_contingency, f_oneway, kruskal, mannwhitneyu, ttest_1samp, ttest_ind, ttest_rel
 
-    test_type = st.selectbox("Test type:", [
-        "T-test (2 independent samples)", "T-test (1 sample)", "T-test (paired)",
-        "ANOVA", "Mann-Whitney U", "Kruskal-Wallis", "Chi-Square"
-    ], key="ht_type")
+    test_type = st.selectbox(
+        "Test type:",
+        [
+            "T-test (2 independent samples)",
+            "T-test (1 sample)",
+            "T-test (paired)",
+            "ANOVA",
+            "Mann-Whitney U",
+            "Kruskal-Wallis",
+            "Chi-Square",
+        ],
+        key="ht_type",
+    )
     SIGNIFICANCE_LEVEL = 0.05
 
     if "2 independent" in test_type:
@@ -76,13 +97,15 @@ def _render_hypothesis_testing(df, num, cat):
                         s2 = df[df[grp_col] == g2][val_col].dropna()
                         if len(s1) > 1 and len(s2) > 1:
                             stat, p = ttest_ind(s1, s2, equal_var=False)
-                            pooled_std = np.sqrt((s1.std()**2 + s2.std()**2) / 2)
+                            pooled_std = np.sqrt((s1.std() ** 2 + s2.std() ** 2) / 2)
                             cohens_d = (s1.mean() - s2.mean()) / pooled_std if pooled_std > 0 else 0
                             c1, c2, c3, c4 = st.columns(4)
                             c1.metric("t-statistic", f"{stat:.4f}")
                             c2.metric("p-value", f"{p:.6f}")
                             c3.metric("Cohen's d", f"{abs(cohens_d):.4f}")
-                            c4.metric("Conclusion", "Significant 🎯" if p < SIGNIFICANCE_LEVEL else "Not significant ❌")
+                            c4.metric(
+                                "Conclusion", "Significant 🎯" if p < SIGNIFICANCE_LEVEL else "Not significant ❌"
+                            )
                             fig = go.Figure()
                             fig.add_trace(go.Violin(y=s1, name=g1, box_visible=True, meanline_visible=True))
                             fig.add_trace(go.Violin(y=s2, name=g2, box_visible=True, meanline_visible=True))
@@ -108,7 +131,9 @@ def _render_hypothesis_testing(df, num, cat):
                 c1, c2 = st.columns(2)
                 c1.metric("t-statistic", f"{stat:.4f}")
                 c2.metric("p-value", f"{p:.6f}")
-                st.info(f"**Conclusion:** {'Different from μ₀ 🎯' if p < SIGNIFICANCE_LEVEL else 'Not different from μ₀ ❌'}")
+                st.info(
+                    f"**Conclusion:** {'Different from μ₀ 🎯' if p < SIGNIFICANCE_LEVEL else 'Not different from μ₀ ❌'}"
+                )
         else:
             st.warning("Need numeric column")
 
@@ -122,7 +147,9 @@ def _render_hypothesis_testing(df, num, cat):
                 c1, c2 = st.columns(2)
                 c1.metric("t-statistic", f"{stat:.4f}")
                 c2.metric("p-value", f"{p:.6f}")
-                st.info(f"**Conclusion:** {'Significant difference 🎯' if p < SIGNIFICANCE_LEVEL else 'Not significant ❌'}")
+                st.info(
+                    f"**Conclusion:** {'Significant difference 🎯' if p < SIGNIFICANCE_LEVEL else 'Not significant ❌'}"
+                )
 
     elif "ANOVA" in test_type:
         if len(num) >= 1 and len(cat) >= 1:
@@ -153,7 +180,7 @@ def _render_hypothesis_testing(df, num, cat):
                     s1 = df[df[grp_col] == g1][val_col].dropna()
                     s2 = df[df[grp_col] == g2][val_col].dropna()
                     if len(s1) > 1 and len(s2) > 1:
-                        stat, p = mannwhitneyu(s1, s2, alternative='two-sided')
+                        stat, p = mannwhitneyu(s1, s2, alternative="two-sided")
                         c1, c2, c3 = st.columns(3)
                         c1.metric("U-statistic", f"{stat:.4f}")
                         c2.metric("p-value", f"{p:.6f}")
@@ -187,9 +214,12 @@ def _render_hypothesis_testing(df, num, cat):
                 c1.metric("χ²", f"{stat:.4f}")
                 c2.metric("p-value", f"{p:.6f}")
                 c3.metric("DoF", dof)
-                st.info(f"**Conclusion:** {'Variables are related 🎯' if p < SIGNIFICANCE_LEVEL else 'No relationship ❌'}")
-                fig = px.imshow(ct, text_auto=True, title="Contingency Table",
-                               color_continuous_scale="Blues", aspect='auto')
+                st.info(
+                    f"**Conclusion:** {'Variables are related 🎯' if p < SIGNIFICANCE_LEVEL else 'No relationship ❌'}"
+                )
+                fig = px.imshow(
+                    ct, text_auto=True, title="Contingency Table", color_continuous_scale="Blues", aspect="auto"
+                )
                 apply_theme(fig)
                 st.plotly_chart(fig, use_container_width=True)
         else:
@@ -202,13 +232,17 @@ def _render_regression(df, num):
         st.warning("Need ≥2 numeric columns")
         return
     from sklearn.linear_model import LinearRegression
-    from sklearn.preprocessing import StandardScaler
     from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
 
     st.markdown("###  Linear Regression (Book Ch.4)")
     target = st.selectbox("Target:", num, key="reg_target")
-    features = st.multiselect("Features:", [c for c in num if c != target],
-                            default=[c for c in num if c != target][:min(3, len(num)-1)], key="reg_feats")
+    features = st.multiselect(
+        "Features:",
+        [c for c in num if c != target],
+        default=[c for c in num if c != target][: min(3, len(num) - 1)],
+        key="reg_feats",
+    )
     if len(features) >= 1 and st.button("📈 Run Regression", key="reg_run"):
         X = df[features].dropna()
         y = df.loc[X.index, target]
@@ -230,11 +264,24 @@ def _render_regression(df, num):
             st.dataframe(coef_df, use_container_width=True)
             y_pred = model.predict(X_test_s)
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=y_test, y=y_pred, mode='markers', marker=dict(color="#1E40AF", size=6, opacity=0.6)))
-            fig.add_trace(go.Scatter(x=[y_test.min(), y_test.max()], y=[y_test.min(), y_test.max()],
-                                    mode='lines', line=dict(color="#f87171", dash="dash"), name="Perfect Fit"))
-            fig.update_layout(title=f"Actual vs Predicted (R²={test_r2:.4f})",
-                            xaxis_title="Actual", yaxis_title="Predicted", height=350)
+            fig.add_trace(
+                go.Scatter(x=y_test, y=y_pred, mode="markers", marker=dict(color="#1E40AF", size=6, opacity=0.6))
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=[y_test.min(), y_test.max()],
+                    y=[y_test.min(), y_test.max()],
+                    mode="lines",
+                    line=dict(color="#f87171", dash="dash"),
+                    name="Perfect Fit",
+                )
+            )
+            fig.update_layout(
+                title=f"Actual vs Predicted (R²={test_r2:.4f})",
+                xaxis_title="Actual",
+                yaxis_title="Predicted",
+                height=350,
+            )
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
         else:

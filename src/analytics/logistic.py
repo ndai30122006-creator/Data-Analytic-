@@ -1,10 +1,12 @@
 """Logistic Regression & Classification (Book Ch.5)"""
+
 import logging
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 from .base import apply_theme, insight_card, validate_df
 
@@ -12,9 +14,10 @@ logger = logging.getLogger(__name__)
 
 try:
     from sklearn.linear_model import LogisticRegression
-    from sklearn.preprocessing import StandardScaler
+    from sklearn.metrics import auc, confusion_matrix, roc_curve
     from sklearn.model_selection import train_test_split
-    from sklearn.metrics import confusion_matrix, roc_curve, auc
+    from sklearn.preprocessing import StandardScaler
+
     SKLEARN_AVAIL = True
 except ImportError:
     SKLEARN_AVAIL = False
@@ -38,9 +41,13 @@ def render_logistic_tab(df, num, cat):
     target_col = st.selectbox("Chọn biến mục tiêu (binary):", target_options, key="da_log_target")
 
     if target_col in num:
-        threshold = st.slider("Threshold để tạo binary:",
-                            float(df[target_col].min()), float(df[target_col].max()),
-                            float(df[target_col].median()), key="da_log_thresh")
+        threshold = st.slider(
+            "Threshold để tạo binary:",
+            float(df[target_col].min()),
+            float(df[target_col].max()),
+            float(df[target_col].median()),
+            key="da_log_thresh",
+        )
         y = (df[target_col] > threshold).astype(int)
         target_name = f"{target_col} > {threshold:.2f}"
     else:
@@ -49,7 +56,7 @@ def render_logistic_tab(df, num, cat):
         y = (df[target_col] == pos_class).astype(int)
         target_name = f"{target_col} = {pos_class}"
 
-    features = st.multiselect("Chọn features:", num, default=num[:min(4, len(num))], key="log_feats")
+    features = st.multiselect("Chọn features:", num, default=num[: min(4, len(num))], key="log_feats")
 
     if len(features) >= 1 and st.button("🔴 Train Logistic Regression", key="log_run"):
         with st.spinner("Đang huấn luyện..."):
@@ -60,7 +67,8 @@ def render_logistic_tab(df, num, cat):
                 return
 
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y_aligned, test_size=0.3, random_state=42, stratify=y_aligned)
+                X, y_aligned, test_size=0.3, random_state=42, stratify=y_aligned
+            )
             scaler = StandardScaler()
             X_train_scaled = scaler.fit_transform(X_train)
             X_test_scaled = scaler.transform(X_test)
@@ -87,46 +95,64 @@ def render_logistic_tab(df, num, cat):
             c5.metric("AUC", f"{auc_score:.3f}")
 
             st.markdown("#### 📊 Confusion Matrix")
-            fig_cm = px.imshow(cm, text_auto=True,
-                              x=["Predicted Negative", "Predicted Positive"],
-                              y=["Actual Negative", "Actual Positive"],
-                              color_continuous_scale="Blues", aspect='auto')
+            fig_cm = px.imshow(
+                cm,
+                text_auto=True,
+                x=["Predicted Negative", "Predicted Positive"],
+                y=["Actual Negative", "Actual Positive"],
+                color_continuous_scale="Blues",
+                aspect="auto",
+            )
             fig_cm.update_layout(height=350)
             apply_theme(fig_cm)
             st.plotly_chart(fig_cm, use_container_width=True)
 
             st.markdown("#### 📈 ROC Curve")
             fig_roc = go.Figure()
-            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines',
-                                        name=f'ROC (AUC={auc_score:.3f})',
-                                        line=dict(color="#818cf8", width=2),
-                                        fill='tozeroy', fillcolor='rgba(129,140,248,0.1)'))
-            fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines',
-                                        name='Random Classifier',
-                                        line=dict(color="#f87171", dash="dash")))
-            fig_roc.update_layout(title=f"ROC Curve — {target_name}",
-                                 xaxis_title="False Positive Rate",
-                                 yaxis_title="True Positive Rate", height=400)
+            fig_roc.add_trace(
+                go.Scatter(
+                    x=fpr,
+                    y=tpr,
+                    mode="lines",
+                    name=f"ROC (AUC={auc_score:.3f})",
+                    line=dict(color="#818cf8", width=2),
+                    fill="tozeroy",
+                    fillcolor="rgba(129,140,248,0.1)",
+                )
+            )
+            fig_roc.add_trace(
+                go.Scatter(
+                    x=[0, 1], y=[0, 1], mode="lines", name="Random Classifier", line=dict(color="#f87171", dash="dash")
+                )
+            )
+            fig_roc.update_layout(
+                title=f"ROC Curve — {target_name}",
+                xaxis_title="False Positive Rate",
+                yaxis_title="True Positive Rate",
+                height=400,
+            )
             apply_theme(fig_roc)
             st.plotly_chart(fig_roc, use_container_width=True)
 
             st.markdown("#### 📋 Coefficients")
-            coef_df = pd.DataFrame({
-                "Feature": features,
-                "Coefficient": model.coef_[0],
-                "Odds Ratio": np.exp(model.coef_[0])
-            })
+            coef_df = pd.DataFrame(
+                {"Feature": features, "Coefficient": model.coef_[0], "Odds Ratio": np.exp(model.coef_[0])}
+            )
             st.dataframe(coef_df, use_container_width=True)
-            insight_card("💡", "Interpretation",
-                        f"Mô hình Logistic đạt Accuracy={accuracy:.1%}, AUC={auc_score:.3f}. "
-                        f"Precision={precision:.1%}, Recall={recall:.1%}, F1={f1:.1%}",
-                        "good" if auc_score > 0.7 else "warning")
+            insight_card(
+                "💡",
+                "Interpretation",
+                f"Mô hình Logistic đạt Accuracy={accuracy:.1%}, AUC={auc_score:.3f}. "
+                f"Precision={precision:.1%}, Recall={recall:.1%}, F1={f1:.1%}",
+                "good" if auc_score > 0.7 else "warning",
+            )
 
             # SHAP
             st.markdown("#### 🔮 SHAP Explainability")
             st.caption("SHAP values show how each feature contributes to predictions")
             try:
                 import shap
+
                 SHAP_AVAIL = True
             except ImportError:
                 SHAP_AVAIL = False
@@ -140,13 +166,15 @@ def render_logistic_tab(df, num, cat):
                     with st.spinner("⏳ Computing SHAP values..."):
                         try:
                             import matplotlib.pyplot as plt
+
                             sample_size = min(100, len(X_test_scaled))
                             X_sample = X_test_scaled[:sample_size]
                             explainer = shap.Explainer(model, X_train_scaled)
                             shap_values = explainer(X_sample)
                             fig, ax = plt.subplots(figsize=(8, 4))
-                            shap.summary_plot(shap_values, X_sample, feature_names=features,
-                                            plot_type="bar", show=False)
+                            shap.summary_plot(
+                                shap_values, X_sample, feature_names=features, plot_type="bar", show=False
+                            )
                             plt.tight_layout()
                             st.pyplot(fig)
                             plt.close()
@@ -155,9 +183,7 @@ def render_logistic_tab(df, num, cat):
                             plt.tight_layout()
                             st.pyplot(fig)
                             plt.close()
-                            insight_card("🔮", "SHAP Insights",
-                                        f"Top features: {', '.join(features[:3])}.",
-                                        "good")
+                            insight_card("🔮", "SHAP Insights", f"Top features: {', '.join(features[:3])}.", "good")
                         except (ValueError, RuntimeError, ImportError) as e:
                             logger.warning("SHAP computation failed: %s", e)
                             st.warning(f"⚠️ **SHAP Error:** {str(e)}")

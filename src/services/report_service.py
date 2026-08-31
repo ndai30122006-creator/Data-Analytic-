@@ -1,12 +1,13 @@
 """PDF report generation service"""
+
 import logging
 import os
 from datetime import datetime
 from io import BytesIO
 from typing import Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from fpdf import FPDF
 
 from src.utils.exceptions import handle_error
@@ -36,7 +37,7 @@ class PDFReport(FPDF):
         return "Helvetica"
 
     def _setup_fonts(self):
-        if not getattr(self, '_fonts_registered', False):
+        if not getattr(self, "_fonts_registered", False):
             if _HAS_UNICODE_FONT:
                 self.add_font("DejaVu", "", _FONT_PATH, uni=True)
                 self.add_font("DejaVu", "B", _FONT_BOLD_PATH, uni=True)

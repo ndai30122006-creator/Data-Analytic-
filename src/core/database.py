@@ -1,37 +1,33 @@
 """Database models and session management using SQLAlchemy + bcrypt."""
+
 import logging
 import os
 from datetime import datetime, timezone
 from typing import Optional
 
-# Load .env if present (so DEMO_MODE / DATABASE_URL from .env are respected)
-try:
-    from dotenv import load_dotenv
-
-    load_dotenv()
-except ImportError:
-    pass
-
 import bcrypt
-
-from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Integer
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 logger = logging.getLogger(__name__)
 
 # ── Configuration ──
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'users.db')}"
-)
+# NOTE: .env is loaded by api.py/app.py entrypoints, not here (avoid import side-effect)
+from pathlib import Path
 
-engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_DB = _PROJECT_ROOT / "users.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{_DEFAULT_DB}")
+
+_connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+engine = create_engine(DATABASE_URL, echo=False, connect_args=_connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
 class User(Base):
     """User account model."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -46,6 +42,7 @@ class Dataset(Base):
     """Dataset metadata model — stores per-user dataset info for API."""
 
     __tablename__ = "datasets"
+    __table_args__ = (UniqueConstraint("username", "dataset_name", name="uq_datasets_username_name"),)
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), index=True, nullable=False)
@@ -64,11 +61,8 @@ def init_db():
 
 def get_user(username: str) -> Optional[User]:
     """Look up user by username."""
-    session = SessionLocal()
-    try:
+    with SessionLocal() as session:
         return session.query(User).filter(User.username == username).first()
-    finally:
-        session.close()
 
 
 def _hash_password(password: str) -> str:
@@ -83,10 +77,15 @@ def _verify_password(password: str, password_hash: str) -> bool:
 
 def create_user(username: str, password: str) -> User:
     """Create a new user with bcrypt-hashed password."""
-    session = SessionLocal()
-    try:
+    if not username or not username.strip():
+        raise ValueError("Username cannot be empty")
+    if len(password) < 6:
+        raise ValueError("Password must be at least 6 characters")
+    if username.strip() != username or " " in username:
+        raise ValueError("Username cannot contain spaces")
+    with SessionLocal() as session:
         user = User(
-            username=username,
+            username=username.strip(),
             password_hash=_hash_password(password),
         )
         session.add(user)
@@ -94,8 +93,6 @@ def create_user(username: str, password: str) -> User:
         session.refresh(user)
         logger.info("User created: %s", username)
         return user
-    finally:
-        session.close()
 
 
 def verify_user_password(username: str, password: str) -> Optional[User]:
@@ -110,22 +107,18 @@ def verify_user_password(username: str, password: str) -> Optional[User]:
 
 def update_api_key(username: str, api_key: str) -> bool:
     """Update user's AI API key."""
-    session = SessionLocal()
-    try:
+    with SessionLocal() as session:
         user = session.query(User).filter(User.username == username).first()
         if not user:
             return False
         user.api_key_ai = api_key
         session.commit()
         return True
-    finally:
-        session.close()
 
 
 def delete_user(username: str) -> bool:
     """Delete a user by username. Returns True if deleted."""
-    session = SessionLocal()
-    try:
+    with SessionLocal() as session:
         user = session.query(User).filter(User.username == username).first()
         if not user:
             return False
@@ -133,60 +126,47 @@ def delete_user(username: str) -> bool:
         session.commit()
         logger.info("User deleted: %s", username)
         return True
-    finally:
-        session.close()
 
 
 # ── Dataset helpers ──
 
+
 def create_dataset(username: str, dataset_name: str, rows: int = 0, cols: int = 0) -> Dataset:
     """Persist dataset metadata for a user."""
-    session = SessionLocal()
-    try:
-        ds = Dataset(username=username, dataset_name=dataset_name, rows=rows, cols=cols)
+    if not dataset_name or not dataset_name.strip():
+        raise ValueError("dataset_name is required")
+    if rows < 0 or cols < 0:
+        raise ValueError("rows/cols must be >= 0")
+    with SessionLocal() as session:
+        ds = Dataset(username=username, dataset_name=dataset_name.strip(), rows=rows, cols=cols)
         session.add(ds)
         session.commit()
         session.refresh(ds)
         logger.info("Dataset created: %s/%s (%sx%s)", username, dataset_name, rows, cols)
         return ds
-    finally:
-        session.close()
 
 
 def list_datasets(username: str) -> list[Dataset]:
     """Return all datasets for a user."""
-    session = SessionLocal()
-    try:
+    with SessionLocal() as session:
         return session.query(Dataset).filter(Dataset.username == username).all()
-    finally:
-        session.close()
 
 
 def get_dataset(username: str, dataset_name: str) -> Optional[Dataset]:
     """Look up a single dataset by user + name."""
-    session = SessionLocal()
-    try:
-        return session.query(Dataset).filter(
-            Dataset.username == username, Dataset.dataset_name == dataset_name
-        ).first()
-    finally:
-        session.close()
+    with SessionLocal() as session:
+        return session.query(Dataset).filter(Dataset.username == username, Dataset.dataset_name == dataset_name).first()
 
 
 def delete_dataset(username: str, dataset_name: str) -> bool:
     """Delete a dataset. Returns True if deleted."""
-    session = SessionLocal()
-    try:
-        ds = session.query(Dataset).filter(
-            Dataset.username == username, Dataset.dataset_name == dataset_name
-        ).first()
+    with SessionLocal() as session:
+        ds = session.query(Dataset).filter(Dataset.username == username, Dataset.dataset_name == dataset_name).first()
         if not ds:
             return False
         session.delete(ds)
         session.commit()
         return True
-    finally:
-        session.close()
 
 
 def _ensure_demo_users():
@@ -211,5 +191,6 @@ def _ensure_demo_users():
             logger.warning("Failed to auto-create demo user %s: %s", uname, exc)
 
 
-# Initialize on import
-init_db()
+# NOTE: init_db() is NOT called on import anymore (P0 fix).
+# Call explicitly from api.py startup event or Alembic migration.
+# For backward compat in dev, callers should do: from src.core.database import init_db; init_db()

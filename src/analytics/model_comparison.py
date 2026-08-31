@@ -1,21 +1,28 @@
 """Model Comparison & Cross-Validation (Book Ch.6)"""
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
 
-from .base import apply_theme, insight_card, validate_df
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
 from src.utils.performance import safe_n_jobs
 
+from .base import apply_theme, insight_card, validate_df
+
 try:
+    from sklearn.ensemble import (
+        AdaBoostRegressor,
+        ExtraTreesRegressor,
+        GradientBoostingRegressor,
+        RandomForestRegressor,
+    )
+    from sklearn.linear_model import ElasticNet, Lasso, LinearRegression, Ridge
     from sklearn.model_selection import cross_val_score, train_test_split
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.svm import SVR
     from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.ensemble import (RandomForestRegressor, GradientBoostingRegressor,
-                                 AdaBoostRegressor, ExtraTreesRegressor)
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.svm import SVR
+    from sklearn.tree import DecisionTreeRegressor
+
     SKLEARN_AVAIL = True
 except Exception:
     SKLEARN_AVAIL = False
@@ -36,8 +43,12 @@ def render_model_comparison_tab(df, num):
         return
 
     target = st.selectbox("Target:", num, key="mc_target")
-    features = st.multiselect("Features:", [c for c in num if c != target],
-                             default=[c for c in num if c != target][:min(4, len(num)-1)], key="mc_feats")
+    features = st.multiselect(
+        "Features:",
+        [c for c in num if c != target],
+        default=[c for c in num if c != target][: min(4, len(num) - 1)],
+        key="mc_feats",
+    )
     if len(features) < 1:
         st.warning("Chọn ít nhất 1 feature")
         return
@@ -47,11 +58,21 @@ def render_model_comparison_tab(df, num):
 
     models_to_compare = st.multiselect(
         "Algorithms:",
-        ["Linear Regression", "Ridge", "Lasso", "ElasticNet",
-         "Decision Tree", "Random Forest", "Gradient Boosting", "AdaBoost",
-         "Extra Trees", "KNN", "SVR"],
+        [
+            "Linear Regression",
+            "Ridge",
+            "Lasso",
+            "ElasticNet",
+            "Decision Tree",
+            "Random Forest",
+            "Gradient Boosting",
+            "AdaBoost",
+            "Extra Trees",
+            "KNN",
+            "SVR",
+        ],
         default=["Linear Regression", "Random Forest", "Gradient Boosting", "Ridge"],
-        key="mc_models"
+        key="mc_models",
     )
 
     if st.button("🏆 Compare", key="mc_run") and models_to_compare:
@@ -62,8 +83,7 @@ def render_model_comparison_tab(df, num):
                 st.error("Cần ít nhất 10 mẫu")
                 return
 
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
             scaler = StandardScaler()
             X_train_scaled = scaler.fit_transform(X_train)
             X_test_scaled = scaler.transform(X_test)
@@ -79,14 +99,16 @@ def render_model_comparison_tab(df, num):
                 "AdaBoost": AdaBoostRegressor(n_estimators=50),
                 "Extra Trees": ExtraTreesRegressor(n_estimators=100, n_jobs=safe_n_jobs(-1)),
                 "KNN": KNeighborsRegressor(n_neighbors=5),
-                "SVR": SVR(kernel='rbf')
+                "SVR": SVR(kernel="rbf"),
             }
 
             results = []
             for name in models_to_compare:
                 model = model_map[name]
                 try:
-                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=cv_folds, scoring='r2', n_jobs=safe_n_jobs(1))
+                    cv_scores = cross_val_score(
+                        model, X_train_scaled, y_train, cv=cv_folds, scoring="r2", n_jobs=safe_n_jobs(1)
+                    )
                     cv_mean = cv_scores.mean()
                     cv_std = cv_scores.std()
                 except Exception:
@@ -96,26 +118,32 @@ def render_model_comparison_tab(df, num):
                 train_score = model.score(X_train_scaled, y_train)
                 test_score = model.score(X_test_scaled, y_test)
 
-                results.append({
-                    "Model": name, "Train R²": round(train_score, 4),
-                    "Test R²": round(test_score, 4),
-                    "CV R²": round(cv_mean, 4), "CV Std": round(cv_std, 4)
-                })
+                results.append(
+                    {
+                        "Model": name,
+                        "Train R²": round(train_score, 4),
+                        "Test R²": round(test_score, 4),
+                        "CV R²": round(cv_mean, 4),
+                        "CV Std": round(cv_std, 4),
+                    }
+                )
 
             results_df = pd.DataFrame(results).sort_values("Test R²", ascending=False)
             st.dataframe(results_df, use_container_width=True)
 
             fig = go.Figure()
-            fig.add_trace(go.Bar(name="Train R²", x=results_df["Model"], y=results_df["Train R²"],
-                                marker_color="#818cf8"))
-            fig.add_trace(go.Bar(name="Test R²", x=results_df["Model"], y=results_df["Test R²"],
-                                marker_color="#34d399"))
-            fig.add_trace(go.Bar(name="CV R²", x=results_df["Model"], y=results_df["CV R²"],
-                                marker_color="#fbbf24"))
-            fig.update_layout(title="R² Comparison", barmode='group', height=400)
+            fig.add_trace(
+                go.Bar(name="Train R²", x=results_df["Model"], y=results_df["Train R²"], marker_color="#818cf8")
+            )
+            fig.add_trace(
+                go.Bar(name="Test R²", x=results_df["Model"], y=results_df["Test R²"], marker_color="#34d399")
+            )
+            fig.add_trace(go.Bar(name="CV R²", x=results_df["Model"], y=results_df["CV R²"], marker_color="#fbbf24"))
+            fig.update_layout(title="R² Comparison", barmode="group", height=400)
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
 
             best = results_df.iloc[0]
-            insight_card("🏆", f"Best: {best['Model']}",
-                        f"Test R² = {best['Test R²']:.4f} | CV R² = {best['CV R²']:.4f}", "good")
+            insight_card(
+                "🏆", f"Best: {best['Model']}", f"Test R² = {best['Test R²']:.4f} | CV R² = {best['CV R²']:.4f}", "good"
+            )

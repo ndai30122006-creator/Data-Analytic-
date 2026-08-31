@@ -1,20 +1,24 @@
 """Learning Analytics tab — scores, pass rates, risk groups"""
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
-from src.utils.helpers import apply_theme, guess_learning_column
 from src.ui.components import render_kpi_card
+from src.utils.helpers import apply_theme, guess_learning_column
 
 try:
-    from src.ui.theme import metric_card, status_badge, gradient_text
+    from src.ui.theme import gradient_text, metric_card, status_badge
 except ImportError:
+
     def metric_card(title, value, change="", icon="📊", color="primary"):
         return f'<div class="metric-card"><h4>{icon} {title}</h4><h2>{value}</h2></div>'
+
     def status_badge(text, status="primary"):
         return f"<span>{text}</span>"
+
     def gradient_text(text, c1="#1877F2", c2="#E4405F"):
         return f"<span style='font-weight:700'>{text}</span>"
 
@@ -28,12 +32,10 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
         return
 
     score_guess = guess_learning_column(
-        num_cols,
-        ["score", "grade", "mark", "point", "diem", "gpa", "final", "tong_ket", "cuoi_ky"]
+        num_cols, ["score", "grade", "mark", "point", "diem", "gpa", "final", "tong_ket", "cuoi_ky"]
     )
     group_guess = guess_learning_column(
-        cat_cols,
-        ["class", "lop", "course", "mon", "subject", "major", "nganh", "group", "nhom", "gender", "gioi_tinh"]
+        cat_cols, ["class", "lop", "course", "mon", "subject", "major", "nganh", "group", "nhom", "gender", "gioi_tinh"]
     )
 
     score_default = num_cols.index(score_guess) if score_guess in num_cols else 0
@@ -78,8 +80,12 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
     chart_cols = st.columns(2)
     with chart_cols[0]:
         fig = px.histogram(
-            analysis_df, x=score_col, nbins=30, marginal="box",
-            title=f"Phân phối {score_col}", color_discrete_sequence=["#34d399"]
+            analysis_df,
+            x=score_col,
+            nbins=30,
+            marginal="box",
+            title=f"Phân phối {score_col}",
+            color_discrete_sequence=["#34d399"],
         )
         fig.add_vline(x=pass_mark, line_dash="dash", line_color="#22c55e", annotation_text="Đạt")
         fig.add_vline(x=risk_mark, line_dash="dash", line_color="#ef4444", annotation_text="Rủi ro")
@@ -88,16 +94,15 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
 
     with chart_cols[1]:
         categories = pd.cut(
-            score,
-            bins=[-np.inf, risk_mark, pass_mark, np.inf],
-            labels=["Cần hỗ trợ", "Cần theo dõi", "Đạt"]
+            score, bins=[-np.inf, risk_mark, pass_mark, np.inf], labels=["Cần hỗ trợ", "Cần theo dõi", "Đạt"]
         )
         status_counts = categories.value_counts().reindex(["Cần hỗ trợ", "Cần theo dõi", "Đạt"]).fillna(0)
         fig = px.bar(
-            x=status_counts.index.astype(str), y=status_counts.values,
+            x=status_counts.index.astype(str),
+            y=status_counts.values,
             title="Phân loại kết quả học tập",
             color=status_counts.index.astype(str),
-            color_discrete_map={"Cần hỗ trợ": "#ef4444", "Cần theo dõi": "#eab308", "Đạt": "#22c55e"}
+            color_discrete_map={"Cần hỗ trợ": "#ef4444", "Cần theo dõi": "#eab308", "Đạt": "#22c55e"},
         )
         fig.update_layout(showlegend=False, xaxis_title="", yaxis_title="Số lượng")
         apply_theme(fig)
@@ -105,27 +110,34 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
 
     if group_col != "Không phân nhóm":
         st.markdown("#### So sánh theo nhóm")
-        summary = analysis_df.groupby(group_col, dropna=False)[score_col].agg(
-            ["count", "mean", "median", "std"]
-        ).reset_index()
-        summary["pass_rate"] = analysis_df.groupby(group_col, dropna=False)[score_col].apply(
-            lambda s: (s >= pass_mark).mean() * 100
-        ).values
-        summary["risk_rate"] = analysis_df.groupby(group_col, dropna=False)[score_col].apply(
-            lambda s: (s < risk_mark).mean() * 100
-        ).values
+        summary = (
+            analysis_df.groupby(group_col, dropna=False)[score_col]
+            .agg(["count", "mean", "median", "std"])
+            .reset_index()
+        )
+        summary["pass_rate"] = (
+            analysis_df.groupby(group_col, dropna=False)[score_col]
+            .apply(lambda s: (s >= pass_mark).mean() * 100)
+            .values
+        )
+        summary["risk_rate"] = (
+            analysis_df.groupby(group_col, dropna=False)[score_col].apply(lambda s: (s < risk_mark).mean() * 100).values
+        )
         summary = summary.sort_values("mean", ascending=False)
         st.dataframe(summary.round(2), use_container_width=True, hide_index=True)
 
-        fig = px.box(analysis_df, x=group_col, y=score_col, points="outliers",
-                     title=f"{score_col} theo {group_col}")
+        fig = px.box(analysis_df, x=group_col, y=score_col, points="outliers", title=f"{score_col} theo {group_col}")
         apply_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("#### Gợi ý đọc kết quả")
     if risk_rate >= 25:
-        st.warning("Tỷ lệ nhóm rủi ro đang cao. Nên xem lại phân bố điểm, độ khó học phần, và các nhóm/lớp có điểm trung bình thấp.")
+        st.warning(
+            "Tỷ lệ nhóm rủi ro đang cao. Nên xem lại phân bố điểm, độ khó học phần, và các nhóm/lớp có điểm trung bình thấp."
+        )
     elif pass_rate >= 80:
         st.success("Tỷ lệ đạt khá tốt. Có thể tiếp tục xem nhóm xuất sắc và các yếu tố liên quan đến kết quả cao.")
     else:
-        st.info("Kết quả ở mức cần theo dõi. Nên kết hợp thêm cột chuyên cần, bài tập, LMS hoặc điểm thành phần để phân tích sâu hơn.")
+        st.info(
+            "Kết quả ở mức cần theo dõi. Nên kết hợp thêm cột chuyên cần, bài tập, LMS hoặc điểm thành phần để phân tích sâu hơn."
+        )

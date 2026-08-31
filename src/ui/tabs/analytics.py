@@ -1,24 +1,31 @@
 """Analytics tab — Anomaly Detection, Profiling, Data Cleaning, AutoML"""
+
 import logging
-from typing import List, Dict, Any
-import streamlit as st
-import pandas as pd
+from typing import Any, Dict, List
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 from src.utils.config import (
-    MIN_ROWS_VALIDATION, PARAM_GRIDS, PROFILER_TABS,
-    ERROR_NO_NUMERIC_COLS, ERROR_EMPTY_DATAFRAME, ERROR_WORK_DF_NONE
+    ERROR_EMPTY_DATAFRAME,
+    ERROR_NO_NUMERIC_COLS,
+    ERROR_WORK_DF_NONE,
+    MIN_ROWS_VALIDATION,
+    PARAM_GRIDS,
+    PROFILER_TABS,
 )
-from src.utils.validators import validate_dataframe
+from src.utils.exceptions import DataValidationError, ModelTrainingError, handle_error
 from src.utils.helpers import apply_theme
-from src.utils.exceptions import handle_error, ModelTrainingError, DataValidationError
+from src.utils.validators import validate_dataframe
 
 logger = logging.getLogger(__name__)
 
 try:
     from sklearn.ensemble import IsolationForest
+
     SKLEARN_ENSEMBLE_AVAIL = True
 except ImportError:
     SKLEARN_ENSEMBLE_AVAIL = False
@@ -36,12 +43,17 @@ def render_analytics_tab(df: pd.DataFrame, num: List[str], cat: List[str]) -> No
         return
 
     from src.utils.config import ANALYTICS_TABS
+
     an_tabs = st.tabs(ANALYTICS_TABS)
 
-    with an_tabs[0]: _render_anomaly(df, num)
-    with an_tabs[1]: _render_profiling(df, num, cat)
-    with an_tabs[2]: _render_cleaning(df, num)
-    with an_tabs[3]: _render_automl(df, num)
+    with an_tabs[0]:
+        _render_anomaly(df, num)
+    with an_tabs[1]:
+        _render_profiling(df, num, cat)
+    with an_tabs[2]:
+        _render_cleaning(df, num)
+    with an_tabs[3]:
+        _render_automl(df, num)
 
 
 def _render_anomaly(df: pd.DataFrame, num: List[str]) -> None:
@@ -51,7 +63,7 @@ def _render_anomaly(df: pd.DataFrame, num: List[str]) -> None:
     if df.empty:
         st.error(ERROR_EMPTY_DATAFRAME)
         return
-    ac = st.multiselect("Columns:", num, default=num[:min(3, len(num))], key="an")
+    ac = st.multiselect("Columns:", num, default=num[: min(3, len(num))], key="an")
     ct = st.slider("Contamination:", 0.01, 0.5, 0.05, 0.01)
     if st.button("🔍 Detect", key="anr") and ac and SKLEARN_ENSEMBLE_AVAIL:
         with st.spinner("..."):
@@ -68,8 +80,14 @@ def _render_anomaly(df: pd.DataFrame, num: List[str]) -> None:
             col_metrics3.metric("Ratio", "N/A")
         if len(ac) >= 2:
             X["A"] = p
-            fig = px.scatter(X, x=ac[0], y=ac[1], color=X["A"].map({1: "Normal", -1: "Anomaly"}),
-                           title="Anomalies", color_discrete_map={"Normal": "#1E40AF", "Anomaly": "#ef4444"})
+            fig = px.scatter(
+                X,
+                x=ac[0],
+                y=ac[1],
+                color=X["A"].map({1: "Normal", -1: "Anomaly"}),
+                title="Anomalies",
+                color_discrete_map={"Normal": "#1E40AF", "Anomaly": "#ef4444"},
+            )
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
 
@@ -101,8 +119,13 @@ def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
                     st.plotly_chart(fig, use_container_width=True)
                 else:
                     vc = df[c_].value_counts().head(15)
-                    fig = px.bar(x=vc.index.astype(str), y=vc.values, title="Top 15",
-                               color=vc.values, color_continuous_scale="Blues")
+                    fig = px.bar(
+                        x=vc.index.astype(str),
+                        y=vc.values,
+                        title="Top 15",
+                        color=vc.values,
+                        color_continuous_scale="Blues",
+                    )
                     apply_theme(fig)
                     st.plotly_chart(fig, use_container_width=True)
 
@@ -119,8 +142,15 @@ def _render_profiling(df: pd.DataFrame, num: List[str], cat: List[str]) -> None:
     with pt[2]:
         if len(num) >= 2:
             corr = df[num].corr()
-            fig = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu_r",
-                           zmin=-1, zmax=1, title="Correlation Matrix", aspect='auto')
+            fig = px.imshow(
+                corr,
+                text_auto=True,
+                color_continuous_scale="RdBu_r",
+                zmin=-1,
+                zmax=1,
+                title="Correlation Matrix",
+                aspect="auto",
+            )
             fig.update_layout(height=600)
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
@@ -144,29 +174,42 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
 
     if len(missing_cols) > 0:
         st.write(f"**{len(missing_cols)} columns with missing values:**")
-        missing_df = pd.DataFrame({
-            "Column": missing_cols.index,
-            "Missing": missing_cols.values,
-            "Missing %": [f"{v/len(work_df)*100:.1f}%" for v in missing_cols.values]
-        })
+        missing_df = pd.DataFrame(
+            {
+                "Column": missing_cols.index,
+                "Missing": missing_cols.values,
+                "Missing %": [f"{v/len(work_df)*100:.1f}%" for v in missing_cols.values],
+            }
+        )
         st.dataframe(missing_df, use_container_width=True, hide_index=True)
 
         col1, col2 = st.columns(2)
         with col1:
-            mv_action = st.selectbox("Action:",
-                ["Drop rows with any NaN", "Drop rows with all NaN",
-                 "Fill with Mean", "Fill with Median", "Fill with Mode", "Fill with 0",
-                 "Forward Fill", "Backward Fill"], key="mv_action")
+            mv_action = st.selectbox(
+                "Action:",
+                [
+                    "Drop rows with any NaN",
+                    "Drop rows with all NaN",
+                    "Fill with Mean",
+                    "Fill with Median",
+                    "Fill with Mode",
+                    "Fill with 0",
+                    "Forward Fill",
+                    "Backward Fill",
+                ],
+                key="mv_action",
+            )
         with col2:
-            mv_cols = st.multiselect("Apply to:", missing_cols.index.tolist(),
-                                    default=missing_cols.index.tolist(), key="mv_cols")
+            mv_cols = st.multiselect(
+                "Apply to:", missing_cols.index.tolist(), default=missing_cols.index.tolist(), key="mv_cols"
+            )
 
         if st.button("✨ Apply", key="mv_apply"):
             try:
                 if mv_action == "Drop rows with any NaN":
                     work_df = work_df.dropna(subset=mv_cols)
                 elif mv_action == "Drop rows with all NaN":
-                    work_df = work_df.dropna(how='all', subset=mv_cols)
+                    work_df = work_df.dropna(how="all", subset=mv_cols)
                 elif mv_action == "Fill with Mean":
                     for c in mv_cols:
                         if pd.api.types.is_numeric_dtype(work_df[c].dtype):
@@ -223,7 +266,7 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
         outlier_col = st.selectbox("Column:", num_cols_clean, key="outlier_col")
         q1, q3 = work_df[outlier_col].quantile(0.25), work_df[outlier_col].quantile(0.75)
         iqr = q3 - q1
-        lower, upper = q1 - 1.5*iqr, q3 + 1.5*iqr
+        lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
         outliers = work_df[(work_df[outlier_col] < lower) | (work_df[outlier_col] > upper)]
         st.write(f"**{len(outliers)} outliers detected**")
         if len(outliers) > 0:
@@ -255,7 +298,7 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
                     work_df = pd.get_dummies(work_df, columns=enc_cols)
                 elif enc_method == "Label":
                     for c in enc_cols:
-                        work_df[c] = work_df[c].astype('category').cat.codes
+                        work_df[c] = work_df[c].astype("category").cat.codes
                 elif enc_method == "Frequency":
                     for c in enc_cols:
                         freq = work_df[c].value_counts(normalize=True)
@@ -295,6 +338,7 @@ def _render_cleaning(df: pd.DataFrame, num: List[str]) -> None:
 def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
     try:
         import xgboost as xgb
+
         XGB_AVAIL = True
     except ImportError:
         XGB_AVAIL = False
@@ -305,6 +349,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
     try:
         from sklearn.pipeline import Pipeline
         from sklearn.preprocessing import StandardScaler
+
         SKLEARN_AVAIL = True
     except ImportError:
         SKLEARN_AVAIL = False
@@ -317,9 +362,9 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
         st.info("Install: pip install xgboost scikit-learn")
         return
 
-    from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split
-    from sklearn.linear_model import Ridge, Lasso
     from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+    from sklearn.linear_model import Lasso, Ridge
+    from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split
 
     if len(num) < 2:
         st.warning("Need ≥2 numeric columns")
@@ -330,7 +375,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
 
     tg = st.selectbox("Target:", num, key="atg")
     feats = [c for c in num if c != tg]
-    cols = st.multiselect("Features:", feats, default=feats[:min(4, len(feats))], key="atg_feats")
+    cols = st.multiselect("Features:", feats, default=feats[: min(4, len(feats))], key="atg_feats")
     if not cols:
         st.warning("Select ≥1 feature")
         return
@@ -341,9 +386,12 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
         test_size = st.slider("Test size:", 0.1, 0.4, 0.2, 0.05, key="atg_ts")
     with col2:
         cv_folds = st.slider("CV folds:", 2, 10, 3, key="atg_cv")
-        auto_models = st.multiselect("Models:",
+        auto_models = st.multiselect(
+            "Models:",
             ["Random Forest", "XGBoost", "Gradient Boosting", "Ridge", "Lasso"],
-            default=["Random Forest", "XGBoost"], key="atg_models")
+            default=["Random Forest", "XGBoost"],
+            key="atg_models",
+        )
 
     auto_scale = st.checkbox("📐 Auto Scaling", value=True, key="atg_scale")
 
@@ -363,7 +411,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
                     "XGBoost": xgb.XGBRegressor(random_state=42, verbosity=0),
                     "Gradient Boosting": GradientBoostingRegressor(random_state=42),
                     "Ridge": Ridge(),
-                    "Lasso": Lasso(max_iter=5000)
+                    "Lasso": Lasso(max_iter=5000),
                 }
 
                 results: List[Dict[str, Any]] = []
@@ -382,9 +430,11 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
                         pipeline = Pipeline(steps)
 
                         if tune_method == "GridSearch":
-                            searcher = GridSearchCV(pipeline, param_grid, cv=cv_folds, scoring='r2', n_jobs=-1)
+                            searcher = GridSearchCV(pipeline, param_grid, cv=cv_folds, scoring="r2", n_jobs=-1)
                         elif tune_method == "RandomizedSearch":
-                            searcher = RandomizedSearchCV(pipeline, param_grid, n_iter=10, cv=cv_folds, scoring='r2', n_jobs=-1, random_state=42)
+                            searcher = RandomizedSearchCV(
+                                pipeline, param_grid, n_iter=10, cv=cv_folds, scoring="r2", n_jobs=-1, random_state=42
+                            )
                         else:
                             searcher = None
 
@@ -400,33 +450,34 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
                         train_score = best_model.score(X_train, y_train)
                         test_score = best_model.score(X_test, y_test)
 
-                        results.append({
-                            "Model": model_name,
-                            "Train R²": round(train_score, 4),
-                            "Test R²": round(test_score, 4),
-                            "CV R²": round(cv_score, 4)
-                        })
+                        results.append(
+                            {
+                                "Model": model_name,
+                                "Train R²": round(train_score, 4),
+                                "Test R²": round(test_score, 4),
+                                "CV R²": round(cv_score, 4),
+                            }
+                        )
 
                         if test_score > best_overall["score"]:
                             best_overall = {"name": model_name, "score": test_score}
                     except (ValueError, MemoryError) as model_e:
                         logger.error("Model %s failed: %s", model_name, model_e, exc_info=True)
                         error_type_name = type(model_e).__name__
-                        results.append({
-                            "Model": model_name,
-                            "Train R²": f"❌ {error_type_name}",
-                            "Test R²": f"❌ {error_type_name}",
-                            "CV R²": f"❌ {error_type_name}"
-                        })
+                        results.append(
+                            {
+                                "Model": model_name,
+                                "Train R²": f"❌ {error_type_name}",
+                                "Test R²": f"❌ {error_type_name}",
+                                "CV R²": f"❌ {error_type_name}",
+                            }
+                        )
                         handle_error(model_e, f"_render_automl / {model_name}")
                     except Exception as model_e:
                         logger.error("Model %s failed: %s", model_name, model_e, exc_info=True)
-                        results.append({
-                            "Model": model_name,
-                            "Train R²": "❌ Failed",
-                            "Test R²": "❌ Failed",
-                            "CV R²": "❌ Failed"
-                        })
+                        results.append(
+                            {"Model": model_name, "Train R²": "❌ Failed", "Test R²": "❌ Failed", "CV R²": "❌ Failed"}
+                        )
                         st.warning(f"⚠️ **{model_name}** failed: {str(model_e)}")
                     finally:
                         progress_bar.progress((i + 1) / len(auto_models))
@@ -437,7 +488,11 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
 
             result_df = pd.DataFrame(results)
             if "Train R²" in result_df.columns:
-                result_df = result_df.sort_values("Test R²", ascending=False) if result_df["Test R²"].dtype != 'object' else result_df
+                result_df = (
+                    result_df.sort_values("Test R²", ascending=False)
+                    if result_df["Test R²"].dtype != "object"
+                    else result_df
+                )
             st.dataframe(result_df, use_container_width=True, hide_index=True)
             if best_overall["name"]:
                 st.success(f"🏆 **Best: {best_overall['name']}** — Test R² = {best_overall['score']:.4f}")
@@ -448,7 +503,7 @@ def _render_automl(df: pd.DataFrame, num: List[str]) -> None:
                 df_plot = pd.DataFrame(valid_results)
                 fig.add_trace(go.Bar(name="Train", x=df_plot["Model"], y=df_plot["Train R²"], marker_color="#1E40AF"))
                 fig.add_trace(go.Bar(name="Test", x=df_plot["Model"], y=df_plot["Test R²"], marker_color="#34d399"))
-                fig.update_layout(title="AutoML Results", barmode='group', height=350)
+                fig.update_layout(title="AutoML Results", barmode="group", height=350)
                 apply_theme(fig)
                 st.plotly_chart(fig, use_container_width=True)
         except MemoryError:
