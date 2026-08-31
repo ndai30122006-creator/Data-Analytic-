@@ -18,6 +18,17 @@ _temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 _temp_db_path = _temp_db.name
 _temp_db.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{_temp_db_path}"
+# P0 fix: database.py no longer auto init on import, so create tables for temp DB
+try:
+    # Re-import after env set to ensure engine uses temp DB
+    import importlib
+
+    import src.core.database as _db
+
+    importlib.reload(_db)
+    _db.init_db()
+except Exception:
+    pass
 
 
 @pytest.fixture

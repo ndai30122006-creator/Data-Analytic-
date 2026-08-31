@@ -11,6 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 from src.core.database import create_dataset as db_create_dataset
 from src.core.database import (
     create_user,
@@ -36,6 +43,18 @@ from src.utils.security import (
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Learning Analytics API", version="1.3.0")
+
+
+@app.on_event("startup")
+def _startup_init_db():
+    """Initialize DB on startup (P0 fix: database.py no longer auto init on import)."""
+    try:
+        from src.core.database import init_db
+
+        init_db()
+    except Exception as exc:
+        logger.warning("DB init on startup failed: %s", exc)
+
 
 # ── Configuration ──
 SECRET_KEY = get_jwt_secret_key()

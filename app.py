@@ -63,9 +63,9 @@ render_compare_tab, _ = _safe_import("src.ui.tabs.compare", "render_compare_tab"
 render_analytics_tab, _ = _safe_import("src.ui.tabs.analytics", "render_analytics_tab")
 render_ai_insights_tab, _ = _safe_import("src.ui.tabs.ai_insights", "render_ai_insights_tab")
 
-# Deep analysis – no fallback because we show a different UI in that case
+# Deep analysis – canonical via core (P0: analytics_engine)
 render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
-    "src.analytics", "render_deep_analysis_tab", fallback=False
+    "src.core.analytics_engine", "render_deep_analysis_tab", fallback=False
 )
 if not DEEP_ANALYSIS_AVAIL:
     logger.warning("Advanced analytics module not available")

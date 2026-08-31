@@ -179,7 +179,7 @@ Format your response as JSON with these keys:
         self, df: pd.DataFrame, analysis_type: str, score_col: Optional[str] = None, group_col: Optional[str] = None
     ) -> AIReport:
         """Generate insights using rule-based logic (fallback when no LLM)."""
-        from src.ui.tabs.ai_insights import generate_data_summary, generate_learning_insights
+        from src.core.insights import generate_data_summary, generate_learning_insights
 
         data_summary = generate_data_summary(df)
         specific_insights = ""
@@ -330,9 +330,28 @@ _ai_service: Optional[AIService] = None
 
 
 def get_ai_service(api_key: Optional[str] = None, provider: str = "openai") -> AIService:
-    """Get or create singleton — recreates if api_key/provider changes (fix stale cache)."""
+    """Get singleton — per Streamlit session if available to avoid cross-user leak (P0)."""
     global _ai_service
-    # Recreate when params differ, so st.session_state.ai_api_key changes take effect
+    # Prefer per-session storage when Streamlit context exists
+    try:
+        import streamlit as st
+
+        # Use session_state dict to isolate per browser session
+        if hasattr(st, "session_state") and st.session_state is not None:
+            key = f"_ai_service_{provider.lower()}"
+            # Also need api_key in key to separate users
+            api_part = (api_key or "")[:8]
+            skey = f"{key}_{api_part}"
+            if skey in st.session_state:
+                svc = st.session_state[skey]
+                if svc.api_key == (api_key or svc.api_key) and svc.provider == provider.lower():
+                    return svc
+            svc = AIService(api_key, provider)
+            st.session_state[skey] = svc
+            return svc
+    except Exception:
+        pass
+    # Fallback global (for tests / non-streamlit)
     if _ai_service is None:
         _ai_service = AIService(api_key, provider)
     elif api_key is not None and (api_key != _ai_service.api_key or provider.lower() != _ai_service.provider):
