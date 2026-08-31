@@ -122,14 +122,14 @@ def get_chart_theme(mode: str | None = None) -> Dict[str, Any]:
 
 # ── Shared Chart Colors (Pro Max: blue data + amber) ───────
 CHART_COLORS: Dict[str, str] = {
-    "primary": "#1E40AF",
-    "primary_alt": "#3B82F6",
-    "secondary": "#3B82F6",
-    "accent": "#D97706",
-    "success": "#059669",
-    "warning": "#D97706",
-    "danger": "#DC2626",
-    "info": "#0284C7",
+    "primary": "#8B5CF6",
+    "primary_alt": "#A78BFA",
+    "secondary": "#EC4899",
+    "accent": "#06B6D4",
+    "success": "#10B981",
+    "warning": "#F59E0B",
+    "danger": "#EF4444",
+    "info": "#06B6D4",
 }
 
 # ── UI Constants ────────────────────────────────────────────
