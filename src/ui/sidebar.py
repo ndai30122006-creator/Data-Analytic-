@@ -17,18 +17,15 @@ from src.services.report_service import generate_pdf_report
 
 def render_sidebar():
     """Render the sidebar with data upload, dataset management, session, and PDF export"""
-    with st.sidebar:
+    try:
+        with st.sidebar:
 
-        # ═══════════════════════════════════════════
-        # HEADER — Branding
-        # ═══════════════════════════════════════════
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            st.markdown("<div style='width:40px;height:40px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem'>LA</div>", unsafe_allow_html=True)
-        with col2:
+            # HEADER — Branding (no external image, no nested columns issue)
             st.markdown(
-                "<div style='line-height:1.3'><strong style='font-size:0.95rem;color:var(--text-primary)'>Learning Analytics</strong><br>"
-                "<span style='font-size:0.70rem;color:var(--text-tertiary);letter-spacing:0.04em;text-transform:uppercase'>Pro Max Data-Dense</span></div>",
+                "<div style='display:flex;align-items:center;gap:10px;margin-bottom:4px'>"
+                "<div style='width:40px;height:40px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem;flex-shrink:0'>LA</div>"
+                "<div style='line-height:1.25'><div style='font-size:0.95rem;font-weight:700;color:var(--text-primary)'>Learning Analytics</div>"
+                "<div style='font-size:0.70rem;color:var(--text-tertiary);letter-spacing:0.04em;text-transform:uppercase'>Pro Max Data-Dense</div></div></div>",
                 unsafe_allow_html=True
             )
 
@@ -210,3 +207,21 @@ def render_sidebar():
 
         # ── Bottom spacer ──
         st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    except Exception as exc:
+        # Fallback so sidebar never crashes the whole app (was reported as "side bar đang bị lỗi")
+        import traceback
+        logger.error("render_sidebar failed: %s", exc, exc_info=True)
+        try:
+            st.sidebar.error(f"Sidebar lỗi: {exc}")
+            st.sidebar.caption("Thử `streamlit run app.py` lại hoặc xóa `st.session_state`")
+            if st.sidebar.button("Reset session", key="sidebar_error_reset"):
+                for k in list(st.session_state.keys()):
+                    del st.session_state[k]
+                st.rerun()
+        except Exception:
+            pass
+        # Also log to main area if sidebar context missing
+        try:
+            st.error(f"Sidebar lỗi: {exc}")
+        except Exception:
+            pass
