@@ -74,7 +74,7 @@ def _render_two_proportion_test(df, cat, scipy_stats, key_prefix="da"):
         fig.update_layout(title="Conversion Rate Comparison", height=350,
                          yaxis_title="Rate", yaxis_tickformat=".0%")
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
         result = "CÓ khác biệt có ý nghĩa thống kê 🎯" if p_value < 0.05 else "KHÔNG có khác biệt có ý nghĩa thống kê ❌"
         insight_card("📊", "Kết luận", f"p = {p_value:.6f} → {result}",
@@ -142,4 +142,4 @@ def _render_power_analysis(scipy_stats):
                         xaxis_title="Effect Size (absolute %)",
                         yaxis_title="Statistical Power", height=400)
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)

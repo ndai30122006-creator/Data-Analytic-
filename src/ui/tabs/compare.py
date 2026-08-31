@@ -27,7 +27,7 @@ def render_compare_tab():
         df1 = st.session_state.datasets[ds1]
         df2 = st.session_state.datasets[ds2]
 
-        st.markdown("#### 📊 So sánh cơ bản")
+        st.markdown("####  So sánh cơ bản")
         comp_data = {
             "Metric": ["Rows", "Columns", "Numeric Columns", "Categorical Columns", "Missing Values", "Memory Usage (MB)"],
             ds1: [len(df1), len(df1.columns),
@@ -41,7 +41,7 @@ def render_compare_tab():
                   df2.isnull().sum().sum(),
                   round(df2.memory_usage(deep=True).sum() / 1024 / 1024, 2)]
         }
-        st.dataframe(pd.DataFrame(comp_data), width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(comp_data), use_container_width=True, hide_index=True)
 
         st.markdown("#### 🔗 So sánh columns")
         cols1 = set(df1.columns)
@@ -68,7 +68,7 @@ def render_compare_tab():
                     st.write(", ".join(sorted(only_in_2)))
 
         if common_cols:
-            st.markdown("#### 📈 So sánh thống kê (các cột numeric chung)")
+            st.markdown("####  So sánh thống kê (các cột numeric chung)")
             common_num = [c for c in common_cols
                          if c in df1.select_dtypes(include=[np.number]).columns
                          and c in df2.select_dtypes(include=[np.number]).columns]
@@ -87,12 +87,12 @@ def render_compare_tab():
                             f"{ds2} - Std": round(s2.std(), 4),
                         })
                 if stat_comp:
-                    st.dataframe(pd.DataFrame(stat_comp), width='stretch', hide_index=True)
+                    st.dataframe(pd.DataFrame(stat_comp), use_container_width=True, hide_index=True)
                     if st.button("📊 Vẽ biểu đồ so sánh", key="plot_compare"):
                         for col in common_num[:5]:
                             fig = go.Figure()
-                            fig.add_trace(go.Box(y=df1[col].dropna(), name=ds1, marker_color="#818cf8"))
+                            fig.add_trace(go.Box(y=df1[col].dropna(), name=ds1, marker_color="#1E40AF"))
                             fig.add_trace(go.Box(y=df2[col].dropna(), name=ds2, marker_color="#34d399"))
                             fig.update_layout(title=f"Compare: {col}", height=300)
                             apply_theme(fig)
-                            st.plotly_chart(fig, width='stretch')
+                            st.plotly_chart(fig, use_container_width=True)

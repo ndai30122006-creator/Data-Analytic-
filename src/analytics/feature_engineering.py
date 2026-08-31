@@ -45,7 +45,7 @@ def _render_create_features(df, num):
                    "+": lambda a, b: a + b, "-": lambda a, b: a - b}
             df[new_name] = ops[op](df[c1], df[c2])
             st.success(f"✅ Created '{new_name}'")
-            st.dataframe(df[[c1, c2, new_name]].head(10), width="stretch")
+            st.dataframe(df[[c1, c2, new_name]].head(10), use_container_width=True)
 
     elif feat_type == "Polynomial" and num:
         c = st.selectbox("Col:", num, key="fe_pc")
@@ -114,6 +114,6 @@ def _render_feature_selection(df, num):
                     title=f"Feature Scores ({method})",
                     color="Score", color_continuous_scale="Viridis")
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
         selected = result.nlargest(k, "Score")
         st.success(f"✅ Top {k}: {', '.join(selected['Feature'].tolist())}")

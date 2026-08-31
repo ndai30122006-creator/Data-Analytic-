@@ -9,8 +9,8 @@ from sqlalchemy import engine_from_config, pool
 # Add project root to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Import all models so Alembic can detect them
-from src.core.database import Base, User  # noqa: F401
+# Import all models so Alembic can detect them (include Dataset for drift fix)
+from src.core.database import Base, User, Dataset  # noqa: F401
 
 config = context.config
 

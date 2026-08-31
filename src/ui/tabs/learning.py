@@ -84,7 +84,7 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
         fig.add_vline(x=pass_mark, line_dash="dash", line_color="#22c55e", annotation_text="Đạt")
         fig.add_vline(x=risk_mark, line_dash="dash", line_color="#ef4444", annotation_text="Rủi ro")
         apply_theme(fig)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
 
     with chart_cols[1]:
         categories = pd.cut(
@@ -101,7 +101,7 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
         )
         fig.update_layout(showlegend=False, xaxis_title="", yaxis_title="Số lượng")
         apply_theme(fig)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
 
     if group_col != "Không phân nhóm":
         st.markdown("#### So sánh theo nhóm")
@@ -115,12 +115,12 @@ def render_learning_analytics_tab(df, num_cols, cat_cols):
             lambda s: (s < risk_mark).mean() * 100
         ).values
         summary = summary.sort_values("mean", ascending=False)
-        st.dataframe(summary.round(2), width="stretch", hide_index=True)
+        st.dataframe(summary.round(2), use_container_width=True, hide_index=True)
 
         fig = px.box(analysis_df, x=group_col, y=score_col, points="outliers",
                      title=f"{score_col} theo {group_col}")
         apply_theme(fig)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("#### Gợi ý đọc kết quả")
     if risk_rate >= 25:

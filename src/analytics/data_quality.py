@@ -72,7 +72,7 @@ def _render_duplicates(df):
     n_exact = exact_dups.sum()
     st.metric("Exact Duplicates", f"{n_exact:,} ({n_exact/len(df)*100:.1f}%)")
     if n_exact > 0:
-        st.dataframe(df[exact_dups].head(20), width='stretch')
+        st.dataframe(df[exact_dups].head(20), use_container_width=True)
 
 
 def _render_schema(df):
@@ -83,7 +83,7 @@ def _render_schema(df):
         "Null%": (df.isnull().sum().values / len(df) * 100).round(1).astype(str) + "%",
         "Unique": df.nunique().values
     })
-    st.dataframe(schema, width="stretch")
+    st.dataframe(schema, use_container_width=True)
 
 
 def _render_drift(df, num):
@@ -112,7 +112,7 @@ def _render_drift(df, num):
                 pass
 
     if drift_results:
-        st.dataframe(pd.DataFrame(drift_results), width='stretch')
+        st.dataframe(pd.DataFrame(drift_results), use_container_width=True)
         n_drift = sum(1 for r in drift_results if r["Drift"] == "⚠️ Yes")
         if n_drift > 0:
             insight_card("⚠️", f"{n_drift} drifted columns",

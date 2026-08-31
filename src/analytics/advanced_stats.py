@@ -97,7 +97,7 @@ def _render_ttest_2sample(df, num, cat):
         fig.add_trace(go.Violin(y=s2, name=g2, box_visible=True, meanline_visible=True))
         fig.update_layout(title=f"So sánh {val_col}: {g1} vs {g2} (p={p:.4f}, d={abs(cohens_d):.3f})")
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_ttest_1sample(df, num):
@@ -162,7 +162,7 @@ def _render_anova(df, num, cat):
                      "good" if p < 0.05 else "info")
         fig = px.box(df, x=grp_col, y=val_col, title=f"ANOVA: {val_col} theo {grp_col}")
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_mannwhitney(df, num, cat):
@@ -238,7 +238,7 @@ def _render_chisquare(df, cat):
         fig = px.imshow(ct, text_auto=True, title="Contingency Table",
                         color_continuous_scale="Viridis", aspect='auto')
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_normality(df, num):
@@ -274,7 +274,7 @@ def _render_normality(df, num):
         fig.add_trace(go.Box(y=s, marker_color="#34d399", boxmean=True), row=1, col=3)
         fig.update_layout(height=350)
         apply_theme(fig)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_correlation(df, num):
@@ -289,7 +289,7 @@ def _render_correlation(df, num):
                    zmin=-1, zmax=1, title=f"Correlation Matrix ({corr_method})", aspect='auto')
     fig.update_layout(height=500)
     apply_theme(fig)
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
     st.markdown("#### 🔗 Top Correlations")
     pairs = []
     for i in range(len(num)):

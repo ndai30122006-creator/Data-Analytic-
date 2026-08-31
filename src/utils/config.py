@@ -69,18 +69,73 @@ PARAM_GRIDS = {
 }
 
 # ── Chart Theme ─────────────────────────────────────────────
-CHART_THEME: Dict[str, Any] = dict(
+# Pro Max Data-Dense: Fira Sans + blue/amber palette — 4.5:1 contrast
+FONT_FAMILY = "'Fira Sans', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif"
+
+# Light-mode chart theme — Pro Max blue data (#1E40AF) + amber (#D97706) highlights
+CHART_THEME_LIGHT: Dict[str, Any] = dict(
     plot_bgcolor='rgba(0,0,0,0)',
     paper_bgcolor='rgba(0,0,0,0)',
-    font=dict(family="Inter, -apple-system, sans-serif", size=13, color="#e2e8f0"),
-    title=dict(font=dict(size=16, color="#f1f5f9"), x=0.5, xanchor='center'),
+    font=dict(family=FONT_FAMILY, size=12, color="#475569"),
+    title=dict(font=dict(size=15, color="#1E3A8A"), x=0.5, xanchor='center'),
+    xaxis=dict(gridcolor='rgba(30,64,175,0.08)', zerolinecolor='rgba(30,64,175,0.12)'),
+    yaxis=dict(gridcolor='rgba(30,64,175,0.08)', zerolinecolor='rgba(30,64,175,0.12)'),
+    hoverlabel=dict(bgcolor="#FFFFFF", font_size=11, font_family="Fira Sans"),
+    margin=dict(l=40, r=20, t=40, b=40),
+    legend=dict(font=dict(size=11), bgcolor='rgba(0,0,0,0)'),
+    colorway=['#1E40AF', '#3B82F6', '#D97706', '#059669', '#0284C7', '#DC2626', '#7C3AED']
+)
+
+# Dark-mode chart theme — Pro Max dark (light blue / amber)
+CHART_THEME_DARK: Dict[str, Any] = dict(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    font=dict(family=FONT_FAMILY, size=12, color="#CBD5E1"),
+    title=dict(font=dict(size=15, color="#F1F5F9"), x=0.5, xanchor='center'),
     xaxis=dict(gridcolor='rgba(255,255,255,0.06)', zerolinecolor='rgba(255,255,255,0.1)'),
     yaxis=dict(gridcolor='rgba(255,255,255,0.06)', zerolinecolor='rgba(255,255,255,0.1)'),
-    hoverlabel=dict(bgcolor="#1e293b", font_size=12, font_family="Inter"),
+    hoverlabel=dict(bgcolor="#111D33", font_size=11, font_family="Fira Sans"),
     margin=dict(l=40, r=20, t=40, b=40),
-    legend=dict(font=dict(size=12), bgcolor='rgba(0,0,0,0)'),
-    colorway=['#818cf8', '#34d399', '#fbbf24', '#f87171', '#38bdf8', '#a78bfa']
+    legend=dict(font=dict(size=11), bgcolor='rgba(0,0,0,0)'),
+    colorway=['#60A5FA', '#38BDF8', '#FBBF24', '#34D399', '#22D3EE', '#F87171', '#A78BFA']
 )
+
+# Back-compat alias (dark theme was the only theme before mode-aware charts).
+CHART_THEME: Dict[str, Any] = CHART_THEME_DARK
+
+# Currently active chart mode ("light" | "dark"). Set by src.ui.theme.render_theme().
+_CHART_MODE: str = "light"
+
+
+def set_chart_mode(mode: str) -> None:
+    """Set the active chart theme mode ("light" or "dark")."""
+    global _CHART_MODE
+    _CHART_MODE = "dark" if str(mode).lower() in ("dark", "prod") else "light"
+
+
+def get_chart_mode() -> str:
+    """Return the active chart theme mode."""
+    return _CHART_MODE
+
+
+def get_chart_theme(mode: str | None = None) -> Dict[str, Any]:
+    """Return the chart theme dict for the given mode (or the active one)."""
+    if mode is None:
+        mode = _CHART_MODE
+    return CHART_THEME_DARK if str(mode).lower() == "dark" else CHART_THEME_LIGHT
+
+
+# ── Shared Chart Colors (Pro Max: blue data + amber) ───────
+CHART_COLORS: Dict[str, str] = {
+    "primary": "#1E40AF",
+    "primary_alt": "#3B82F6",
+    "secondary": "#3B82F6",
+    "accent": "#D97706",
+    "success": "#059669",
+    "warning": "#D97706",
+    "danger": "#DC2626",
+    "info": "#0284C7",
+}
 
 # ── UI Constants ────────────────────────────────────────────
 SPARKLINE_HEIGHT = 40
@@ -162,10 +217,10 @@ FEATURE_FLAGS = {
     "show_ai_insights": True,            # AI Insights tab
 }
 
-# ── Color Scheme ────────────────────────────────────────────
-COLOR_SUCCESS = "#22c55e"
-COLOR_WARNING = "#eab308"
-COLOR_DANGER = "#ef4444"
-COLOR_ACCENT = "#5b6bf7"
-COLOR_PRIMARY = "#818cf8"
-COLOR_SECONDARY = "#34d399"
+# ── Color Scheme (Pro Max Data-Dense) ───────────────────────
+COLOR_SUCCESS = "#059669"
+COLOR_WARNING = "#D97706"
+COLOR_DANGER = "#DC2626"
+COLOR_ACCENT = "#D97706"
+COLOR_PRIMARY = "#1E40AF"
+COLOR_SECONDARY = "#3B82F6"

@@ -84,7 +84,7 @@ def render_naive_bayes_tab(df, num, cat):
                           color_continuous_scale="Purples", aspect='auto')
             fig.update_layout(height=350, title="Confusion Matrix — Naive Bayes")
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
             st.markdown("#### 📋 Class Priors")
             priors = pd.DataFrame({
@@ -93,4 +93,4 @@ def render_naive_bayes_tab(df, num, cat):
                 "Theta (mean)": [gnb.theta_[0, 0] if gnb.theta_.shape[1] > 0 else 0,
                                 gnb.theta_[1, 0] if gnb.theta_.shape[1] > 0 else 0]
             })
-            st.dataframe(priors, width="stretch")
+            st.dataframe(priors, use_container_width=True)

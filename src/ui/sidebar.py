@@ -24,21 +24,20 @@ def render_sidebar():
         # ═══════════════════════════════════════════
         col1, col2 = st.columns([1, 3])
         with col1:
-            st.image("https://cdn-icons-png.flaticon.com/512/4727/4727496.png", width=48)
+            st.markdown("<div style='width:40px;height:40px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem'>LA</div>", unsafe_allow_html=True)
         with col2:
             st.markdown(
-                "<div style='line-height:1.3'><strong style='font-size:1.05rem;'>🎓 Learning Analytics</strong><br>"
-                "<span style='font-size:0.75rem;color:var(--text-secondary);'>Practical Statistics v3.0</span></div>",
+                "<div style='line-height:1.3'><strong style='font-size:0.95rem;color:var(--text-primary)'>Learning Analytics</strong><br>"
+                "<span style='font-size:0.70rem;color:var(--text-tertiary);letter-spacing:0.04em;text-transform:uppercase'>Pro Max Data-Dense</span></div>",
                 unsafe_allow_html=True
             )
 
         st.markdown("<hr style='margin:0.75rem 0;border:none;border-top:1px solid var(--border-light);'>",
                     unsafe_allow_html=True)
 
-        # ═══════════════════════════════════════════
-        # 1. DATA INPUT
-        # ═══════════════════════════════════════════
-        st.markdown("#### 📂 DATA INPUT")
+        # 1. DATA INPUT — Pro Max filter sidebar (dense)
+        st.markdown("#### DATA INPUT")
+        st.caption("CSV / Excel — 50MB max")
 
         uploaded = st.file_uploader(
             "Upload CSV / Excel",
@@ -51,14 +50,14 @@ def render_sidebar():
         if uploaded:
             for file in uploaded:
                 if file.name not in st.session_state.datasets:
-                    with st.spinner(f"⏳ Loading {file.name}..."):
+                    with st.spinner(f"Loading {file.name}..."):
                         time.sleep(0.3)
                         loaded_df = load_and_process_data(file)
                         if loaded_df is not None:
                             st.session_state.datasets[file.name] = loaded_df
-                            st.success(f"✅ {file.name}")
+                            st.success(f"{file.name} — OK")
 
-        st.caption("📁 Supported: .csv, .xlsx, .xls · Max: 100MB")
+        st.caption("Supported: .csv, .xlsx · cuộn ngang khi bảng rộng")
 
         st.markdown("<hr style='margin:0.75rem 0;border:none;border-top:1px solid var(--border-light);'>",
                     unsafe_allow_html=True)
@@ -67,7 +66,7 @@ def render_sidebar():
         # 2. DATASET MANAGER
         # ═══════════════════════════════════════════
         if st.session_state.datasets:
-            st.markdown("#### 🗃️ DATASET MANAGER")
+            st.markdown("#### DATASET MANAGER")
 
             dataset_names = list(st.session_state.datasets.keys())
             current_selection = st.session_state.get("dataset_selector", "-- Chọn --")
@@ -102,28 +101,23 @@ def render_sidebar():
 
                 st.markdown(f"""
                 <div style="
-                    background: var(--bg-secondary);
+                    background: var(--card);
                     border: 1px solid var(--border-light);
                     border-radius: var(--radius-md);
-                    padding: 0.75rem 1rem;
-                    margin: 0.5rem 0;
+                    padding: 10px 12px;
+                    margin: 6px 0;
                 ">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">
-                            📄 {st.session_state.filename}
-                        </span>
-                        <span style="font-size:0.75rem;background:rgba(49,162,76,0.15);color:#31A24C;
-                                     padding:2px 8px;border-radius:20px;font-weight:600;">
-                            ✅ {quality_pct}%
-                        </span>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+                        <span style="font-weight:600;font-size:0.82rem;color:var(--text-primary);overflow-wrap:break-word;flex:1">{st.session_state.filename}</span>
+                        <span class="badge badge-success" style="flex-shrink:0">{quality_pct}%</span>
                     </div>
-                    <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">
+                    <div style="font-size:0.72rem;color:var(--text-tertiary);margin-top:4px;font-family:var(--font-mono)">
                         {rows:,} rows × {cols} cols
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button("🔄 Reset", use_container_width=True, key="sidebar_reset"):
+                if st.button("Reset", use_container_width=True, key="sidebar_reset"):
                     st.session_state.df = None
                     st.session_state.filename = ""
                     st.session_state.datasets = {}
@@ -131,9 +125,8 @@ def render_sidebar():
                     st.session_state.file_uploader_key += 1
                     st.rerun()
 
-                # Delete button for selected dataset
                 if selected_dataset != "-- Chọn --":
-                    if st.button(f"🗑 Remove “{selected_dataset}”", use_container_width=True,
+                    if st.button(f"Remove “{selected_dataset}”", use_container_width=True,
                                  key="del_dataset"):
                         del st.session_state.datasets[selected_dataset]
                         if st.session_state.filename == selected_dataset:
@@ -144,26 +137,22 @@ def render_sidebar():
         st.markdown("<hr style='margin:0.75rem 0;border:none;border-top:1px solid var(--border-light);'>",
                     unsafe_allow_html=True)
 
-        # ═══════════════════════════════════════════
-        # 3. SETTINGS
-        # ═══════════════════════════════════════════
-        st.markdown("#### ⚙️ SETTINGS")
-
-        # Theme toggle — rendered inline
+        # 3. SETTINGS — Pro Max both modes supported
+        st.markdown("#### SETTINGS")
         theme_col1, theme_col2 = st.columns(2)
         with theme_col1:
-            if st.button("☀️ Light", use_container_width=True,
-                         help="Switch to light mode"):
+            if st.button("Light", use_container_width=True,
+                         help="Light — Pro Max Data-Dense"):
                 st.session_state.theme_mode = "light"
                 st.rerun()
         with theme_col2:
-            if st.button("🌙 Dark", use_container_width=True,
-                         help="Switch to dark mode"):
+            if st.button("Dark", use_container_width=True,
+                         help="Dark — Pro Max"):
                 st.session_state.theme_mode = "dark"
                 st.rerun()
 
-        mode_name = "Light Mode ☀️" if st.session_state.get("theme_mode", "light") == "light" else "Dark Mode 🌙"
-        st.caption(f"Current: **{mode_name}**")
+        mode_name = "Light" if st.session_state.get("theme_mode", "light") == "light" else "Dark"
+        st.caption(f"Current: **{mode_name}** — Pro Max")
 
         st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 
@@ -171,15 +160,15 @@ def render_sidebar():
         # 4. SESSION & EXPORT (only when data loaded)
         # ═══════════════════════════════════════════
         if st.session_state.df is not None:
-            st.markdown("#### 💾 SESSION & EXPORT")
+            st.markdown("#### SESSION & EXPORT")
 
             sess_col1, sess_col2 = st.columns(2)
             with sess_col1:
-                if st.button("💾 Save Session", use_container_width=True, key="save_sess"):
+                if st.button("Save Session", use_container_width=True, key="save_sess"):
                     ok, msg = save_session_state()
                     st.success(msg) if ok else st.error(msg)
             with sess_col2:
-                if st.button("📂 Load Session", use_container_width=True, key="load_sess"):
+                if st.button("Load Session", use_container_width=True, key="load_sess"):
                     ok, msg = load_session_state()
                     if ok:
                         st.success(msg)
@@ -190,15 +179,14 @@ def render_sidebar():
             if has_saved_session():
                 info = get_session_info()
                 if info:
-                    st.caption(f"📁 Last: {info['filename']} ({info['rows']} × {info['cols']})")
+                    st.caption(f"Last: {info['filename']} ({info['rows']} × {info['cols']})")
 
-            # PDF export
             df = st.session_state.df
             num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
             cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
-            if st.button("📄 Generate PDF Report", use_container_width=True, key="gen_pdf"):
-                with st.spinner("⏳ Generating PDF report..."):
+            if st.button("Generate PDF Report", use_container_width=True, key="gen_pdf"):
+                with st.spinner("Generating PDF report..."):
                     try:
                         pdf_bytes = generate_pdf_report(
                             df, num_cols, cat_cols,
@@ -206,17 +194,14 @@ def render_sidebar():
                         )
                         st.session_state["_pdf_bytes"] = pdf_bytes
                         st.session_state["_pdf_filename"] = f"report_{datetime.now():%Y%m%d_%H%M}.pdf"
-                        st.success("✅ PDF Report generated! Click the button below to download.")
+                        st.success("PDF Report generated!")
                     except Exception as e:
                         logger.error("PDF generation failed: %s", e, exc_info=True)
-                        st.error(f"❌ **Lỗi tạo PDF:** {str(e)}")
-                        st.caption("💡 Kiểm tra lại dữ liệu hoặc thử lại sau")
+                        st.error(f"Lỗi tạo PDF: {str(e)}")
 
-            # Render download button outside of the generate-button callback
-            # so it persists across reruns
             if st.session_state.get("_pdf_bytes"):
                 st.download_button(
-                    "📥 Download PDF Report",
+                    "Download PDF Report",
                     st.session_state["_pdf_bytes"],
                     st.session_state.get("_pdf_filename", "report.pdf"),
                     "application/pdf",

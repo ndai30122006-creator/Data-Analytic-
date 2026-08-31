@@ -196,7 +196,7 @@ def render_ai_insights_tab(df: pd.DataFrame, num_cols: List[str], cat_cols: List
                 group_col = None
     
     # Generate button
-    if st.button("🤖 Generate AI Insights", type="primary", width="stretch", key="gen_ai_insights"):
+    if st.button("🤖 Generate AI Insights", type="primary", use_container_width=True, key="gen_ai_insights"):
         with st.spinner("Đang phân tích và tạo insights..."):
             report = generate_ai_report(df, analysis_type, score_col, group_col)
             

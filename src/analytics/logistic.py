@@ -93,7 +93,7 @@ def render_logistic_tab(df, num, cat):
                               color_continuous_scale="Blues", aspect='auto')
             fig_cm.update_layout(height=350)
             apply_theme(fig_cm)
-            st.plotly_chart(fig_cm, width='stretch')
+            st.plotly_chart(fig_cm, use_container_width=True)
 
             st.markdown("#### 📈 ROC Curve")
             fig_roc = go.Figure()
@@ -108,7 +108,7 @@ def render_logistic_tab(df, num, cat):
                                  xaxis_title="False Positive Rate",
                                  yaxis_title="True Positive Rate", height=400)
             apply_theme(fig_roc)
-            st.plotly_chart(fig_roc, width='stretch')
+            st.plotly_chart(fig_roc, use_container_width=True)
 
             st.markdown("#### 📋 Coefficients")
             coef_df = pd.DataFrame({
@@ -116,7 +116,7 @@ def render_logistic_tab(df, num, cat):
                 "Coefficient": model.coef_[0],
                 "Odds Ratio": np.exp(model.coef_[0])
             })
-            st.dataframe(coef_df, width="stretch")
+            st.dataframe(coef_df, use_container_width=True)
             insight_card("💡", "Interpretation",
                         f"Mô hình Logistic đạt Accuracy={accuracy:.1%}, AUC={auc_score:.3f}. "
                         f"Precision={precision:.1%}, Recall={recall:.1%}, F1={f1:.1%}",

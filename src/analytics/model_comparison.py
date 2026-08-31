@@ -103,7 +103,7 @@ def render_model_comparison_tab(df, num):
                 })
 
             results_df = pd.DataFrame(results).sort_values("Test R²", ascending=False)
-            st.dataframe(results_df, width="stretch")
+            st.dataframe(results_df, use_container_width=True)
 
             fig = go.Figure()
             fig.add_trace(go.Bar(name="Train R²", x=results_df["Model"], y=results_df["Train R²"],
@@ -114,7 +114,7 @@ def render_model_comparison_tab(df, num):
                                 marker_color="#fbbf24"))
             fig.update_layout(title="R² Comparison", barmode='group', height=400)
             apply_theme(fig)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
             best = results_df.iloc[0]
             insight_card("🏆", f"Best: {best['Model']}",
