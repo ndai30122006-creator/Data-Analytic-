@@ -1,23 +1,28 @@
 """Helper functions extracted from app.py"""
-from typing import Optional, List, Any, Dict, Callable
+
 import logging
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-import streamlit as st
-from io import BytesIO
 from datetime import datetime
+from io import BytesIO
+from typing import Any, Callable, Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
 
 from src.utils.config import (
-    get_chart_theme, get_chart_mode,
-    MAX_FILE_SIZE_BYTES, MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD,
+    MAX_COLS_UPLOAD,
+    MAX_FILE_SIZE_BYTES,
+    MAX_ROWS_UPLOAD,
+    get_chart_mode,
+    get_chart_theme,
 )
 from src.utils.exceptions import DataValidationError, handle_error
 from src.utils.performance import check_file_size, warn_if_large_dataset
 
 logger = logging.getLogger(__name__)
-SPARKLINE_DEFAULT_COLOR: str = '#5b6bf7'
+SPARKLINE_DEFAULT_COLOR: str = "#5b6bf7"
 SPARKLINE_DEFAULT_HEIGHT: int = 40
 
 
@@ -56,7 +61,9 @@ def apply_theme(fig: go.Figure, mode: Optional[str] = None) -> go.Figure:
     return fig
 
 
-def sparkline(series: pd.Series, color: str = SPARKLINE_DEFAULT_COLOR, height: int = SPARKLINE_DEFAULT_HEIGHT) -> go.Figure:
+def sparkline(
+    series: pd.Series, color: str = SPARKLINE_DEFAULT_COLOR, height: int = SPARKLINE_DEFAULT_HEIGHT
+) -> go.Figure:
     """
     Generate a minimal sparkline chart for inline trend display.
 
@@ -74,17 +81,22 @@ def sparkline(series: pd.Series, color: str = SPARKLINE_DEFAULT_COLOR, height: i
     if series is None:
         raise ValueError("Series cannot be None")
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        y=series.values, mode='lines',
-        line=dict(color=color, width=1.5),
-        fill='tozeroy', fillcolor=f'rgba(91,107,247,0.06)',
-        showlegend=False, hoverinfo='skip'
-    ))
+    fig.add_trace(
+        go.Scatter(
+            y=series.values,
+            mode="lines",
+            line=dict(color=color, width=1.5),
+            fill="tozeroy",
+            fillcolor=f"rgba(91,107,247,0.06)",
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
         height=height,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(visible=False, showticklabels=False),
         yaxis=dict(visible=False, showticklabels=False),
     )
@@ -142,8 +154,7 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
             df = pd.read_excel(file, engine="openpyxl")
         else:
             raise DataValidationError(
-                f"Định dạng '{file.name.split('.')[-1]}' không hỗ trợ. "
-                "Chấp nhận: .csv, .xlsx, .xls"
+                f"Định dạng '{file.name.split('.')[-1]}' không hỗ trợ. " "Chấp nhận: .csv, .xlsx, .xls"
             )
 
         if df.empty:
@@ -166,7 +177,7 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
         handle_error(DataValidationError(f"Lỗi parse file: {e}"), "load_and_process_data")
         return None
     except Exception as e:
-        logger.error("Unexpected error loading file '%s': %s", getattr(file, 'name', 'unknown'), e, exc_info=True)
+        logger.error("Unexpected error loading file '%s': %s", getattr(file, "name", "unknown"), e, exc_info=True)
         st.error(f"❌ **Lỗi đọc file:** {str(e)}")
         st.caption("💡 Kiểm tra file có bị hỏng hoặc không đúng định dạng")
         return None

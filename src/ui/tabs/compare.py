@@ -1,8 +1,9 @@
 """Compare Datasets tab — side-by-side comparison of multiple datasets"""
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
 from src.utils.helpers import apply_theme
 
@@ -29,17 +30,30 @@ def render_compare_tab():
 
         st.markdown("####  So sánh cơ bản")
         comp_data = {
-            "Metric": ["Rows", "Columns", "Numeric Columns", "Categorical Columns", "Missing Values", "Memory Usage (MB)"],
-            ds1: [len(df1), len(df1.columns),
-                  len(df1.select_dtypes(include=[np.number]).columns),
-                  len(df1.select_dtypes(include=["object", "category"]).columns),
-                  df1.isnull().sum().sum(),
-                  round(df1.memory_usage(deep=True).sum() / 1024 / 1024, 2)],
-            ds2: [len(df2), len(df2.columns),
-                  len(df2.select_dtypes(include=[np.number]).columns),
-                  len(df2.select_dtypes(include=["object", "category"]).columns),
-                  df2.isnull().sum().sum(),
-                  round(df2.memory_usage(deep=True).sum() / 1024 / 1024, 2)]
+            "Metric": [
+                "Rows",
+                "Columns",
+                "Numeric Columns",
+                "Categorical Columns",
+                "Missing Values",
+                "Memory Usage (MB)",
+            ],
+            ds1: [
+                len(df1),
+                len(df1.columns),
+                len(df1.select_dtypes(include=[np.number]).columns),
+                len(df1.select_dtypes(include=["object", "category"]).columns),
+                df1.isnull().sum().sum(),
+                round(df1.memory_usage(deep=True).sum() / 1024 / 1024, 2),
+            ],
+            ds2: [
+                len(df2),
+                len(df2.columns),
+                len(df2.select_dtypes(include=[np.number]).columns),
+                len(df2.select_dtypes(include=["object", "category"]).columns),
+                df2.isnull().sum().sum(),
+                round(df2.memory_usage(deep=True).sum() / 1024 / 1024, 2),
+            ],
         }
         st.dataframe(pd.DataFrame(comp_data), use_container_width=True, hide_index=True)
 
@@ -69,23 +83,28 @@ def render_compare_tab():
 
         if common_cols:
             st.markdown("####  So sánh thống kê (các cột numeric chung)")
-            common_num = [c for c in common_cols
-                         if c in df1.select_dtypes(include=[np.number]).columns
-                         and c in df2.select_dtypes(include=[np.number]).columns]
+            common_num = [
+                c
+                for c in common_cols
+                if c in df1.select_dtypes(include=[np.number]).columns
+                and c in df2.select_dtypes(include=[np.number]).columns
+            ]
             if common_num:
                 stat_comp = []
                 for col in common_num[:10]:
                     s1 = df1[col].dropna()
                     s2 = df2[col].dropna()
                     if len(s1) > 0 and len(s2) > 0:
-                        stat_comp.append({
-                            "Column": col,
-                            f"{ds1} - Mean": round(s1.mean(), 4),
-                            f"{ds2} - Mean": round(s2.mean(), 4),
-                            "Diff": round(s1.mean() - s2.mean(), 4),
-                            f"{ds1} - Std": round(s1.std(), 4),
-                            f"{ds2} - Std": round(s2.std(), 4),
-                        })
+                        stat_comp.append(
+                            {
+                                "Column": col,
+                                f"{ds1} - Mean": round(s1.mean(), 4),
+                                f"{ds2} - Mean": round(s2.mean(), 4),
+                                "Diff": round(s1.mean() - s2.mean(), 4),
+                                f"{ds1} - Std": round(s1.std(), 4),
+                                f"{ds2} - Std": round(s2.std(), 4),
+                            }
+                        )
                 if stat_comp:
                     st.dataframe(pd.DataFrame(stat_comp), use_container_width=True, hide_index=True)
                     if st.button("📊 Vẽ biểu đồ so sánh", key="plot_compare"):

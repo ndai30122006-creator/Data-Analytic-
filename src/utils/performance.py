@@ -1,4 +1,5 @@
 """Performance utilities — safe n_jobs, file size limits, resource guards."""
+
 import logging
 import os
 
@@ -7,6 +8,7 @@ logger = logging.getLogger(__name__)
 # Optional psutil for memory monitoring
 try:
     import psutil  # type: ignore[import-unused]
+
     _PSUTIL_AVAIL = True
 except ImportError:
     _PSUTIL_AVAIL = False
@@ -15,11 +17,11 @@ except ImportError:
 
 def safe_n_jobs(requested: int = -1, max_jobs: int = 4) -> int:
     """Clamp n_jobs to a safe maximum to avoid resource exhaustion.
-    
+
     Args:
         requested: Requested n_jobs value (-1 means all CPUs).
         max_jobs: Hard cap (default 4).
-    
+
     Returns:
         Safe n_jobs value (≥1).
     """
@@ -33,7 +35,7 @@ def safe_n_jobs(requested: int = -1, max_jobs: int = 4) -> int:
 
 def check_file_size(file_size_bytes: int, max_bytes: int = 50 * 1024 * 1024) -> tuple[bool, str]:
     """Check if file size is within limits.
-    
+
     Returns:
         (is_valid, message)
     """
@@ -55,8 +57,7 @@ def get_memory_usage() -> float:
         return 0.0
 
 
-def warn_if_large_dataset(df_rows: int, df_cols: int,
-                          max_rows: int = 500_000, max_cols: int = 200) -> str | None:
+def warn_if_large_dataset(df_rows: int, df_cols: int, max_rows: int = 500_000, max_cols: int = 200) -> str | None:
     """Return a warning message if the dataset is large, or None."""
     warnings = []
     if df_rows > max_rows:

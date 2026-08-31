@@ -1,24 +1,26 @@
 """Unit tests for src/core/statistical_tests.py"""
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 
 from src.core.statistical_tests import (
+    calculate_sample_size,
+    compute_regression_metrics,
+    run_anova,
+    run_bootstrap,
+    run_chisquare,
+    run_kruskal,
+    run_mannwhitney,
     run_ttest_independent,
     run_ttest_onesample,
     run_ttest_paired,
-    run_anova,
-    run_chisquare,
-    run_mannwhitney,
-    run_kruskal,
-    run_bootstrap,
     run_two_proportion_ztest,
-    calculate_sample_size,
-    compute_regression_metrics,
 )
 
 
@@ -69,10 +71,7 @@ class TestANOVA:
 
     def test_basic_anova(self, sample_df):
         """Test basic one-way ANOVA."""
-        groups = [
-            sample_df[sample_df["department"] == d]["score"].values
-            for d in sample_df["department"].unique()
-        ]
+        groups = [sample_df[sample_df["department"] == d]["score"].values for d in sample_df["department"].unique()]
         result = run_anova(*groups)
         assert "statistic" in result
         assert "p_value" in result
@@ -105,10 +104,7 @@ class TestChiSquare:
 
     def test_chi_square_expected(self):
         """Test chi-square with known expected values."""
-        data = pd.DataFrame({
-            "A": [10, 20, 30],
-            "B": [15, 25, 35]
-        }, index=["X", "Y", "Z"])
+        data = pd.DataFrame({"A": [10, 20, 30], "B": [15, 25, 35]}, index=["X", "Y", "Z"])
         result = run_chisquare(data)
         assert "statistic" in result
         assert "p_value" in result
@@ -135,10 +131,7 @@ class TestKruskal:
 
     def test_basic_kruskal(self, sample_df):
         """Test basic Kruskal-Wallis H test."""
-        groups = [
-            sample_df[sample_df["department"] == d]["score"].values
-            for d in sample_df["department"].unique()
-        ]
+        groups = [sample_df[sample_df["department"] == d]["score"].values for d in sample_df["department"].unique()]
         result = run_kruskal(*groups)
         assert "statistic" in result
         assert "p_value" in result
@@ -233,6 +226,7 @@ class TestRegressionMetrics:
 
 # ── Edge Cases ──
 
+
 class TestEdgeCases:
     """Tests for edge cases across all statistical functions."""
 
@@ -250,10 +244,7 @@ class TestEdgeCases:
 
     def test_all_same_values(self):
         """Test with constant arrays."""
-        result = run_ttest_independent(
-            np.ones(50) * 5.0,
-            np.ones(50) * 5.0
-        )
+        result = run_ttest_independent(np.ones(50) * 5.0, np.ones(50) * 5.0)
         # With identical data, p_value may be NaN due to precision loss
         assert result["cohens_d"] == 0.0
 

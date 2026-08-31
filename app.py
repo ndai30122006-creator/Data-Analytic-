@@ -1,5 +1,7 @@
 """Data Analyst Pro v3.0 — Practical Statistics for Data Scientists Edition"""
+
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -10,29 +12,28 @@ import streamlit as st
 # ═══════════════════════════════════
 try:
     st.set_page_config(
-        page_title="Learning Analytics Thống kê", page_icon="🎓",
-        layout="wide", initial_sidebar_state="expanded"
+        page_title="Learning Analytics Thống kê", page_icon="🎓", layout="wide", initial_sidebar_state="expanded"
     )
 except Exception as e:
     logging.error("Page config failed: %s", e, exc_info=True)
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 
 # ── Safe module loading helpers ──
 
+
 def _make_fallback(name: str):
     """Return a no-op callable that logs + shows st.error on invocation."""
+
     def _fallback(*args, **kwargs):
-        st.error(f"⚠️ Module **{name}** failed to load. "
-                 f"Check the app logs for details.")
+        st.error(f"⚠️ Module **{name}** failed to load. " f"Check the app logs for details.")
         logger.error("Attempted to use unavailable module: %s", name)
+
     return _fallback
 
 
-def _safe_import(module_name: str, attr: str, *,
-                 fallback: bool = True):
+def _safe_import(module_name: str, attr: str, *, fallback: bool = True):
     """Safely import *attr* from *module_name*.
 
     Returns (callable, True) on success, or (fallback_callable, False)
@@ -45,8 +46,7 @@ def _safe_import(module_name: str, attr: str, *,
         logger.info("Loaded %s from %s", attr, module_name)
         return fn, True
     except Exception as exc:
-        logger.error("Failed to import %s from %s: %s", attr, module_name, exc,
-                      exc_info=True)
+        logger.error("Failed to import %s from %s: %s", attr, module_name, exc, exc_info=True)
         if fallback:
             return _make_fallback(f"{module_name}.{attr}"), False
         return None, False
@@ -57,41 +57,36 @@ render_theme, _ = _safe_import("src.ui.theme", "render_theme")
 render_sidebar, _ = _safe_import("src.ui.sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("src.ui.tabs.landing", "render_landing_page")
 render_overview_tab, _ = _safe_import("src.ui.tabs.overview", "render_overview_tab")
-render_learning_analytics_tab, _ = _safe_import(
-    "src.ui.tabs.learning", "render_learning_analytics_tab")
-render_statistics_tab, _ = _safe_import(
-    "src.ui.tabs.statistics", "render_statistics_tab")
-render_compare_tab, _ = _safe_import(
-    "src.ui.tabs.compare", "render_compare_tab")
-render_analytics_tab, _ = _safe_import(
-    "src.ui.tabs.analytics", "render_analytics_tab")
-render_ai_insights_tab, _ = _safe_import(
-    "src.ui.tabs.ai_insights", "render_ai_insights_tab")
+render_learning_analytics_tab, _ = _safe_import("src.ui.tabs.learning", "render_learning_analytics_tab")
+render_statistics_tab, _ = _safe_import("src.ui.tabs.statistics", "render_statistics_tab")
+render_compare_tab, _ = _safe_import("src.ui.tabs.compare", "render_compare_tab")
+render_analytics_tab, _ = _safe_import("src.ui.tabs.analytics", "render_analytics_tab")
+render_ai_insights_tab, _ = _safe_import("src.ui.tabs.ai_insights", "render_ai_insights_tab")
 
 # Deep analysis – no fallback because we show a different UI in that case
 render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
-    "src.analytics", "render_deep_analysis_tab", fallback=False)
+    "src.analytics", "render_deep_analysis_tab", fallback=False
+)
 if not DEEP_ANALYSIS_AVAIL:
     logger.warning("Advanced analytics module not available")
 
 # ── Safe import for error handler (no automatic fallback) ──
-_handle_error, _handle_error_ok = _safe_import(
-    "src.utils.exceptions", "handle_error", fallback=False)
+_handle_error, _handle_error_ok = _safe_import("src.utils.exceptions", "handle_error", fallback=False)
 if _handle_error_ok:
     handle_error = _handle_error
 else:
     # Local fallback so the app never crashes on a missing handler
-    def handle_error(exc: Exception, context: str = "",
-                     user_message: str = "") -> None:
+    def handle_error(exc: Exception, context: str = "", user_message: str = "") -> None:
         """Fallback error handler when src.utils.exceptions.handle_error
         failed to load."""
-        logger.error("[%s] %s | Context: %s",
-                     type(exc).__name__, exc, context, exc_info=True)
+        logger.error("[%s] %s | Context: %s", type(exc).__name__, exc, context, exc_info=True)
         try:
             import streamlit as st
+
             st.error(f"❌ {user_message or str(exc)}")
         except Exception:
             pass
+
     logger.warning("Using local fallback for handle_error")
 
 
@@ -121,9 +116,12 @@ def main() -> None:
     """Main entry point — initialises session state and renders the UI."""
     # ── Session State Init ──
     SESSION_DEFAULTS = [
-        ("df", None), ("filename", ""), ("cleaned_df", None),
+        ("df", None),
+        ("filename", ""),
+        ("cleaned_df", None),
         ("file_uploader_key", 0),
-        ("datasets", {}), ("compare_datasets", []),
+        ("datasets", {}),
+        ("compare_datasets", []),
         ("ai_report", None),
     ]
     for key, default in SESSION_DEFAULTS:
@@ -150,8 +148,9 @@ def main() -> None:
 
     col1, col2 = st.columns([4, 1])
     with col1:
-        query = st.text_input("🔍", placeholder="Tìm kiếm nhanh (Ctrl+K)...", key="smart_search",
-                              label_visibility="collapsed")
+        query = st.text_input(
+            "🔍", placeholder="Tìm kiếm nhanh (Ctrl+K)...", key="smart_search", label_visibility="collapsed"
+        )
     with col2:
         st.button("⚡", help="Phím tắt Ctrl+K", disabled=True, key="smart_search_btn")
 
@@ -167,6 +166,7 @@ def main() -> None:
         # Search through tab names
         try:
             from src.utils.config import MAIN_TABS
+
             matching_tabs = [t for t in MAIN_TABS if query_lower in t.lower()]
             if matching_tabs:
                 st.info(f"📑 **Tab phù hợp:** {', '.join(matching_tabs)}")
@@ -200,13 +200,13 @@ def main() -> None:
         try:
             from src.utils.config import MAIN_TABS, TAB_DEEP_ANALYSIS
         except Exception as exc:
-            logger.error("Failed to import MAIN_TABS from config: %s", exc,
-                          exc_info=True)
+            logger.error("Failed to import MAIN_TABS from config: %s", exc, exc_info=True)
             st.error("⚠️ Configuration error: tab definitions could not be loaded.")
             st.stop()
 
         # ── Header section before tabs ──
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="
             display: flex;
             justify-content: space-between;
@@ -232,7 +232,9 @@ def main() -> None:
                 🎯 {len(MAIN_TABS)} analysis tabs
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
         # ── Dynamic tab dispatch ──
         # Map each tab name to its renderer (with pre-bound args).
@@ -266,10 +268,8 @@ def main() -> None:
                         st.warning(f"⚠️ No renderer registered for tab **{tab_name}**.")
                         logger.warning("Missing renderer for tab: %s", tab_name)
                 except Exception as exc:
-                    st.error(f"⚠️ An error occurred in the **{tab_name}** tab. "
-                             f"Check the logs for details.")
-                    logger.error("Renderer for tab %s failed: %s",
-                                 tab_name, exc, exc_info=True)
+                    st.error(f"⚠️ An error occurred in the **{tab_name}** tab. " f"Check the logs for details.")
+                    logger.error("Renderer for tab %s failed: %s", tab_name, exc, exc_info=True)
 
     st.caption("📊 Data Analyst Pro v3.0 — Practical Statistics for Data Scientists, 2nd Ed")
 

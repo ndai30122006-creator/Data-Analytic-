@@ -1,14 +1,14 @@
 """Initial database schema — creates users table.
 
 Revision ID: 001
-Revises: 
+Revises:
 Create Date: 2026-07-22
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision: str = "001"
 down_revision: Union[str, None] = None

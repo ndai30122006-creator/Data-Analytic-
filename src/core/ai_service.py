@@ -4,13 +4,14 @@ AI Service — LangChain-powered LLM integration for generating insights.
 Supports OpenAI and Google Gemini models.
 Falls back to rule-based insights when no API key is configured.
 """
+
 import logging
 import os
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AIInsight:
     """A single AI-generated insight."""
+
     type: str  # "success", "info", "warning", "danger"
     icon: str
     title: str
@@ -27,6 +29,7 @@ class AIInsight:
 @dataclass
 class AIReport:
     """Complete AI-generated report."""
+
     summary: str
     specific_insights: str
     ai_insights: List[AIInsight]
@@ -60,6 +63,7 @@ class AIService:
         try:
             if self.provider == "openai":
                 from langchain_openai import ChatOpenAI
+
                 self._llm = ChatOpenAI(
                     model="gpt-4o-mini",
                     temperature=0.3,
@@ -68,6 +72,7 @@ class AIService:
                 logger.info("OpenAI LLM initialized (gpt-4o-mini)")
             elif self.provider == "gemini":
                 from langchain_google_genai import ChatGoogleGenerativeAI
+
                 self._llm = ChatGoogleGenerativeAI(
                     model="gemini-2.0-flash",
                     temperature=0.3,
@@ -83,9 +88,10 @@ class AIService:
             return True
         except ImportError as exc:
             logger.warning(
-                "Failed to import LangChain provider '%s': %s. "
-                "Install with: pip install langchain-%s",
-                self.provider, exc, self.provider,
+                "Failed to import LangChain provider '%s': %s. " "Install with: pip install langchain-%s",
+                self.provider,
+                exc,
+                self.provider,
             )
             self._initialized = True
             return False
@@ -94,9 +100,9 @@ class AIService:
             self._initialized = True
             return False
 
-    def _build_prompt(self, df: pd.DataFrame, analysis_type: str,
-                      score_col: Optional[str] = None,
-                      group_col: Optional[str] = None) -> str:
+    def _build_prompt(
+        self, df: pd.DataFrame, analysis_type: str, score_col: Optional[str] = None, group_col: Optional[str] = None
+    ) -> str:
         """Build a prompt for the LLM based on the data and analysis type."""
         num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
@@ -123,7 +129,7 @@ Duplicate rows: {df.duplicated().sum():,}
                 prompt += f"min={stats['min']:.2f}, max={stats['max']:.2f}\n"
 
         if analysis_type == "learning" and score_col and score_col in df.columns:
-            scores = pd.to_numeric(df[score_col], errors='coerce').dropna()
+            scores = pd.to_numeric(df[score_col], errors="coerce").dropna()
             if len(scores) > 0:
                 prompt += f"\nLearning Analysis for '{score_col}':\n"
                 prompt += f"- Mean: {scores.mean():.2f}\n"
@@ -133,7 +139,7 @@ Duplicate rows: {df.duplicated().sum():,}
 
                 if group_col and group_col in df.columns:
                     prompt += f"\nGroup analysis by '{group_col}':\n"
-                    groups = df.groupby(group_col)[score_col].agg(['count', 'mean', 'std']).round(2)
+                    groups = df.groupby(group_col)[score_col].agg(["count", "mean", "std"]).round(2)
                     prompt += f"- Number of groups: {len(groups)}\n"
                     prompt += f"- Top group: {groups['mean'].idxmax()} ({groups['mean'].max():.2f})\n"
                     prompt += f"- Bottom group: {groups['mean'].idxmin()} ({groups['mean'].min():.2f})\n"
@@ -155,6 +161,7 @@ Format your response as JSON with these keys:
     def _parse_llm_response(self, response_content: str) -> Dict[str, Any]:
         """Parse LLM response into structured format."""
         import json
+
         try:
             # Try to parse as JSON
             result = json.loads(response_content)
@@ -164,16 +171,13 @@ Format your response as JSON with these keys:
             logger.warning("LLM response was not valid JSON; parsing as text")
             return {
                 "summary": response_content[:500],
-                "insights": [
-                    {"type": "info", "icon": "🤖", "title": "AI Analysis",
-                     "message": response_content[:200]}
-                ],
-                "recommendations": ["Review the AI analysis above for detailed insights"]
+                "insights": [{"type": "info", "icon": "🤖", "title": "AI Analysis", "message": response_content[:200]}],
+                "recommendations": ["Review the AI analysis above for detailed insights"],
             }
 
-    def _generate_rule_based_insights(self, df: pd.DataFrame, analysis_type: str,
-                                       score_col: Optional[str] = None,
-                                       group_col: Optional[str] = None) -> AIReport:
+    def _generate_rule_based_insights(
+        self, df: pd.DataFrame, analysis_type: str, score_col: Optional[str] = None, group_col: Optional[str] = None
+    ) -> AIReport:
         """Generate insights using rule-based logic (fallback when no LLM)."""
         from src.ui.tabs.ai_insights import generate_data_summary, generate_learning_insights
 
@@ -186,49 +190,74 @@ Format your response as JSON with these keys:
         missing_pct = (df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100
 
         if missing_pct > 10:
-            ai_insights_list.append(AIInsight(
-                type="warning", icon="⚠️", title="Chất lượng dữ liệu",
-                message=f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu. Nên xử lý missing values trước khi phân tích sâu."
-            ))
+            ai_insights_list.append(
+                AIInsight(
+                    type="warning",
+                    icon="⚠️",
+                    title="Chất lượng dữ liệu",
+                    message=f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu. Nên xử lý missing values trước khi phân tích sâu.",
+                )
+            )
         elif missing_pct > 0:
-            ai_insights_list.append(AIInsight(
-                type="info", icon="ℹ️", title="Chất lượng dữ liệu",
-                message=f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu, ở mức chấp nhận được."
-            ))
+            ai_insights_list.append(
+                AIInsight(
+                    type="info",
+                    icon="ℹ️",
+                    title="Chất lượng dữ liệu",
+                    message=f"Dữ liệu có {missing_pct:.1f}% giá trị thiếu, ở mức chấp nhận được.",
+                )
+            )
         else:
-            ai_insights_list.append(AIInsight(
-                type="success", icon="✅", title="Chất lượng dữ liệu",
-                message="Dữ liệu hoàn toàn không có giá trị thiếu. Rất tốt!"
-            ))
+            ai_insights_list.append(
+                AIInsight(
+                    type="success",
+                    icon="✅",
+                    title="Chất lượng dữ liệu",
+                    message="Dữ liệu hoàn toàn không có giá trị thiếu. Rất tốt!",
+                )
+            )
 
         dupes = df.duplicated().sum()
         if dupes > 0:
-            ai_insights_list.append(AIInsight(
-                type="warning", icon="🔁", title="Dữ liệu trùng lặp",
-                message=f"Phát hiện {dupes:,} dòng trùng lặp ({dupes/len(df)*100:.1f}%). Nên xóa để tránh bias."
-            ))
+            ai_insights_list.append(
+                AIInsight(
+                    type="warning",
+                    icon="🔁",
+                    title="Dữ liệu trùng lặp",
+                    message=f"Phát hiện {dupes:,} dòng trùng lặp ({dupes/len(df)*100:.1f}%). Nên xóa để tránh bias.",
+                )
+            )
 
         if analysis_type == "learning" and score_col and score_col in df.columns:
-            scores = pd.to_numeric(df[score_col], errors='coerce').dropna()
+            scores = pd.to_numeric(df[score_col], errors="coerce").dropna()
             if len(scores) > 0:
                 pass_rate = (scores >= 5.0).mean() * 100
                 risk_rate = (scores < 4.0).mean() * 100
 
                 if risk_rate >= 25:
-                    ai_insights_list.append(AIInsight(
-                        type="danger", icon="🚨", title="Cảnh báo học tập",
-                        message=f"Tỷ lệ sinh viên rủi ro ({risk_rate:.1f}%) quá cao. Cần can thiệp sớm."
-                    ))
+                    ai_insights_list.append(
+                        AIInsight(
+                            type="danger",
+                            icon="🚨",
+                            title="Cảnh báo học tập",
+                            message=f"Tỷ lệ sinh viên rủi ro ({risk_rate:.1f}%) quá cao. Cần can thiệp sớm.",
+                        )
+                    )
                 elif pass_rate >= 80:
-                    ai_insights_list.append(AIInsight(
-                        type="success", icon="🎯", title="Kết quả học tập",
-                        message=f"Tỷ lệ đạt khá tốt ({pass_rate:.1f}%)."
-                    ))
+                    ai_insights_list.append(
+                        AIInsight(
+                            type="success",
+                            icon="🎯",
+                            title="Kết quả học tập",
+                            message=f"Tỷ lệ đạt khá tốt ({pass_rate:.1f}%).",
+                        )
+                    )
                 else:
-                    ai_insights_list.append(AIInsight(
-                        type="info", icon="📊", title="Kết quả học tập",
-                        message=f"Tỷ lệ đạt {pass_rate:.1f}%."
-                    ))
+                    ai_insights_list.append(
+                        AIInsight(
+                            type="info", icon="📊", title="Kết quả học tập", message=f"Tỷ lệ đạt {pass_rate:.1f}%."
+                        )
+                    )
 
         recommendations = []
         if missing_pct > 10:
@@ -252,12 +281,16 @@ Format your response as JSON with these keys:
             model_used="rule-based",
         )
 
-    def generate_report(self, df: pd.DataFrame, analysis_type: str = "overview",
-                        score_col: Optional[str] = None,
-                        group_col: Optional[str] = None) -> AIReport:
+    def generate_report(
+        self,
+        df: pd.DataFrame,
+        analysis_type: str = "overview",
+        score_col: Optional[str] = None,
+        group_col: Optional[str] = None,
+    ) -> AIReport:
         """
         Generate an AI-powered insights report.
-        
+
         Uses LangChain to call LLM API if configured, otherwise falls back to rule-based.
         """
         if not self._init_llm() or self._llm is None:
@@ -270,12 +303,14 @@ Format your response as JSON with these keys:
 
             insights_list = []
             for ins in parsed.get("insights", []):
-                insights_list.append(AIInsight(
-                    type=ins.get("type", "info"),
-                    icon=ins.get("icon", "ℹ️"),
-                    title=ins.get("title", "Insight"),
-                    message=ins.get("message", ""),
-                ))
+                insights_list.append(
+                    AIInsight(
+                        type=ins.get("type", "info"),
+                        icon=ins.get("icon", "ℹ️"),
+                        title=ins.get("title", "Insight"),
+                        message=ins.get("message", ""),
+                    )
+                )
 
             return AIReport(
                 summary=parsed.get("summary", ""),

@@ -1,4 +1,5 @@
 """Database models and session management using SQLAlchemy + bcrypt."""
+
 import logging
 import os
 from datetime import datetime, timezone
@@ -13,16 +14,14 @@ except ImportError:
     pass
 
 import bcrypt
-
-from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Integer
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 logger = logging.getLogger(__name__)
 
 # ── Configuration ──
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'users.db')}"
+    "DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'users.db')}"
 )
 
 engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
@@ -32,6 +31,7 @@ Base = declarative_base()
 
 class User(Base):
     """User account model."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -139,6 +139,7 @@ def delete_user(username: str) -> bool:
 
 # ── Dataset helpers ──
 
+
 def create_dataset(username: str, dataset_name: str, rows: int = 0, cols: int = 0) -> Dataset:
     """Persist dataset metadata for a user."""
     session = SessionLocal()
@@ -166,9 +167,7 @@ def get_dataset(username: str, dataset_name: str) -> Optional[Dataset]:
     """Look up a single dataset by user + name."""
     session = SessionLocal()
     try:
-        return session.query(Dataset).filter(
-            Dataset.username == username, Dataset.dataset_name == dataset_name
-        ).first()
+        return session.query(Dataset).filter(Dataset.username == username, Dataset.dataset_name == dataset_name).first()
     finally:
         session.close()
 
@@ -177,9 +176,7 @@ def delete_dataset(username: str, dataset_name: str) -> bool:
     """Delete a dataset. Returns True if deleted."""
     session = SessionLocal()
     try:
-        ds = session.query(Dataset).filter(
-            Dataset.username == username, Dataset.dataset_name == dataset_name
-        ).first()
+        ds = session.query(Dataset).filter(Dataset.username == username, Dataset.dataset_name == dataset_name).first()
         if not ds:
             return False
         session.delete(ds)

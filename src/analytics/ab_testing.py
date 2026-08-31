@@ -1,8 +1,9 @@
 """A/B Testing & Power Analysis (Book Ch.3)"""
-import streamlit as st
+
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 from .base import apply_theme, insight_card
 
@@ -53,7 +54,7 @@ def _render_two_proportion_test(df, cat, scipy_stats, key_prefix="da"):
         p1 = g1_success / g1_total
         p2 = g2_success / g2_total
         p_pool = (g1_success + g2_success) / (g1_total + g2_total)
-        se = np.sqrt(p_pool * (1 - p_pool) * (1/g1_total + 1/g2_total))
+        se = np.sqrt(p_pool * (1 - p_pool) * (1 / g1_total + 1 / g2_total))
         z_stat = (p1 - p2) / se if se > 0 else 0
         p_value = 2 * (1 - scipy_stats.norm.cdf(abs(z_stat)))
         h = 2 * np.arcsin(np.sqrt(p1)) - 2 * np.arcsin(np.sqrt(p2))
@@ -63,22 +64,30 @@ def _render_two_proportion_test(df, cat, scipy_stats, key_prefix="da"):
         c2.metric("Group B Rate", f"{p2:.2%}")
         c3.metric("Z-statistic", f"{z_stat:.4f}")
         c4.metric("p-value", f"{p_value:.6f}")
-        st.metric("Effect Size (Cohen's h)", f"{abs(h):.4f}",
-                 delta="Lớn" if abs(h) > 0.8 else "Trung bình" if abs(h) > 0.5 else "Nhỏ")
+        st.metric(
+            "Effect Size (Cohen's h)",
+            f"{abs(h):.4f}",
+            delta="Lớn" if abs(h) > 0.8 else "Trung bình" if abs(h) > 0.5 else "Nhỏ",
+        )
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=["Group A", "Group B"], y=[p1, p2],
-                            text=[f"{p1:.1%}", f"{p2:.1%}"],
-                            textposition='outside',
-                            marker_color=['#818cf8', '#34d399']))
-        fig.update_layout(title="Conversion Rate Comparison", height=350,
-                         yaxis_title="Rate", yaxis_tickformat=".0%")
+        fig.add_trace(
+            go.Bar(
+                x=["Group A", "Group B"],
+                y=[p1, p2],
+                text=[f"{p1:.1%}", f"{p2:.1%}"],
+                textposition="outside",
+                marker_color=["#818cf8", "#34d399"],
+            )
+        )
+        fig.update_layout(title="Conversion Rate Comparison", height=350, yaxis_title="Rate", yaxis_tickformat=".0%")
         apply_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
 
-        result = "CÓ khác biệt có ý nghĩa thống kê 🎯" if p_value < 0.05 else "KHÔNG có khác biệt có ý nghĩa thống kê ❌"
-        insight_card("📊", "Kết luận", f"p = {p_value:.6f} → {result}",
-                    "good" if p_value < 0.05 else "info")
+        result = (
+            "CÓ khác biệt có ý nghĩa thống kê 🎯" if p_value < 0.05 else "KHÔNG có khác biệt có ý nghĩa thống kê ❌"
+        )
+        insight_card("📊", "Kết luận", f"p = {p_value:.6f} → {result}", "good" if p_value < 0.05 else "info")
 
 
 def _render_sample_size_calculator(scipy_stats):
@@ -94,24 +103,27 @@ def _render_sample_size_calculator(scipy_stats):
         p_pool = (p1 + p2) / 2
         z_alpha = scipy_stats.norm.ppf(1 - alpha / 2)
         z_beta = scipy_stats.norm.ppf(power)
-        n = ((z_alpha * np.sqrt(2 * p_pool * (1 - p_pool)) +
-              z_beta * np.sqrt(p1 * (1 - p1) + p2 * (1 - p2))) ** 2) / ((p2 - p1) ** 2)
+        n = ((z_alpha * np.sqrt(2 * p_pool * (1 - p_pool)) + z_beta * np.sqrt(p1 * (1 - p1) + p2 * (1 - p2))) ** 2) / (
+            (p2 - p1) ** 2
+        )
         n = int(np.ceil(n))
         st.success(f"### 📊 Cần {n:,} samples per group (total: {n*2:,})")
         c1, c2, c3 = st.columns(3)
         c1.metric("Baseline", f"{baseline}%")
         c2.metric("Detectable effect", f"{min_effect}%")
         c3.metric("Power", f"{power:.0%}")
-        insight_card("💡", "Sample Size",
-                    f"Cần {n:,} observations mỗi nhóm (total {n*2:,}) để phát hiện "
-                    f"effect {min_effect}% từ baseline {baseline}% với power={power:.0%}, α={alpha}.",
-                    "good")
+        insight_card(
+            "💡",
+            "Sample Size",
+            f"Cần {n:,} observations mỗi nhóm (total {n*2:,}) để phát hiện "
+            f"effect {min_effect}% từ baseline {baseline}% với power={power:.0%}, α={alpha}.",
+            "good",
+        )
 
 
 def _render_power_analysis(scipy_stats):
     st.markdown("#### 📊 Power Analysis Curve")
-    p_base = st.slider("Baseline rate (%):", 1, 99, 10, 1, key="da_ab_power_base",
-                      help="Tỷ lệ chuyển đổi hiện tại")
+    p_base = st.slider("Baseline rate (%):", 1, 99, 10, 1, key="da_ab_power_base", help="Tỷ lệ chuyển đổi hiện tại")
     n_per_group = st.slider("Sample size per group:", 10, 10000, 500, 10, key="da_ab_power_n")
 
     if st.button("📊 Generate Power Curve", key="da_ab_power_run"):
@@ -125,21 +137,25 @@ def _render_power_analysis(scipy_stats):
                 continue
             p_pool = (p1 + p2) / 2
             try:
-                z_beta = (np.sqrt(n_per_group) * abs(p2 - p1) -
-                         z_alpha * np.sqrt(2 * p_pool * (1 - p_pool))) / \
-                         np.sqrt(p1 * (1 - p1) + p2 * (1 - p2))
+                z_beta = (np.sqrt(n_per_group) * abs(p2 - p1) - z_alpha * np.sqrt(2 * p_pool * (1 - p_pool))) / np.sqrt(
+                    p1 * (1 - p1) + p2 * (1 - p2)
+                )
                 powers.append(scipy_stats.norm.cdf(z_beta))
             except Exception:
                 powers.append(0)
 
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=effects * 100, y=powers, mode='lines',
-                                name=f"n={n_per_group}",
-                                line=dict(color="#818cf8", width=2)))
-        fig.add_hline(y=0.8, line_dash="dash", line_color="#34d399",
-                     annotation_text="Power=80%")
-        fig.update_layout(title=f"Power Curve (n={n_per_group}, α=0.05, baseline={p_base}%)",
-                        xaxis_title="Effect Size (absolute %)",
-                        yaxis_title="Statistical Power", height=400)
+        fig.add_trace(
+            go.Scatter(
+                x=effects * 100, y=powers, mode="lines", name=f"n={n_per_group}", line=dict(color="#818cf8", width=2)
+            )
+        )
+        fig.add_hline(y=0.8, line_dash="dash", line_color="#34d399", annotation_text="Power=80%")
+        fig.update_layout(
+            title=f"Power Curve (n={n_per_group}, α=0.05, baseline={p_base}%)",
+            xaxis_title="Effect Size (absolute %)",
+            yaxis_title="Statistical Power",
+            height=400,
+        )
         apply_theme(fig)
         st.plotly_chart(fig, use_container_width=True)

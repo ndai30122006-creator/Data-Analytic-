@@ -1,31 +1,35 @@
 """FastAPI Backend for Learning Analytics SaaS — JWT + bcrypt + SQLAlchemy + rate limiting"""
+
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Depends, status, Header, Request
+import jwt
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-import jwt
-
+from src.core.database import create_dataset as db_create_dataset
 from src.core.database import (
     create_user,
-    verify_user_password,
-    update_api_key,
+)
+from src.core.database import delete_dataset as db_delete_dataset
+from src.core.database import (
     delete_user,
-    list_datasets as db_list_datasets,
-    create_dataset as db_create_dataset,
-    get_dataset as db_get_dataset,
-    delete_dataset as db_delete_dataset,
+)
+from src.core.database import get_dataset as db_get_dataset
+from src.core.database import list_datasets as db_list_datasets
+from src.core.database import (
+    update_api_key,
+    verify_user_password,
 )
 from src.utils.security import (
-    get_jwt_secret_key,
-    get_jwt_algorithm,
     get_access_token_expire_minutes,
     get_cors_origins,
+    get_jwt_algorithm,
+    get_jwt_secret_key,
     validate_environment,
 )
 
@@ -42,6 +46,7 @@ RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60"))
 # ── Redis-based rate limiter (falls back to in-memory) ──
 try:
     import redis.asyncio as aioredis
+
     REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     _redis = aioredis.from_url(REDIS_URL, decode_responses=True)
     _redis_available = True
@@ -58,6 +63,7 @@ except Exception as exc:
 # ── In-memory fallback rate limiter ──
 _request_counts: Dict[str, list] = {}
 
+
 async def _check_rate_limit_redis(client_ip: str) -> bool:
     """Sliding-window rate limiter using Redis."""
     if not _redis_available:
@@ -66,31 +72,30 @@ async def _check_rate_limit_redis(client_ip: str) -> bool:
         key = f"ratelimit:{client_ip}"
         now = datetime.now(timezone.utc).timestamp()
         window = 60  # seconds
-        
+
         # Remove old entries and add current
         await _redis.zremrangebyscore(key, 0, now - window)
         await _redis.zadd(key, {str(now): now})
         await _redis.expire(key, window)
-        
+
         count = await _redis.zcard(key)
         return count <= RATE_LIMIT_PER_MINUTE
     except Exception as exc:
         logger.error("Redis rate limit check failed: %s", exc)
         return _check_rate_limit_memory(client_ip)
 
+
 def _check_rate_limit_memory(client_ip: str) -> bool:
     """Simple sliding-window rate limiter (in-memory fallback)."""
     now = datetime.now(timezone.utc)
     if client_ip not in _request_counts:
         _request_counts[client_ip] = []
-    _request_counts[client_ip] = [
-        t for t in _request_counts[client_ip]
-        if (now - t).total_seconds() < 60
-    ]
+    _request_counts[client_ip] = [t for t in _request_counts[client_ip] if (now - t).total_seconds() < 60]
     if len(_request_counts[client_ip]) >= RATE_LIMIT_PER_MINUTE:
         return False
     _request_counts[client_ip].append(now)
     return True
+
 
 async def check_rate_limit(request: Request) -> None:
     """Dependency: check rate limit for the current request."""
@@ -101,6 +106,7 @@ async def check_rate_limit(request: Request) -> None:
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded. Please try again later.",
         )
+
 
 # ── CORS Configuration ──
 cors_origins = get_cors_origins()
@@ -124,22 +130,24 @@ else:
         allow_headers=["Authorization", "Content-Type"],
     )
 
+
 # ── Global exception handler ──
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(
-        "Unhandled exception: %s | Path: %s | Detail: %s",
-        type(exc).__name__, request.url.path, str(exc), exc_info=True
+        "Unhandled exception: %s | Path: %s | Detail: %s", type(exc).__name__, request.url.path, str(exc), exc_info=True
     )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error. Please try again later."}
+        content={"detail": "Internal server error. Please try again later."},
     )
+
 
 # ── Models ─────────────────────────────────────────────────
 class LoginRequest(BaseModel):
     username: str
     password: str
+
 
 class LoginResponse(BaseModel):
     access_token: str
@@ -147,14 +155,17 @@ class LoginResponse(BaseModel):
     username: str
     expires_in: int
 
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
+
 
 class AnalysisRequest(BaseModel):
     dataset_name: str
     analysis_type: str
     params: Dict[str, Any] = {}
+
 
 class ApiKeyUpdateRequest(BaseModel):
     api_key: str
@@ -178,6 +189,7 @@ def create_access_token(username: str) -> tuple[str, datetime]:
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token, expires_at
 
+
 def verify_access_token(token: str) -> Optional[str]:
     """Verify a JWT token and return the username."""
     try:
@@ -190,6 +202,7 @@ def verify_access_token(token: str) -> Optional[str]:
         logger.warning("Invalid token: %s", exc)
         return None
 
+
 async def get_current_user(authorization: str = Header(...)) -> str:
     """Dependency: extract and verify Bearer JWT token."""
     if not authorization.startswith("Bearer "):
@@ -198,7 +211,7 @@ async def get_current_user(authorization: str = Header(...)) -> str:
             detail="Invalid authorization header format",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = authorization[len("Bearer "):]
+    token = authorization[len("Bearer ") :]
     username = verify_access_token(token)
     if not username:
         raise HTTPException(
@@ -208,10 +221,12 @@ async def get_current_user(authorization: str = Header(...)) -> str:
         )
     return username
 
+
 # ── Endpoints ──────────────────────────────────────────────
 @app.get("/")
 async def root():
     return {"message": "Learning Analytics API", "version": "1.3.0"}
+
 
 @app.post("/auth/login", response_model=LoginResponse, dependencies=[Depends(check_rate_limit)])
 async def login(request: LoginRequest, req: Request):
@@ -234,6 +249,7 @@ async def login(request: LoginRequest, req: Request):
         username=request.username,
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+
 
 @app.post("/auth/register", dependencies=[Depends(check_rate_limit)])
 async def register(request: RegisterRequest, req: Request):
@@ -268,9 +284,11 @@ async def register(request: RegisterRequest, req: Request):
             detail="Registration failed",
         )
 
+
 @app.get("/auth/verify")
 async def verify_auth(username: str = Depends(get_current_user)):
     return {"username": username, "valid": True}
+
 
 @app.post("/auth/api-key")
 async def update_ai_api_key(
@@ -287,6 +305,8 @@ async def update_ai_api_key(
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return {"message": "API key updated"}
+
+
 @app.get("/datasets")
 async def list_datasets(username: str = Depends(get_current_user)):
     """List all datasets owned by the authenticated user (DB-backed)."""
@@ -348,14 +368,15 @@ async def delete_user_endpoint(username: str = Depends(get_current_user)):
 def _dispatch_analysis(analysis_type: str, params: Dict[str, Any]) -> Dict[str, Any]:
     """Map analysis_type to real computation via src/core/statistical_tests."""
     import numpy as np
+
     from src.core.statistical_tests import (
+        run_anova,
+        run_bootstrap,
+        run_kruskal,
+        run_mannwhitney,
         run_ttest_independent,
         run_ttest_onesample,
         run_ttest_paired,
-        run_anova,
-        run_mannwhitney,
-        run_kruskal,
-        run_bootstrap,
         run_two_proportion_ztest,
     )
 
@@ -411,7 +432,9 @@ def _dispatch_analysis(analysis_type: str, params: Dict[str, Any]) -> Dict[str, 
         conf_level = int(params.get("conf_level", 95))
         result = run_bootstrap(data, n_iter=n_iter, conf_level=conf_level)
         # Convert ndarray to list for JSON serialization
-        result["boot_stats"] = result["boot_stats"].tolist() if hasattr(result["boot_stats"], "tolist") else result["boot_stats"]
+        result["boot_stats"] = (
+            result["boot_stats"].tolist() if hasattr(result["boot_stats"], "tolist") else result["boot_stats"]
+        )
         return result
 
     if at in ("ab_test", "two_proportion", "two_proportion_ztest", "abtest"):
@@ -494,9 +517,11 @@ async def run_analysis(
         logger.error("Analysis failed (%s): %s", request.analysis_type, exc, exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Analysis failed")
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
 
 @app.get("/env/validate")
 async def validate_env():
@@ -509,6 +534,8 @@ async def validate_env():
         "rate_limiter": "redis" if _redis_available else "in-memory",
     }
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

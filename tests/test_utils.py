@@ -1,16 +1,18 @@
 """Unit tests for utility modules — Data Analyst Pro v3.0"""
+
 import os
 import sys
 import tempfile
-import pytest
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import pytest
 
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.utils.performance import safe_n_jobs, check_file_size, warn_if_large_dataset
 from src.utils.exceptions import DataValidationError, handle_error
+from src.utils.performance import check_file_size, safe_n_jobs, warn_if_large_dataset
 from src.utils.validators import validate_dataframe_schema
 
 
@@ -94,10 +96,14 @@ class TestConfigConstants:
     def test_config_imports(self):
         """Core config constants should be accessible."""
         from src.utils.config import (
-            MIN_ROWS_VALIDATION, MAX_FILE_SIZE_MB,
-            MAIN_TABS, STATISTICS_TABS,
-            N_JOBS_MAX, FEATURE_FLAGS
+            FEATURE_FLAGS,
+            MAIN_TABS,
+            MAX_FILE_SIZE_MB,
+            MIN_ROWS_VALIDATION,
+            N_JOBS_MAX,
+            STATISTICS_TABS,
         )
+
         assert MIN_ROWS_VALIDATION >= 1
         assert MAX_FILE_SIZE_MB >= 1
         assert len(MAIN_TABS) >= 5
@@ -108,10 +114,13 @@ class TestConfigConstants:
     def test_feature_flags(self):
         """FEATURE_FLAGS should have all expected keys."""
         from src.utils.config import FEATURE_FLAGS
+
         expected_keys = [
-            "show_landing_page", "show_smart_search",
-            "show_deep_analysis", "show_compare_tab",
-            "show_ai_insights"
+            "show_landing_page",
+            "show_smart_search",
+            "show_deep_analysis",
+            "show_compare_tab",
+            "show_ai_insights",
         ]
         for key in expected_keys:
             assert key in FEATURE_FLAGS, f"Missing feature flag: {key}"

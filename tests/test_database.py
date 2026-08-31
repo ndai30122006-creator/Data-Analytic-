@@ -1,20 +1,22 @@
 """Unit tests for src/core/database.py"""
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
 from src.core.database import (
-    User,
     SessionLocal,
-    create_user,
-    get_user,
-    verify_user_password,
-    update_api_key,
+    User,
     _hash_password,
     _verify_password,
+    create_user,
+    get_user,
+    update_api_key,
+    verify_user_password,
 )
 
 

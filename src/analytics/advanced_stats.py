@@ -1,18 +1,30 @@
 """Advanced Statistics — Hypothesis Testing, Normality, Correlation (Book Ch.2-3)"""
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 from plotly.subplots import make_subplots
 
 from .base import apply_theme, insight_card, validate_df
 
 try:
     from scipy import stats as scipy_stats
-    from scipy.stats import ttest_ind, ttest_1samp, ttest_rel, f_oneway
-    from scipy.stats import mannwhitneyu, kruskal, chi2_contingency
-    from scipy.stats import shapiro, normaltest, kstest, probplot
+    from scipy.stats import (
+        chi2_contingency,
+        f_oneway,
+        kruskal,
+        kstest,
+        mannwhitneyu,
+        normaltest,
+        probplot,
+        shapiro,
+        ttest_1samp,
+        ttest_ind,
+        ttest_rel,
+    )
+
     SCIPY_AVAIL = True
 except Exception:
     SCIPY_AVAIL = False
@@ -32,11 +44,19 @@ def render_advanced_stats_tab(df, num, cat):
 
     # ── Hypothesis Testing ──
     with tabs[0]:
-        test_type = st.selectbox("Loại kiểm định:", [
-            "T-test (2 mẫu độc lập)", "T-test (1 mẫu)", "T-test (bắt cặp)",
-            "ANOVA (nhiều mẫu)", "Mann-Whitney U (phi tham số)",
-            "Kruskal-Wallis (phi tham số)", "Chi-Square (độc lập)"
-        ], key="ht_type_adv")
+        test_type = st.selectbox(
+            "Loại kiểm định:",
+            [
+                "T-test (2 mẫu độc lập)",
+                "T-test (1 mẫu)",
+                "T-test (bắt cặp)",
+                "ANOVA (nhiều mẫu)",
+                "Mann-Whitney U (phi tham số)",
+                "Kruskal-Wallis (phi tham số)",
+                "Chi-Square (độc lập)",
+            ],
+            key="ht_type_adv",
+        )
 
         if "2 mẫu" in test_type:
             _render_ttest_2sample(df, num, cat)
@@ -81,17 +101,20 @@ def _render_ttest_2sample(df, num, cat):
             st.error("Cần ≥2 giá trị mỗi nhóm")
             return
         stat, p = ttest_ind(s1, s2, equal_var=False)
-        pooled_std = np.sqrt((s1.std()**2 + s2.std()**2) / 2)
+        pooled_std = np.sqrt((s1.std() ** 2 + s2.std() ** 2) / 2)
         cohens_d = (s1.mean() - s2.mean()) / pooled_std if pooled_std > 0 else 0
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("t-statistic", f"{stat:.4f}")
         c2.metric("p-value", f"{p:.6f}")
         c3.metric("Cohen's d", f"{abs(cohens_d):.4f}")
         c4.metric("Effect", "Lớn 🎯" if abs(cohens_d) > 0.8 else "TB" if abs(cohens_d) > 0.5 else "Nhỏ")
-        insight_card("📊", "Kết quả",
-                     f"p = {p:.6f} {'< 0.05 → Có khác biệt' if p < 0.05 else '≥ 0.05 → Không có khác biệt'}. "
-                     f"Cohen's d = {abs(cohens_d):.3f}",
-                     "good" if p < 0.05 else "info")
+        insight_card(
+            "📊",
+            "Kết quả",
+            f"p = {p:.6f} {'< 0.05 → Có khác biệt' if p < 0.05 else '≥ 0.05 → Không có khác biệt'}. "
+            f"Cohen's d = {abs(cohens_d):.3f}",
+            "good" if p < 0.05 else "info",
+        )
         fig = go.Figure()
         fig.add_trace(go.Violin(y=s1, name=g1, box_visible=True, meanline_visible=True))
         fig.add_trace(go.Violin(y=s2, name=g2, box_visible=True, meanline_visible=True))
@@ -113,10 +136,13 @@ def _render_ttest_1sample(df, num):
         c1, c2 = st.columns(2)
         c1.metric("t-statistic", f"{stat:.4f}")
         c2.metric("p-value", f"{p:.6f}")
-        insight_card("📊", "Kết quả",
-                     f"Mean = {s.mean():.4f} vs μ₀ = {mu0:.4f}. Cohen's d = {abs(cohens_d):.3f}. "
-                     f"{'Có khác biệt' if p < 0.05 else 'Không có khác biệt'}.",
-                     "good" if p < 0.05 else "info")
+        insight_card(
+            "📊",
+            "Kết quả",
+            f"Mean = {s.mean():.4f} vs μ₀ = {mu0:.4f}. Cohen's d = {abs(cohens_d):.3f}. "
+            f"{'Có khác biệt' if p < 0.05 else 'Không có khác biệt'}.",
+            "good" if p < 0.05 else "info",
+        )
 
 
 def _render_ttest_paired(df, num):
@@ -132,8 +158,12 @@ def _render_ttest_paired(df, num):
         c1, c2 = st.columns(2)
         c1.metric("t-statistic", f"{stat:.4f}")
         c2.metric("p-value", f"{p:.6f}")
-        insight_card("📊", "Kết quả", f"Paired t-test: p = {p:.6f}, Cohen's d = {abs(cohens_d):.3f}",
-                     "good" if p < 0.05 else "info")
+        insight_card(
+            "📊",
+            "Kết quả",
+            f"Paired t-test: p = {p:.6f}, Cohen's d = {abs(cohens_d):.3f}",
+            "good" if p < 0.05 else "info",
+        )
 
 
 def _render_anova(df, num, cat):
@@ -150,16 +180,19 @@ def _render_anova(df, num, cat):
             return
         stat, p = f_oneway(*groups)
         all_data = np.concatenate(groups)
-        ss_between = sum(len(g) * (np.mean(g) - np.mean(all_data))**2 for g in groups)
-        ss_total = sum((g - np.mean(all_data))**2 for g in groups)
+        ss_between = sum(len(g) * (np.mean(g) - np.mean(all_data)) ** 2 for g in groups)
+        ss_total = sum((g - np.mean(all_data)) ** 2 for g in groups)
         eta_sq = ss_between / ss_total if ss_total > 0 else 0
         c1, c2, c3 = st.columns(3)
         c1.metric("F-statistic", f"{stat:.4f}")
         c2.metric("p-value", f"{p:.6f}")
         c3.metric("η² (Effect Size)", f"{eta_sq:.4f}")
-        insight_card("📊", "Kết quả ANOVA",
-                     f"p = {p:.6f}. η² = {eta_sq:.4f} {'(Lớn)' if eta_sq > 0.14 else '(TB)' if eta_sq > 0.06 else '(Nhỏ)'}",
-                     "good" if p < 0.05 else "info")
+        insight_card(
+            "📊",
+            "Kết quả ANOVA",
+            f"p = {p:.6f}. η² = {eta_sq:.4f} {'(Lớn)' if eta_sq > 0.14 else '(TB)' if eta_sq > 0.06 else '(Nhỏ)'}",
+            "good" if p < 0.05 else "info",
+        )
         fig = px.box(df, x=grp_col, y=val_col, title=f"ANOVA: {val_col} theo {grp_col}")
         apply_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
@@ -185,14 +218,13 @@ def _render_mannwhitney(df, num, cat):
             return
         stat, p = mannwhitneyu(s1, s2)
         n1, n2 = len(s1), len(s2)
-        z = (stat - n1*n2/2) / np.sqrt(n1*n2*(n1+n2+1)/12)
+        z = (stat - n1 * n2 / 2) / np.sqrt(n1 * n2 * (n1 + n2 + 1) / 12)
         r = abs(z) / np.sqrt(n1 + n2)
         c1, c2, c3 = st.columns(3)
         c1.metric("U-statistic", f"{stat:.2f}")
         c2.metric("p-value", f"{p:.6f}")
         c3.metric("Effect size (r)", f"{r:.4f}")
-        insight_card("📊", "Kết quả", f"Mann-Whitney: p = {p:.6f}, r = {r:.4f}",
-                     "good" if p < 0.05 else "info")
+        insight_card("📊", "Kết quả", f"Mann-Whitney: p = {p:.6f}, r = {r:.4f}", "good" if p < 0.05 else "info")
 
 
 def _render_kruskal(df, num, cat):
@@ -211,8 +243,7 @@ def _render_kruskal(df, num, cat):
         c1, c2 = st.columns(2)
         c1.metric("H-statistic", f"{stat:.4f}")
         c2.metric("p-value", f"{p:.6f}")
-        insight_card("📊", "Kết quả", f"Kruskal-Wallis: p = {p:.6f}",
-                     "good" if p < 0.05 else "info")
+        insight_card("📊", "Kết quả", f"Kruskal-Wallis: p = {p:.6f}", "good" if p < 0.05 else "info")
 
 
 def _render_chisquare(df, cat):
@@ -225,18 +256,20 @@ def _render_chisquare(df, cat):
         ct = pd.crosstab(df[c1], df[c2])
         stat, p, dof, _expected = chi2_contingency(ct)
         n = ct.sum().sum()
-        cramer_v = np.sqrt(stat / (n * min(ct.shape[0]-1, ct.shape[1]-1))) if n > 0 else 0
+        cramer_v = np.sqrt(stat / (n * min(ct.shape[0] - 1, ct.shape[1] - 1))) if n > 0 else 0
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("χ²", f"{stat:.4f}")
         c2.metric("p-value", f"{p:.6f}")
         c3.metric("Bậc tự do", dof)
         c4.metric("Cramer's V", f"{cramer_v:.4f}")
-        insight_card("📊", "Kết quả",
-                     f"Chi-Square: p = {p:.6f}. Cramer's V = {cramer_v:.4f} "
-                     f"{'(Mạnh)' if cramer_v > 0.5 else '(TB)' if cramer_v > 0.3 else '(Yếu)'}",
-                     "good" if p < 0.05 else "info")
-        fig = px.imshow(ct, text_auto=True, title="Contingency Table",
-                        color_continuous_scale="Viridis", aspect='auto')
+        insight_card(
+            "📊",
+            "Kết quả",
+            f"Chi-Square: p = {p:.6f}. Cramer's V = {cramer_v:.4f} "
+            f"{'(Mạnh)' if cramer_v > 0.5 else '(TB)' if cramer_v > 0.3 else '(Yếu)'}",
+            "good" if p < 0.05 else "info",
+        )
+        fig = px.imshow(ct, text_auto=True, title="Contingency Table", color_continuous_scale="Viridis", aspect="auto")
         apply_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
 
@@ -257,20 +290,26 @@ def _render_normality(df, num):
         if n >= 8:
             stat, p = normaltest(s)
             results["D'Agostino-Pearson"] = (stat, p)
-        stat, p = kstest(s, 'norm', args=(s.mean(), s.std()))
+        stat, p = kstest(s, "norm", args=(s.mean(), s.std()))
         results["KS"] = (stat, p)
         cols = st.columns(len(results))
         for i, (name, (stat, p)) in enumerate(results.items()):
             with cols[i]:
                 st.metric(name, f"p={p:.6f}", delta="Normal ✅" if p > 0.05 else "Not Normal ❌")
-        fig = make_subplots(rows=1, cols=3,
-                           subplot_titles=("Histogram", "Q-Q Plot", "Box Plot"),
-                           specs=[[{"type": "xy"}, {"type": "xy"}, {"type": "xy"}]])
+        fig = make_subplots(
+            rows=1,
+            cols=3,
+            subplot_titles=("Histogram", "Q-Q Plot", "Box Plot"),
+            specs=[[{"type": "xy"}, {"type": "xy"}, {"type": "xy"}]],
+        )
         fig.add_trace(go.Histogram(x=s, nbinsx=40, marker_color="#818cf8", opacity=0.7), row=1, col=1)
         (osm, osr), (slope, intercept, _r) = probplot(s, dist="norm")
-        fig.add_trace(go.Scatter(x=osm, y=osr, mode='markers', marker=dict(color="#818cf8", size=4)), row=1, col=2)
-        fig.add_trace(go.Scatter(x=osm, y=slope * osm + intercept, mode='lines',
-                                line=dict(color="#f87171", dash="dash")), row=1, col=2)
+        fig.add_trace(go.Scatter(x=osm, y=osr, mode="markers", marker=dict(color="#818cf8", size=4)), row=1, col=2)
+        fig.add_trace(
+            go.Scatter(x=osm, y=slope * osm + intercept, mode="lines", line=dict(color="#f87171", dash="dash")),
+            row=1,
+            col=2,
+        )
         fig.add_trace(go.Box(y=s, marker_color="#34d399", boxmean=True), row=1, col=3)
         fig.update_layout(height=350)
         apply_theme(fig)
@@ -285,18 +324,29 @@ def _render_correlation(df, num):
     corr_method = st.selectbox("Method:", ["Pearson", "Spearman", "Kendall"], key="corr_m")
     method_map = {"Pearson": "pearson", "Spearman": "spearman", "Kendall": "kendall"}
     corr = df[num].corr(method=method_map[corr_method])
-    fig = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu_r",
-                   zmin=-1, zmax=1, title=f"Correlation Matrix ({corr_method})", aspect='auto')
+    fig = px.imshow(
+        corr,
+        text_auto=True,
+        color_continuous_scale="RdBu_r",
+        zmin=-1,
+        zmax=1,
+        title=f"Correlation Matrix ({corr_method})",
+        aspect="auto",
+    )
     fig.update_layout(height=500)
     apply_theme(fig)
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("#### 🔗 Top Correlations")
     pairs = []
     for i in range(len(num)):
-        for j in range(i+1, len(num)):
+        for j in range(i + 1, len(num)):
             pairs.append((num[i], num[j], corr.iloc[i, j]))
     pairs.sort(key=lambda x: abs(x[2]), reverse=True)
     for a, b, r in pairs[:10]:
         icon = "🟢" if abs(r) > 0.7 else ("🟡" if abs(r) > 0.4 else "⚪")
-        insight_card(icon, f"{a} ↔ {b}", f"r = {r:.4f} ({corr_method})",
-                     "good" if abs(r) > 0.7 else "warning" if abs(r) > 0.4 else "info")
+        insight_card(
+            icon,
+            f"{a} ↔ {b}",
+            f"r = {r:.4f} ({corr_method})",
+            "good" if abs(r) > 0.7 else "warning" if abs(r) > 0.4 else "info",
+        )

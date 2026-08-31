@@ -1,4 +1,5 @@
 """Alembic migrations environment configuration for Learning Analytics."""
+
 import os
 import sys
 from logging.config import fileConfig
@@ -10,7 +11,7 @@ from sqlalchemy import engine_from_config, pool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # Import all models so Alembic can detect them (include Dataset for drift fix)
-from src.core.database import Base, User, Dataset  # noqa: F401
+from src.core.database import Base, Dataset, User  # noqa: F401
 
 config = context.config
 
@@ -19,9 +20,8 @@ if config.get_main_option("sqlalchemy.url") is None:
     config.set_main_option(
         "sqlalchemy.url",
         os.environ.get(
-            "DATABASE_URL",
-            f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(__file__)), 'users.db')}"
-        )
+            "DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(__file__)), 'users.db')}"
+        ),
     )
 
 if config.config_file_name is not None:

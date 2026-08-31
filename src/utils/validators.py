@@ -1,8 +1,10 @@
 """Validation utilities for Data Analyst Pro"""
-from typing import Tuple, Callable, Any, Dict, List
-import pandas as pd
-import numpy as np
+
 import logging
+from typing import Any, Callable, Dict, List, Tuple
+
+import numpy as np
+import pandas as pd
 import streamlit as st
 
 from src.utils.exceptions import DataValidationError, handle_error
@@ -40,11 +42,11 @@ def validate_dataframe(df: pd.DataFrame, min_rows: int = 5, min_cols: int = 1) -
 def validate_dataframe_schema(df: pd.DataFrame, schema: dict) -> bool:
     """
     Validate that a DataFrame matches an expected schema (column names + dtypes).
-    
+
     Args:
         df: DataFrame to validate.
         schema: Dict mapping column name -> expected dtype string (e.g. "int64", "object").
-    
+
     Returns:
         True if all columns exist and match expected dtypes, False otherwise.
     """
@@ -74,7 +76,9 @@ def safe_execute(func: Callable, error_msg: str = "Lỗi thực thi", default: A
     try:
         return func()
     except Exception as e:
-        logger.error("safe_execute failed [%s] | Context: %s | Detail: %s", type(e).__name__, error_msg, str(e), exc_info=True)
+        logger.error(
+            "safe_execute failed [%s] | Context: %s | Detail: %s", type(e).__name__, error_msg, str(e), exc_info=True
+        )
         st.error(f"❌ {error_msg}: {str(e)}")
         return default
 
@@ -103,20 +107,22 @@ def get_column_stats(df: pd.DataFrame, col: str) -> Dict[str, Any]:
         "missing": df[col].isnull().sum(),
         "missing_pct": round(df[col].isnull().sum() / len(df) * 100, 1),
         "unique": df[col].nunique(),
-        "dtype": str(df[col].dtype)
+        "dtype": str(df[col].dtype),
     }
 
     if pd.api.types.is_numeric_dtype(df[col].dtype):
-        stats.update({
-            "min": df[col].min(),
-            "max": df[col].max(),
-            "mean": df[col].mean(),
-            "median": df[col].median(),
-            "std": df[col].std(),
-            "q1": df[col].quantile(0.25),
-            "q3": df[col].quantile(0.75),
-            "iqr": df[col].quantile(0.75) - df[col].quantile(0.25)
-        })
+        stats.update(
+            {
+                "min": df[col].min(),
+                "max": df[col].max(),
+                "mean": df[col].mean(),
+                "median": df[col].median(),
+                "std": df[col].std(),
+                "q1": df[col].quantile(0.25),
+                "q3": df[col].quantile(0.75),
+                "iqr": df[col].quantile(0.75) - df[col].quantile(0.25),
+            }
+        )
     else:
         stats["top_values"] = df[col].value_counts().head(TOP_N_VALUES).to_dict()
 
@@ -159,12 +165,7 @@ def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
 
     validity = max(0, 100 - (outlier_count / total_cells * 100)) if total_cells > 0 else 0
 
-    quality_score = (
-        completeness * 0.3 +
-        uniqueness * 0.25 +
-        validity * 0.25 +
-        100 * 0.2
-    )
+    quality_score = completeness * 0.3 + uniqueness * 0.25 + validity * 0.25 + 100 * 0.2
 
     return {
         "completeness": round(completeness, 1),
@@ -174,7 +175,7 @@ def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
         "total_cells": total_cells,
         "filled_cells": filled_cells,
         "dup_rows": int(dup_rows),
-        "outlier_count": int(outlier_count)
+        "outlier_count": int(outlier_count),
     }
 
 
@@ -196,15 +197,17 @@ def generate_data_dictionary(df: pd.DataFrame) -> pd.DataFrame:
         if "date" in col.lower() or "time" in col.lower():
             col_type = "DateTime"
 
-        dict_data.append({
-            "Column": col,
-            "Type": col_type,
-            "Dtype": str(df[col].dtype),
-            "Non-Null": df[col].count(),
-            "Null": df[col].isnull().sum(),
-            "Null%": round(df[col].isnull().sum() / len(df) * 100, 1),
-            "Unique": df[col].nunique(),
-            "Sample": str(df[col].dropna().iloc[0])[:50] if len(df[col].dropna()) > 0 else "N/A"
-        })
+        dict_data.append(
+            {
+                "Column": col,
+                "Type": col_type,
+                "Dtype": str(df[col].dtype),
+                "Non-Null": df[col].count(),
+                "Null": df[col].isnull().sum(),
+                "Null%": round(df[col].isnull().sum() / len(df) * 100, 1),
+                "Unique": df[col].nunique(),
+                "Sample": str(df[col].dropna().iloc[0])[:50] if len(df[col].dropna()) > 0 else "N/A",
+            }
+        )
 
     return pd.DataFrame(dict_data)

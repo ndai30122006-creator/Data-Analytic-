@@ -1,17 +1,20 @@
 """Clustering — K-Means, DBSCAN, Hierarchical (Book Ch.6)"""
-import pandas as pd
-import streamlit as st
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 from .base import apply_theme, insight_card, validate_df
 
 try:
+    from scipy.cluster.hierarchy import dendrogram
+    from scipy.cluster.hierarchy import linkage as scipy_linkage
+    from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
+    from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silhouette_score
     from sklearn.preprocessing import StandardScaler
-    from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
-    from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-    from scipy.cluster.hierarchy import linkage as scipy_linkage, dendrogram
+
     SKLEARN_AVAIL = True
 except Exception:
     SKLEARN_AVAIL = False
@@ -31,7 +34,7 @@ def render_clustering_tab(df, num):
         st.warning("Cần ít nhất 2 cột numeric")
         return
 
-    cols = st.multiselect("Columns:", num, default=num[:min(4, len(num))], key="cl_cols")
+    cols = st.multiselect("Columns:", num, default=num[: min(4, len(num))], key="cl_cols")
     if len(cols) < 2:
         st.warning("Chọn ít nhất 2 cột")
         return
@@ -70,14 +73,25 @@ def _render_kmeans(X, X_scaled, cols, scaler):
             c2.metric("Calinski-Harabasz", f"{ch:.2f}")
             c3.metric("Davies-Bouldin", f"{db:.4f}")
             if len(cols) >= 2:
-                fig = px.scatter(X, x=cols[0], y=cols[1], color="Cluster",
-                                title=f"K-Means (K={n_clusters})",
-                                color_discrete_sequence=px.colors.qualitative.Set2)
+                fig = px.scatter(
+                    X,
+                    x=cols[0],
+                    y=cols[1],
+                    color="Cluster",
+                    title=f"K-Means (K={n_clusters})",
+                    color_discrete_sequence=px.colors.qualitative.Set2,
+                )
                 centroids = scaler.inverse_transform(km.cluster_centers_)
                 cent_df = pd.DataFrame(centroids, columns=cols)
-                fig.add_trace(go.Scatter(x=cent_df[cols[0]], y=cent_df[cols[1]],
-                                        mode='markers', marker=dict(symbol='x', size=12, color='red'),
-                                        name="Centroids"))
+                fig.add_trace(
+                    go.Scatter(
+                        x=cent_df[cols[0]],
+                        y=cent_df[cols[1]],
+                        mode="markers",
+                        marker=dict(symbol="x", size=12, color="red"),
+                        name="Centroids",
+                    )
+                )
                 apply_theme(fig)
                 st.plotly_chart(fig, use_container_width=True)
             profile = X.groupby("Cluster")[cols].agg(["mean", "std", "count"]).round(2)
@@ -98,15 +112,20 @@ def _render_dbscan(X, X_scaled, cols):
         c2.metric("Noise", n_noise)
         c3.metric("Noise %", f"{n_noise/len(labels)*100:.1f}%")
         if len(cols) >= 2:
-            fig = px.scatter(X, x=cols[0], y=cols[1], color="Cluster",
-                            title=f"DBSCAN (eps={eps})",
-                            color_discrete_sequence=px.colors.qualitative.Set2 + ["#000"])
+            fig = px.scatter(
+                X,
+                x=cols[0],
+                y=cols[1],
+                color="Cluster",
+                title=f"DBSCAN (eps={eps})",
+                color_discrete_sequence=px.colors.qualitative.Set2 + ["#000"],
+            )
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_hierarchical(X, X_scaled, cols):
-    n_clusters = st.slider("K:", 2, min(15, len(X)-1), 5, key="cl_hc")
+    n_clusters = st.slider("K:", 2, min(15, len(X) - 1), 5, key="cl_hc")
     linkage = st.selectbox("Linkage:", ["ward", "complete", "average", "single"], key="cl_link")
     if st.button("🧬 Run", key="cl_hc_run"):
         hc = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
@@ -115,17 +134,24 @@ def _render_hierarchical(X, X_scaled, cols):
         sil = silhouette_score(X_scaled, labels)
         st.metric("Silhouette", f"{sil:.4f}")
         if len(cols) >= 2:
-            fig = px.scatter(X, x=cols[0], y=cols[1], color="Cluster",
-                            title=f"Hierarchical (K={n_clusters})",
-                            color_discrete_sequence=px.colors.qualitative.Set2)
+            fig = px.scatter(
+                X,
+                x=cols[0],
+                y=cols[1],
+                color="Cluster",
+                title=f"Hierarchical (K={n_clusters})",
+                color_discrete_sequence=px.colors.qualitative.Set2,
+            )
             apply_theme(fig)
             st.plotly_chart(fig, use_container_width=True)
         try:
             import matplotlib.pyplot as plt
+
             linkage_matrix = scipy_linkage(X_scaled, method=linkage)
             fig, ax = plt.subplots(figsize=(10, 5))
-            dendrogram(linkage_matrix, ax=ax, color_threshold=0.7 * max(linkage_matrix[:, 2]),
-                      above_threshold_color='gray')
+            dendrogram(
+                linkage_matrix, ax=ax, color_threshold=0.7 * max(linkage_matrix[:, 2]), above_threshold_color="gray"
+            )
             ax.set_title("Dendrogram")
             st.pyplot(fig)
             plt.close()

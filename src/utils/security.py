@@ -1,8 +1,9 @@
 """
 Security utilities — auto-generated SECRET_KEY, CORS configuration, environment validation.
 """
-import os
+
 import logging
+import os
 import secrets
 from typing import List, Optional
 
@@ -17,14 +18,14 @@ def generate_secret_key() -> str:
 def get_jwt_secret_key() -> str:
     """
     Get JWT secret key from environment or generate a persistent one.
-    
+
     In production, ALWAYS set JWT_SECRET_KEY environment variable.
     For development, a key is auto-generated and stored in .jwt_secret file.
     """
     env_key = os.environ.get("JWT_SECRET_KEY")
     if env_key:
         return env_key
-    
+
     # Development fallback: persist key to file so restarts don't invalidate tokens
     secret_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".jwt_secret")
     try:
@@ -64,14 +65,14 @@ ALLOWED_ORIGINS_PROD: List[str] = []
 def get_cors_origins() -> List[str]:
     """
     Get allowed CORS origins based on environment.
-    
+
     In production, set ALLOWED_ORIGINS env var as comma-separated list.
     Falls back to DEVELOPMENT origins.
     """
     env_origins = os.environ.get("ALLOWED_ORIGINS")
     if env_origins:
         return [o.strip() for o in env_origins.split(",") if o.strip()]
-    
+
     is_production = os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod")
     if is_production:
         logger.warning(
@@ -79,7 +80,7 @@ def get_cors_origins() -> List[str]:
             "Set ALLOWED_ORIGINS environment variable with comma-separated origins."
         )
         return ALLOWED_ORIGINS_PROD
-    
+
     return ALLOWED_ORIGINS_DEV
 
 
@@ -96,12 +97,12 @@ def get_access_token_expire_minutes() -> int:
 def validate_environment() -> List[str]:
     """Validate required environment variables and return warnings."""
     warnings: List[str] = []
-    
+
     if not os.environ.get("JWT_SECRET_KEY"):
         warnings.append(
             "JWT_SECRET_KEY not set. Using auto-generated key (not suitable for production with multiple instances)."
         )
-    
+
     if os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod"):
         if not os.environ.get("DATABASE_URL"):
             warnings.append("DATABASE_URL not set. Using default SQLite (not suitable for production).")
@@ -109,5 +110,5 @@ def validate_environment() -> List[str]:
             warnings.append("ALLOWED_ORIGINS not set. CORS will be restrictive.")
         if os.environ.get("CORS_ALLOW_ALL", "false").lower() == "true":
             warnings.append("CORS_ALLOW_ALL is set to true. This is insecure for production.")
-    
+
     return warnings
