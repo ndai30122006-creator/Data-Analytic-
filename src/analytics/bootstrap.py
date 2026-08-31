@@ -14,8 +14,8 @@ def render_bootstrap_tab(df, num, key_prefix="da"):
         key_prefix: Prefix for Streamlit widget keys to avoid duplicates
                      when rendered in multiple tabs. Default "da" (deep analysis).
     """
-    st.markdown("### 🎲 Bootstrap & Confidence Intervals")
-    st.caption("Phương pháp resampling để ước lượng độ tin cậy (Book Ch.2)")
+    st.markdown("### Bootstrap & Confidence Intervals — via core")
+    st.caption("Resampling via `core/statistical_tests.py:105` — fix stat_choice bug")
 
     if not num:
         st.warning("Cần cột numeric")
@@ -29,18 +29,18 @@ def render_bootstrap_tab(df, num, key_prefix="da"):
     stat_choice = st.selectbox("Thống kê:", ["Mean", "Median", "Std"], key=_k("boot_stat"))
     stat_map = {"Mean": np.mean, "Median": np.median, "Std": np.std}
 
-    if st.button("🎲 Run Bootstrap", key=_k("boot_run")):
+    if st.button("Run Bootstrap", key=_k("boot_run")):
         with st.spinner("Đang resampling..."):
+            from src.core.statistical_tests import run_bootstrap
+
             data = df[col].dropna().values
-            n = len(data)
-            original = stat_map[stat_choice](data)
-            np.random.seed(42)
-            boot_stats = [np.mean(np.random.choice(data, size=n, replace=True)) for _ in range(n_iter)]
-            boot_stats = np.array(boot_stats)
-            alpha = (100 - conf_level) / 200
-            ci_lower = np.percentile(boot_stats, alpha * 100)
-            ci_upper = np.percentile(boot_stats, (1 - alpha) * 100)
-            boot_std = np.std(boot_stats)
+            stat_func = stat_map[stat_choice]
+            res = run_bootstrap(data, n_iter=n_iter, conf_level=conf_level, stat_func=stat_func)
+            original = res["original"]
+            boot_stats = res["boot_stats"]
+            ci_lower = res["ci_lower"]
+            ci_upper = res["ci_upper"]
+            boot_std = res["boot_std"]
 
             c1, c2, c3 = st.columns(3)
             c1.metric(f"Original {stat_choice}", f"{original:.4f}")
