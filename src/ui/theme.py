@@ -60,7 +60,7 @@ COLORS = {
 
 _GLASS_TOKENS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Varela+Round&display=swap');
 :root {
     --primary: #8B5CF6; --primary-hover: #7C3AED; --primary-soft: rgba(139,92,246,0.18);
     --primary-glow: rgba(139,92,246,0.45); --secondary: #EC4899; --accent: #06B6D4;
@@ -72,7 +72,7 @@ _GLASS_TOKENS = """
     --ring: #8B5CF6;
     --radius-sm: 12px; --radius-md: 16px; --radius-lg: 24px; --radius-xl: 32px;
     --shadow-glass: 0 8px 32px rgba(31,38,135,0.37), inset 0 1px 0 rgba(255,255,255,0.15);
-    --font: 'Outfit', system-ui, sans-serif; --font-display: 'Space Grotesk', sans-serif;
+    --font: 'Nunito', 'Varela Round', system-ui, sans-serif; --font-display: 'Quicksand', 'Nunito', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 }
 """
@@ -128,20 +128,21 @@ h1, h2, h3, h4 { font-family: var(--font-display); color: var(--text-primary); l
 /* Buttons glass */
 .stButton > button, .stDownloadButton > button {
     background: rgba(139,92,246,0.9) !important; color: white !important; border: 1px solid rgba(255,255,255,0.2) !important;
-    backdrop-filter: blur(12px) !important; border-radius: 16px !important; font-weight: 600 !important;
+    backdrop-filter: blur(12px) !important; border-radius: 999px !important; font-weight: 600 !important;
     box-shadow: 0 4px 16px rgba(139,92,246,0.35) !important; transition: all 300ms !important;
 }
 .stButton > button:hover { background: rgba(124,58,237,1) !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139,92,246,0.45) !important; }
 
 /* Tabs glass */
-.stTabs [role="tab"] { color: rgba(255,255,255,0.55) !important; border-radius: 12px !important; }
+.stTabs [role="tab"] { color: rgba(255,255,255,0.55) !important; border-radius: 999px !important; }
 .stTabs [role="tab"][aria-selected="true"] { color: #FFFFFF !important; background: rgba(255,255,255,0.10) !important; backdrop-filter: blur(8px); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15); }
 
 /* Inputs glass */
-.stTextInput input, .stSelectbox [data-baseweb="select"] > div, .stTextArea textarea {
+.stTextInput input, .stSelectbox [data-baseweb="select"] > div, .stTextArea textarea, .stNumberInput input {
     background: rgba(255,255,255,0.06) !important; color: white !important; border: 1px solid rgba(255,255,255,0.12) !important;
-    backdrop-filter: blur(12px) !important; border-radius: 12px !important;
+    backdrop-filter: blur(12px) !important; border-radius: 999px !important;
 }
+.stTextArea textarea { border-radius: 20px !important; }
 .stTextInput input:focus { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important; }
 .stDataFrame { background: rgba(255,255,255,0.05) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; overflow: hidden; }
 
