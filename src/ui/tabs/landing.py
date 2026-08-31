@@ -85,7 +85,7 @@ def render_landing_page() -> None:
         ("3️⃣", "Phân tích", "Chọn tab Statistics, AI Insights,...", "warning"),
         ("4️⃣", "Export", "Xuất báo cáo PDF / CSV kết quả", "danger"),
     ]
-    for i, (num, title, desc, badge) in enumerate(steps):
+    for i, (num, title, desc, _) in enumerate(steps):
         with step_cols[i]:
             st.markdown(f"""
             <div style="
@@ -113,7 +113,7 @@ def render_landing_page() -> None:
     # ═══════════════════════════════════════════════════
     # CALL-TO-ACTION  +  ADVANCED BADGES
     # ═══════════════════════════════════════════════════
-    cta_col1, cta_col2, cta_col3 = st.columns([1, 2, 1])
+    _, cta_col2, _ = st.columns([1, 2, 1])
     with cta_col2:
         st.markdown("""
         <div class="cta-banner animate-fade-in">
@@ -132,11 +132,11 @@ def render_landing_page() -> None:
         ("⚖️", "Compare", "info"),
         ("🔬", "Analytics", "danger"),
     ]
-    for i, (icon, label, color) in enumerate(badges):
+    for i, (ic, label, color) in enumerate(badges):
         with badge_cols[i]:
             st.markdown(
                 f"<div style='text-align:center; padding:0.25rem 0;'>"
-                f"{status_badge(f'{icon} {label}', color)}"
+                f"{status_badge(f'{ic} {label}', color)}"
                 f"</div>",
                 unsafe_allow_html=True
             )
