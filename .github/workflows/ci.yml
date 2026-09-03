@@ -34,6 +34,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements/base.txt
           pip install -r requirements/dev.txt
+          mkdir -p data && ls -la data || true
+          python -c "import duckdb; print('duckdb', duckdb.__version__)"
 
       - name: Lint with flake8
         run: |

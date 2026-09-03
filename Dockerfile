@@ -42,8 +42,9 @@ FROM base AS backend
 COPY api.py .
 COPY src/ ./src/
 
-# Thư mục dữ liệu bền vững (users.db) — mount Docker volume tại đây
+# Thư mục dữ liệu bền vững (users.db + warehouse.duckdb) — mount Docker volume tại đây
 RUN mkdir -p /app/data
+VOLUME ["/app/data"]
 
 # Healthcheck dùng curl (đã cài ở base; image slim KHÔNG có curl mặc định)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

@@ -337,18 +337,40 @@ project1/
 └── README.md               # Documentation
 ```
 
-## 🔌 API Endpoints
+## 🔌 API Endpoints (Workbench — Plan 07)
 
-### Analysis
-- `GET /datasets` - List datasets
-- `POST /analysis/run` - Run analysis
+### Datasets
+- `POST /datasets/ingest` — Upload CSV/Excel → `raw` + profile (auth)
+- `GET /datasets/{id}/profile` — Profile JSON (no raw)
+- `GET /datasets` — List | `DELETE /datasets/{name}`
+
+### Pipelines (ETL/ELT)
+- `POST /pipelines` — Save spec | `GET /pipelines` | `GET /pipelines/{id}`
+- `POST /pipelines/preview` — Dry-run 100 rows
+- `POST /pipelines/run` — Async `run_id` (BackgroundTasks) | `GET /runs/{id}` | `GET /runs`
+
+### Brief (Plan 03)
+- `POST /brief/{dataset_id}` — Generate (profile-only) | `GET /brief/{id}` | `GET /brief/{id}/{version}`
+
+### Dashboards (Plan 05)
+- `POST /dashboards` | `GET /dashboards` | `GET/PUT /dashboards/{id}` | `POST /dashboards/{id}/data` | `POST /dashboards/generate`
+
+### Legacy Analysis
+- `POST /analysis/run` — Run analysis (statistics Lab)
 
 ### Health
-- `GET /health` - Health check
+- `GET /health` — Health check | `GET /env/validate`
 
 ### Interactive Docs
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+
+### Workbench Screens (P0)
+- `📥 Ingest` — Upload → preview 20 rows → confirm DuckDB `raw`
+- `⚙️ Pipeline` — NL → YAML spec → dry-run → run → history
+- `📋 Brief` — 1-click profile → narrative, versioned, export MD
+- `📊 Dashboard` — 4-6 charts spec → Plotly, edit/save/export
+- `🧪 Lab` — Statistics Lab (giữ engine) | `⚙️ Settings` BYOK | `🔗 Lineage`
 
 ## 🤝 Contributing
 
@@ -363,6 +385,7 @@ MIT License — feel free to use this project for personal or commercial purpose
 Built with:
 - [Streamlit](https://streamlit.io/) — Web framework
 - [FastAPI](https://fastapi.tiangolo.com/) — API backend
+- [DuckDB](https://duckdb.org/) — Local warehouse (`data/warehouse.duckdb`)
 - [Plotly](https://plotly.com/) — Interactive charts
 - [scikit-learn](https://scikit-learn.org/) — Machine Learning
 - [scipy](https://scipy.org/) — Scientific computing
@@ -372,4 +395,4 @@ Built with:
 
 ---
 
-**🎓 Learning Analytics Thống kê** — Practical Statistics for Data Scientists Edition
+**🧠 AI Data Engineering Workbench** — local-first · DuckDB + BYOK · P0-P5 Done (refactor `e7b6275` → `main`)
