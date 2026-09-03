@@ -55,3 +55,6 @@ test_output/
 # ── Archive legacy (filtered per docs/plan) ──
 archive/
 data/
+*.duckdb
+data/uploads/
+data/specs/

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import bcrypt
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, create_engine
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,10 @@ class Dataset(Base):
     rows = Column(Integer, nullable=True)
     cols = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    # Warehouse extension (003)
+    duckdb_table = Column(String(128), nullable=True)
+    file_path = Column(String(256), nullable=True)
+    profile_json = Column(Text, nullable=True)
 
 
 def init_db():
