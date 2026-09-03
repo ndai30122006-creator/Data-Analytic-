@@ -105,8 +105,17 @@ async def _check_rate_limit_redis(client_ip: str) -> bool:
 
 
 def _check_rate_limit_memory(client_ip: str) -> bool:
-    """Simple sliding-window rate limiter (in-memory fallback)."""
+    """Simple sliding-window rate limiter (in-memory fallback) — bounded."""
     now = datetime.now(timezone.utc)
+    # Periodic cleanup to avoid unbounded dict growth
+    if len(_request_counts) > 1000:
+        # Remove stale IPs
+        for k in list(_request_counts.keys()):
+            _request_counts[k] = [t for t in _request_counts[k] if (now - t).total_seconds() < 60]
+            if not _request_counts[k]:
+                del _request_counts[k]
+            if len(_request_counts) <= 500:
+                break
     if client_ip not in _request_counts:
         _request_counts[client_ip] = []
     _request_counts[client_ip] = [t for t in _request_counts[client_ip] if (now - t).total_seconds() < 60]
@@ -136,7 +145,7 @@ if allow_all_cors:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_credentials=True,
+        allow_credentials=False,  # Must be False when allow_origins=["*"] per Fetch spec
         allow_methods=["*"],
         allow_headers=["*"],
     )
