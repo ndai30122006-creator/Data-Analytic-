@@ -42,44 +42,47 @@ Kiến trúc hiện tại đã tách UI khỏi logic rõ ràng — tận dụng 
 
 ## 2. Phạm vi & câu hỏi đang mở (brainstorm)
 
-### 2.1 Cấu trúc repo — ✅ Đã chốt: monorepo 1 repo
-**Quyết định:** giữ **nguyên trong 1 repo** này (monorepo), không tách repo riêng.
+### 2.1 Cấu trúc repo — ✅ Đã chốt: monorepo 1 repo + `frontend/` ở root
+**Quyết định:** giữ **nguyên trong 1 repo** này (monorepo); folder lớn **`frontend/`**
+ngay root, **2 folder con riêng** — bản web/desktop và bản web trên điện thoại.
 Lý do: dự án cá nhân, dùng chung Auth/FastAPI, deploy cùng nginx.
 
-```
-ui/                          # root của frontend Node.js (monorepo)
+```text
+frontend/                    # root frontend Node.js (monorepo)
 ├── package.json
 ├── pnpm-workspace.yaml      # (hoặc npm workspaces)
-├── packages/
-│   ├── core/                # design system, hooks, theme, layout
-│   ├── features/            # (tùy chọn — xem §2.5) feature modules
-│   ├── web/                 # Web/Desktop app (entry)
-│   └── mobile/              # Mobile app (entry, đọc-là-chính)
+├── web/                     # UI riêng — web/desktop (React+Vite, bundle riêng)
+├── mobile/                  # UI riêng — web trên điện thoại (React+Vite, bundle riêng)
+├── shared/                  # DÙNG CHUNG — logic, API, types, hooks, components trừu tượng
+│   ├── api/                 #   client + TS types (gen từ FastAPI OpenAPI)
+│   ├── features/            #   business logic/state của từng feature
+│   ├── hooks/
+│   └── utils/
 ├── openapi.json             # gen từ FastAPI → TS types
 └── tsconfig.base.json
 ```
-> **Package manager:** chưa chốt (thảo luận §7) — npm / pnpm / yarn đều được
-> monorepo workspace hỗ trợ.
+> **Nguyên tắc:** `web` & `mobile` = 2 app UI riêng (tối ưu giao diện riêng),
+> **KHÔNG** build chung bundle; nhưng cùng dùng logic trong `shared/`.
+> **Package manager:** chưa chốt (thảo luận §7) — npm / pnpm / yarn đều hỗ trợ.
 
-### 2.2 Framework web/desktop
-| Lựa chọn | Ưu nhược | Ghi chú |
-|---|---|---|
-| **React + Vite** | phổ biến nhất, hệ sinh thái chart lớn (Recharts/ECharts), dễ thuê/người khác đọc | mặc định nên xét |
-| **Next.js** | SSR/SSG, routing mạnh, nhưng nặng cho "local-first data app" | xét nếu cần SEO/nhiều trang |
-| **Vue/Nuxt** | nhẹ, dễ học | alternative |
-| **SvelteKit** | cực nhẹ | ít người dùng |
+### 2.2 Framework web/desktop — ✅ Đã chốt: React + Vite
+**Quyết định:** bản web/desktop dùng **React + Vite**.
+Lý do: phổ biến nhất, hệ sinh thái chart lớn (Recharts/ECharts), routing nhẹ, build nhanh —
+đủ tốt cho "local-first data app" (không cần SSR/SEO như Next).
 
-**Đề xuất tạm:** React + Vite cho web; xem thêm Electron/Tauri nếu cần "desktop app" thật sự.
+### 2.3 Mobile — ✅ Đã chốt: KHÔNG app, là **web UI trên điện thoại**
+**Quyết định:** mobile **không phải app native** (không React Native / Expo / Capacitor).
+Mà là **UI web tối ưu cho điện thoại** (responsive/PWA), nằm folder riêng `frontend/mobile`.
 
-### 2.3 Framework mobile
-| Lựa chọn | Ưu nhược |
+| Lựa chọn | Quyết định |
 |---|---|
-| **PWA (web responsive)** | 1 codebase với web, rẻ nhất, không cần store |
-| **React Native / Expo** | app native, ux tốt nhất mobile, cần build/store |
-| **Capacitor (wrapper web)** | native shell + web code, trung gian |
+| ❌ React Native / Expo | không (đây là app native, cần build/store) |
+| ❌ Capacitor (native shell) | không |
+| ✅ **Web UI responsive tối ưu mobile** | dùng (folder `mobile/`, React+Vite, bundle riêng) |
 
-**Đề xuất tạm:** bắt đầu bằng **PWA responsive** (dùng chung codebase web với layout mobile cắt),
-tách React Native/Expo thành phase sau nếu cần store.
+**Điểm khác với web/desktop:** `mobile/` tối ưu giao diện cho màn hình nhỏ + touch:
+bottom-nav, card xếp dọc, layout đọc-là-chính (Brief/Dashboard/Lineage dễ xem trước),
+nhưng **cùng logic** trong `shared/`.
 
 ### 2.4 Data-visualization (chart)
 - Streamlit hiện dùng **Plotly** (backend render JSON figure).
@@ -90,42 +93,49 @@ tách React Native/Expo thành phase sau nếu cần store.
 ---
 
 ### 2.5 Kiến trúc modular frontend — ✅ Đã chốt hướng: modular trước
-**Quyết định:** xây **frontend modular trước** — tách thành các module độc lập,
-dùng chung core, trước khi làm chi tiết từng screen.
+**Quyết định:** xây **frontend modular trước** — tách logic dùng chung ra `shared/`,
+web & mobile chỉ là **2 UI riêng** lắp ghép cùng logic. Cấu trúc thực tế nằm trong
+`frontend/` (§2.1).
 
 **Vì sao modular:**
-- **Tái dùng giữa Web/Desktop & Mobile** — cùng feature module (Ingest, Pipeline, Brief,
-  Dashboard, Lab, Settings, Lineage) chạy được cả 2 nền tảng; chỉ khác ở `shell` (layout/nav).
-- **Dễ bảo trì & mở rộng** — thêm feature mới = thêm 1 module, không đụng app chính.
+- **Tái dùng logic giữa web/desktop & mobile** — cùng business logic/state/API call
+  trong `shared/features`; chỉ khác **UI layer** ở `web/` vs `mobile/` (layout/nav/component).
+- **Dễ bảo trì & mở rộng** — thêm feature mới = thêm 1 module trong `shared/features`.
 - **Khớp backend** — mỗi feature module map 1 nhóm endpoints (Ingest→datasets,
   Pipeline→pipelines/runs, ...).
-- **Dead-code elimination & bundle nhỏ** — mobile chỉ tải module nó cần.
+- **2 bundle UI riêng**, tối ưu riêng cho PC và điện thoại — không build chung.
 
-**Mô hình modular đề xuất (feature-first):**
+**Mô hình modular (feature-first) trong `frontend/`:**
 ```
-packages/
-├── core/                # KHÔNG feature — dùng chung
-│   ├── api/             #   axios/fetch client + generated types + auth token
-│   ├── ui/              #   design system: Button, Card, DataGrid, Chart...
-│   ├── theme/           #   tokens (dark/light), glassmorphism
-│   ├── hooks/           #   useAuth, useDataset, useDebounce...
-│   └── layout/          #   shell của từng nền tảng
-├── features/            # mỗi feature = 1 module (độc lập, tự quản state)
-│   ├── ingest/          #   upload→preview→confirm (datasets)
-│   ├── pipeline/        #   NL→spec→dry-run→run→history
-│   ├── brief/           #   1-click brief + version
-│   ├── dashboard/       #   spec→render chart + edit
-│   ├── lab/             #   statistics / analysis/run
-│   ├── settings/        #   BYOK key + provider
-│   └── lineage/         #   dataset→brief→dashboard
-├── web/                 # LÁT MỎNG: import feature modules + core, bố layout
-└── mobile/              # LÁT MỎNG: chỉ tải feature read-first
+frontend/
+├── shared/                # KHÔNG UI riêng — logic dùng chung (2 app cùng dùng)
+│   ├── api/               #   axios/fetch client + generated TS types + auth token
+│   ├── features/          #   mỗi feature = 1 module (state + API + logic)
+│   │   ├── ingest/        #   upload→preview→confirm (datasets)
+│   │   ├── pipeline/      #   NL→spec→dry-run→run→history
+│   │   ├── brief/         #   1-click brief + version
+│   │   ├── dashboard/     #   spec→data→render chart + edit
+│   │   ├── lab/           #   statistics / analysis/run
+│   │   ├── settings/      #   BYOK key + provider
+│   │   └── lineage/       #   dataset→brief→dashboard
+│   ├── hooks/             #   useAuth, useDataset, useDebounce...
+│   └── utils/
+├── web/                   # UI web/desktop — components + layout + pages RIÊNG
+│   ├── components/        #   UI thì desktop (sidebar to, bảng rộng)
+│   ├── layout/            #   shell desktop
+│   └── pages/
+└── mobile/                # UI mobile — components + layout + pages RIÊNG
+    ├── components/        #   bottom-nav, card dọc, touch-first
+    ├── layout/            #   shell mobile
+    └── pages/
 ```
+
+> Hợp nhất: `shared/features` = `core + features` các cách gọi trước — logic dùng chung.
 
 **Ràng buộc modular (để "friendly" và sạch):**
-- Feature module **không import nhau** (chỉ core). Giao tiếp qua props/events.
-- Feature module **không import backend trực tiếp** — chỉ qua `core/api`.
-- `web`/`mobile` = "app composition root" — ghép feature, không chứa logic feature.
+- Feature module **không import nhau** (chỉ qua `shared`).
+- Feature module **không import backend trực tiếp** — chỉ qua `shared/api`.
+- `web`/`mobile` chứa **UI layer và composition** — không nhét logic feature/API.
 - Mỗi feature module có `index.ts` export rõ ràng + test riêng.
 
 ---
@@ -170,15 +180,17 @@ packages/
 ## 5. Sơ đồ kiến trúc target (Node UI thay Streamlit)
 
 ```
-┌──────────────────────────── 2 clients ────────────────────────────┐
-│   Web/Desktop UI (React+Vite)      Mobile UI (PWA / React Native) │
-│   ───────────────────────────      ─────────────────────────────   │
-│   screens: Ingest·Pipeline·Brief·  screens: Brief·Dashboard·Lab   │
-│   Dashboard·Lab·Settings·Lineage   (read-first, cắt theo mobile)  │
-└──────────────┬──────────────────────────────┬─────────────────────┘
-               │        HTTP/JSON (JWT)       │
-               └──────────────┬───────────────┘
-                             ▼
+┌────────────────────────── frontend/ (Node) ───────────────────────────┐
+│   web/ (UI web/desktop)   mobile/ (UI web trên điện thoại)             │
+│   ─────────── components·     ─────────── components·layout·pages      │
+│   layout·pages (PC, rộng)     (bottom-nav, card dọc, touch, read-first)│
+│                                                                        │
+│            ┌────────────────── shared/ (logic dùng chung) ─────┐        │
+│            │ api client + types ▪ features (7 module) ▪ hooks  │        │
+│            └───────────────────────────────────────────────────┘        │
+└─────────────────────────────────┬──────────────────────────────────────┘
+                                    │ HTTP/JSON (JWT)
+                                    ▼
          ┌─── FastAPI `api.py` (execution layer, KHÔNG đổi) ───┐
          │ /datasets /pipelines /runs /brief /dashboards       │
          │ /analysis /auth /health /env  + AI Gateway (BYOK)   │
@@ -193,34 +205,34 @@ packages/
 ## 6. Đề xuất thứ tự triển khai (brainstorm giai đoạn)
 
 > Điều chỉnh theo quyết định: **xây kiến trúc modular cho frontend TRƯỚC**.
-> Thay vì làm screen trước, ta dựng `core` + các feature module độc lập trước,
-> rồi `web`/`mobile` chỉ là lớp lắp ghép mỏng.
+> Thay vì làm screen trước, ta dựng `frontend/shared` (logic dùng chung) trước,
+> rồi `web`/`mobile` (2 UI riêng) chỉ là lớp lắp ghép mỏng.
 
-1. **Giai đoạn A — Nền móng mono/modular:** `ui/` monorepo + `packages/core`
-   (api client + OpenAPI→TS types, design system, theme, hooks) + auth
+1. **Giai đoạn A — Nền móng `frontend/`:** monorepo `frontend/` (package manager +
+   workspaces) + `shared` (api client + OpenAPI→TS types, hooks, utils) + auth
    (login/register/BYOK). Backend chỉ thêm CORS origin.
-   **Sản phẩm:** `core` dùng được, chạy auth trên web shell.
+   **Sản phẩm:** `shared` dùng được, chạy auth trên web shell.
 2. **Giai đoạn B — Feature modules (trước khi làm screen):** tách từng feature
-   thành module độc lập (ingest, pipeline, brief, dashboard, lab, settings,
-   lineage) — mỗi module: state + API call + UI riêng, **không import nhau**,
-   chỉ dùng `core`.
-3. **Giai đoạn C — Web/Desktop composition:** `packages/web` = lớp lắp ghép,
-   routing 7 screens, mỗi screen = 1 feature module. Bắt đầu thay Streamlit Ingest.
+   thành module độc lập trong `shared/features` (ingest, pipeline, brief, dashboard,
+   lab, settings, lineage) — mỗi module: state + API call + logic, **không import nhau**,
+   chỉ dùng `shared`.
+3. **Giai đoạn C — Web/Desktop UI:** `frontend/web` = UI riêng cho PC (layout,
+   components, pages) lắp ghép logic từ `shared`. Bắt đầu thay Streamlit Ingest.
 4. **Giai đoạn D — Web workflow đầy đủ:** Dashboard (render chart ECharts) +
-   Lab (`/analysis/run`) + Pipeline/Brief — toàn bộ workflow trên web.
-5. **Giai đoạn E — Mobile composition:** `packages/mobile` tái dùng feature module,
-   bố layout mobile, read-first (Brief + Dashboard + Lineage), login.
+   Lab (`/analysis/run`) + Pipeline/Brief — toàn bộ workflow trên web/desktop.
+5. **Giai đoạn E — Mobile UI:** `frontend/mobile` = UI riêng cho điện thoại
+   (bottom-nav, card dọc, touch-first, read-first) dùng lại logic `shared`.
 6. **Giai đoạn F — Polish:** loại Streamlit, demo, deploy (nginx trỏ backend +
-   static UI từ `web`/`mobile`).
+   static UI từ `web` & `mobile`).
 
 ---
 
 ## 7. Câu hỏi chốt cần trả lời trước khi chi tiết hoá
 
-- [x] **Monorepo** hay tách repo? → **Giữ 1 repo** (monorepo `ui/` trong repo này) ✅
+- [x] **Monorepo** hay tách repo? → **Giữ 1 repo** (monorepo `frontend/` trong repo này) ✅
 - [x] **Kiến trúc modular frontend?** → **Đã chốt hướng: modular trước** (feature-first, xem §2.5) ✅
-- [ ] **Web framework**: React+Vite (đề xuất) hay Next/Vue/Svelte?
-- [ ] **Mobile**: PWA responsive (đề xuất bắt đầu) hay React Native/Expo ngay?
+- [x] **Web framework** → **React + Vite** (xem §2.2) ✅
+- [x] **Mobile** → **Không app**, là **web UI trên điện thoại** (folder `mobile/`, xem §2.3) ✅
 - [ ] **Package manager**: npm / pnpm / yarn workspaces?
 - [ ] **Data viz**: ECharts / Recharts / khác?
 - [ ] **Database mới**: có cần migration backend, hay backend đã đủ?

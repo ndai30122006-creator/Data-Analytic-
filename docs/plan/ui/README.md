@@ -3,16 +3,20 @@
 > **Nhánh:** `refactor` · **Trạng thái:** đang ở giai đoạn **brainstorm**.
 
 ## ✅ Quyết định đã chốt
-- **Giữ 1 repo** (monorepo, cấu trúc `ui/`).
-- **Kiến trúc modular frontend trước**: `core` (dùng chung) + `features`
-  (mỗi feature 1 module độc lập) + `web`/`mobile` (lớp lắp ghép mỏng). Chi tiết §2.5 brainstorm.
+- **Giữ 1 repo** (monorepo, folder lớn `frontend/` ngay root).
+- **2 folder UI riêng**: `frontend/web` (web/desktop) + `frontend/mobile` (web trên điện thoại) —
+  **không build chung**, mỗi cái tối ưu giao diện riêng.
+- **Không làm app mobile** — mobile chỉ là **web UI trên điện thoại** (responsive/PWA).
+- **Chia sẻ logic** qua `frontend/shared` (api + features + hooks) — dùng chung giữa 2 UI.
+- **Framework**: **React + Vite** cho cả `web` & `mobile`.
+- **Kiến trúc modular frontend trước**: `shared/features` (mỗi feature 1 module) + 2 UI lắp ghép mỏng.
 
 ## Mục tiêu
-Thay thế dần Streamlit bằng một bộ UI riêng trên **Node.js**, chia **2 client**:
-- **Web/Desktop** — full features, layout rộng.
-- **Mobile** — read-first (Brief + Dashboard + Lineage).
+Thay thế dần Streamlit bằng một bộ UI Node.js, chia **2 folder**:
+- **`web/`** — web/desktop, full features, layout rộng (sidebar, bảng lớn).
+- **`mobile/`** — web trên điện thoại, bottom-nav, card dọc, touch-first, read-first.
 
-UI Node chỉ gọi FastAPI `api.py` qua REST (JWT + BYOK), **không** chạm trực tiếp
+Cả 2 chỉ gọi FastAPI `api.py` qua REST (JWT + BYOK), **không** chạm trực tiếp
 DuckDB/engine — giữ kiến trúc hiện tại không đổi.
 
 ## 📄 Tài liệu
