@@ -65,9 +65,6 @@ render_dashboard_screen, _ = _safe_import("src.ui.screens.dashboard_screen", "re
 render_lab_screen, _ = _safe_import("src.ui.screens.lab_screen", "render_lab_screen")
 render_settings_screen, _ = _safe_import("src.ui.screens.settings_screen", "render_settings_screen")
 
-# Legacy tabs kept for backward compat (Lab merges them)
-render_overview_tab, _ = _safe_import("src.ui.tabs.overview", "render_overview_tab")
-render_statistics_tab, _ = _safe_import("src.ui.tabs.statistics", "render_statistics_tab")
 render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
     "src.core.analytics_engine", "render_deep_analysis_tab", fallback=False
 )

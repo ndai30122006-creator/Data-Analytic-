@@ -51,3 +51,7 @@ reports/
 # ── Test Artifacts ──
 test_output/
 .pytest_cache/
+
+# ── Archive legacy (filtered per docs/plan) ──
+archive/
+data/
