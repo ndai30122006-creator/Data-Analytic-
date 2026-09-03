@@ -57,13 +57,14 @@ render_theme, _ = _safe_import("src.ui.theme", "render_theme")
 render_sidebar, _ = _safe_import("src.ui.sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("src.ui.tabs.landing", "render_landing_page")
 
-# ── New 5 screens (P0 Reposition) + Settings BYOK ──
+# ── New 5 screens (P0 Reposition) + Settings BYOK + Lineage ──
 render_ingest_screen, _ = _safe_import("src.ui.screens.ingest_screen", "render_ingest_screen")
 render_pipeline_screen, _ = _safe_import("src.ui.screens.pipeline_screen", "render_pipeline_screen")
 render_brief_screen, _ = _safe_import("src.ui.screens.brief_screen", "render_brief_screen")
 render_dashboard_screen, _ = _safe_import("src.ui.screens.dashboard_screen", "render_dashboard_screen")
 render_lab_screen, _ = _safe_import("src.ui.screens.lab_screen", "render_lab_screen")
 render_settings_screen, _ = _safe_import("src.ui.screens.settings_screen", "render_settings_screen")
+render_lineage_screen, _ = _safe_import("src.ui.screens.lineage_screen", "render_lineage_screen")
 
 render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
     "src.core.analytics_engine", "render_deep_analysis_tab", fallback=False
@@ -198,8 +199,8 @@ def main() -> None:
         dat = raw.select_dtypes(include=["datetime"]).columns.tolist()
         df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-        # ── Header — 5 main + Settings ──
-        SCREENS = ["📥 Ingest", "⚙️ Pipeline", "📋 Brief", "📊 Dashboard", "🧪 Lab", "⚙️ Settings"]
+        # ── Header — 5 main + Settings + Lineage ──
+        SCREENS = ["📥 Ingest", "⚙️ Pipeline", "📋 Brief", "📊 Dashboard", "🧪 Lab", "⚙️ Settings", "🔗 Lineage"]
         st.markdown(
             f"""
         <div style="
@@ -231,7 +232,7 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-        # ── 5+1 screens dispatch (P0) ──
+        # ── 5+2 screens dispatch (P0/P5) ──
         SCREEN_RENDERERS = {
             "📥 Ingest": lambda: render_ingest_screen(df, num, cat),
             "⚙️ Pipeline": lambda: render_pipeline_screen(df, num, cat),
@@ -239,6 +240,7 @@ def main() -> None:
             "📊 Dashboard": lambda: render_dashboard_screen(df, num, cat),
             "🧪 Lab": lambda: render_lab_screen(df, num, cat, dat),
             "⚙️ Settings": lambda: render_settings_screen(df, num, cat),
+            "🔗 Lineage": lambda: render_lineage_screen(df, num, cat),
         }
 
         main_tabs = st.tabs(SCREENS)
