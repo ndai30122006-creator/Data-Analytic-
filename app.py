@@ -55,7 +55,6 @@ def _safe_import(module_name: str, attr: str, *, fallback: bool = True):
 # ── Safe imports for theme/sidebar ──
 render_theme, _ = _safe_import("src.ui.theme", "render_theme")
 render_sidebar, _ = _safe_import("src.ui.sidebar", "render_sidebar")
-render_landing_page, _ = _safe_import("src.ui.tabs.landing", "render_landing_page")
 
 # ── New 5 screens (P0 Reposition) + Settings BYOK + Lineage ──
 render_ingest_screen, _ = _safe_import("src.ui.screens.ingest_screen", "render_ingest_screen")
@@ -188,10 +187,11 @@ def main() -> None:
     # MAIN CONTENT
     # ═══════════════════════════════════
     if st.session_state.df is None:
+        # Landing archived per docs/plan 01 — show Ingest screen directly
         try:
-            render_landing_page()
+            render_ingest_screen()
         except Exception as exc:
-            handle_error(exc, "render_landing_page()", "Landing page failed to load.")
+            handle_error(exc, "render_ingest_screen()", "Ingest screen failed to load.")
     else:
         raw = st.session_state.df
         num = raw.select_dtypes(include=[np.number]).columns.tolist()
