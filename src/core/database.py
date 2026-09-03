@@ -143,6 +143,43 @@ def _verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
+def _get_fernet():
+    """Get Fernet for BYOK encryption (uses JWT secret as key, fallback deterministic)."""
+    try:
+        from cryptography.fernet import Fernet
+        import hashlib
+        import base64
+
+        secret = os.environ.get("JWT_SECRET_KEY") or "dev-fallback-secret-please-change"
+        # Derive 32-byte key from secret
+        h = hashlib.sha256(secret.encode()).digest()
+        key = base64.urlsafe_b64encode(h)
+        return Fernet(key)
+    except Exception:
+        return None
+
+
+def _encrypt_api_key(raw: str) -> str:
+    f = _get_fernet()
+    if f and raw:
+        try:
+            return f.encrypt(raw.encode()).decode()
+        except Exception:
+            return raw
+    return raw
+
+
+def _decrypt_api_key(enc: str) -> str:
+    f = _get_fernet()
+    if f and enc:
+        try:
+            # Try decrypt, if fails assume plaintext
+            return f.decrypt(enc.encode()).decode()
+        except Exception:
+            return enc
+    return enc
+
+
 def create_user(username: str, password: str) -> User:
     """Create a new user with bcrypt-hashed password."""
     if not username or not username.strip():
@@ -174,14 +211,24 @@ def verify_user_password(username: str, password: str) -> Optional[User]:
 
 
 def update_api_key(username: str, api_key: str) -> bool:
-    """Update user's AI API key."""
+    """Update user's AI API key (encrypted at rest, P0)."""
+    enc = _encrypt_api_key(api_key)
     with SessionLocal() as session:
         user = session.query(User).filter(User.username == username).first()
         if not user:
             return False
-        user.api_key_ai = api_key
+        user.api_key_ai = enc
         session.commit()
         return True
+
+
+def get_api_key(username: str) -> Optional[str]:
+    """Get decrypted API key for user."""
+    with SessionLocal() as session:
+        user = session.query(User).filter(User.username == username).first()
+        if not user or not user.api_key_ai:
+            return None
+        return _decrypt_api_key(user.api_key_ai)
 
 
 def delete_user(username: str) -> bool:

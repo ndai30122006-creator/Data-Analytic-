@@ -4,8 +4,20 @@ from typing import Dict
 
 import pandas as pd
 
+import re
+
 from src.pipeline.spec_schema import PipelineSpec
 from src.warehouse.connection import get_conn
+
+_VALID_ID = re.compile(r"^(raw|mart)\.[a-zA-Z_][a-zA-Z0-9_]{0,63}$")
+
+
+def _validate_identifier(name: str) -> str:
+    if not _VALID_ID.match(name):
+        raise ValueError(f"Invalid identifier {name!r} (must be raw/mart + alphanum/_)")
+    # Quote safely
+    schema, table = name.split(".", 1)
+    return f'"{schema}"."{table}"'
 
 
 def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
@@ -13,13 +25,20 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
     spec.validate_dag()
     order = spec.topo_order()
 
+    # Validate identifiers before any SQL
+    try:
+        src_q = _validate_identifier(spec.source)
+        tgt_q = _validate_identifier(spec.target)
+    except ValueError as e:
+        return {"status": "failed", "error": str(e)}
+
     conn = get_conn()
     try:
         conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
         conn.execute("CREATE SCHEMA IF NOT EXISTS mart")
         # Load source
         try:
-            df = conn.execute(f"SELECT * FROM {spec.source}").fetchdf()
+            df = conn.execute(f"SELECT * FROM {src_q}").fetchdf()
         except Exception as e:
             return {"status": "failed", "error": f"source {spec.source} not found: {e}"}
 
@@ -73,8 +92,8 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
         # Write to target if not sample
         if not sample:
             conn.register("final_df", current)
-            conn.execute(f"DROP TABLE IF EXISTS {spec.target}")
-            conn.execute(f"CREATE TABLE {spec.target} AS SELECT * FROM final_df")
+            conn.execute(f"DROP TABLE IF EXISTS {tgt_q}")
+            conn.execute(f"CREATE TABLE {tgt_q} AS SELECT * FROM final_df")
             conn.unregister("final_df")
 
         return {

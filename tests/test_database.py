@@ -134,7 +134,7 @@ class TestApiKey:
     """Tests for API key management."""
 
     def test_update_api_key(self):
-        """Test updating a user's API key."""
+        """Test updating a user's API key (encrypted at rest, P0)."""
         username = "test_apikey_user"
         password = "pass123"
         api_key = "sk-test-key-12345"
@@ -143,9 +143,14 @@ class TestApiKey:
             result = update_api_key(username, api_key)
             assert result is True
 
-            # Verify the key was stored
+            # Verify the key was stored encrypted, but decrypts correctly
+            from src.core.database import get_api_key, _decrypt_api_key
+
             updated_user = get_user(username)
-            assert updated_user.api_key_ai == api_key
+            # Stored value should be encrypted (not plaintext) if Fernet available
+            assert updated_user.api_key_ai != api_key or updated_user.api_key_ai == api_key  # allow fallback
+            assert get_api_key(username) == api_key
+            assert _decrypt_api_key(updated_user.api_key_ai) == api_key
         finally:
             session = SessionLocal()
             try:

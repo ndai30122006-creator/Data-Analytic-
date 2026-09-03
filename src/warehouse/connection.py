@@ -4,7 +4,8 @@ from pathlib import Path
 
 import duckdb
 
-DATA_DIR = Path("data")
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = _PROJECT_ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
 _DB_PATH = DATA_DIR / "warehouse.duckdb"
 

@@ -468,9 +468,10 @@ async def get_dataset_profile(dataset_id: int, username: str = Depends(get_curre
         return {"dataset_id": ds.id, "dataset_name": ds.dataset_name, "profile": profile}
 
 
-# ── Plan 07: Pipelines (in-memory for now, P3) ──
+# ── Plan 07: Pipelines (persisted via DB, P0 fix) ──
 from fastapi import BackgroundTasks
 
+# Keep in-memory for backward compat during transition, but primary is DB
 _pipelines: Dict[str, Dict[str, Any]] = {}
 _runs: Dict[str, Dict[str, Any]] = {}
 
@@ -484,9 +485,18 @@ class PipelineCreateRequest(BaseModel):
 
 @app.post("/pipelines", dependencies=[Depends(check_rate_limit)])
 async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(get_current_user)):
+    import json
     import uuid
 
+    from src.core.database import Pipeline, SessionLocal
+
     pid = str(uuid.uuid4())[:8]
+    spec_json = json.dumps(req.model_dump(), ensure_ascii=False)
+    with SessionLocal() as s:
+        p = Pipeline(id=pid, owner=username, name=req.name, source=req.source, target=req.target, spec_json=spec_json)
+        s.add(p)
+        s.commit()
+    # Keep in-memory for preview/run backward compat
     _pipelines[pid] = {
         "id": pid,
         "owner": username,
@@ -498,12 +508,43 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
 
 @app.get("/pipelines", dependencies=[Depends(check_rate_limit)])
 async def list_pipelines(username: str = Depends(get_current_user)):
-    items = [v for v in _pipelines.values() if v["owner"] == username]
-    return {"pipelines": items, "count": len(items)}
+    from src.core.database import Pipeline, SessionLocal
+
+    with SessionLocal() as s:
+        rows = s.query(Pipeline).filter(Pipeline.owner == username).all()
+        items = [
+            {
+                "id": r.id,
+                "owner": r.owner,
+                "name": r.name,
+                "source": r.source,
+                "target": r.target,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
+        # Fallback in-memory if DB empty (for tests without DB)
+        if not items:
+            items = [v for v in _pipelines.values() if v["owner"] == username]
+        return {"pipelines": items, "count": len(items)}
 
 
 @app.get("/pipelines/{pipeline_id}", dependencies=[Depends(check_rate_limit)])
 async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_user)):
+    from src.core.database import Pipeline, SessionLocal
+    import json
+
+    with SessionLocal() as s:
+        p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
+        if p and p.owner == username:
+            spec = json.loads(p.spec_json) if p.spec_json else {}
+            return {
+                "id": p.id,
+                "owner": p.owner,
+                **spec,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+    # Fallback in-memory
     p = _pipelines.get(pipeline_id)
     if not p or p["owner"] != username:
         raise HTTPException(status_code=404, detail="Pipeline not found")
@@ -525,29 +566,79 @@ async def preview_pipeline(req: PipelineCreateRequest, username: str = Depends(g
 
 
 def _run_pipeline_task(pipeline_id: str, run_id: str):
+    import json
+
+    from src.core.database import Pipeline, PipelineRun, SessionLocal
+
     try:
         from src.pipeline.spec_schema import PipelineSpec
         from src.pipeline.executor import execute
 
-        spec_dict = _pipelines[pipeline_id]
+        # Fetch spec from DB or in-memory fallback
+        spec_dict = None
+        with SessionLocal() as s:
+            p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
+            if p:
+                spec_dict = json.loads(p.spec_json) if p.spec_json else {}
+                spec_dict["name"] = p.name
+                spec_dict["source"] = p.source
+                spec_dict["target"] = p.target
+        if spec_dict is None:
+            spec_dict = _pipelines.get(pipeline_id, {})
         spec = PipelineSpec(
-            name=spec_dict["name"], source=spec_dict["source"], target=spec_dict["target"], steps=spec_dict["steps"]
+            name=spec_dict.get("name", "pipeline"),
+            source=spec_dict.get("source", "raw.t"),
+            target=spec_dict.get("target", "mart.t"),
+            steps=spec_dict.get("steps", []),
         )
         res = execute(spec, sample=False)
-        _runs[run_id]["status"] = "done" if res.get("status") == "done" else "failed"
-        _runs[run_id]["result"] = res
+        status = "done" if res.get("status") == "done" else "failed"
+        # Update DB
+        with SessionLocal() as s:
+            r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
+            if r:
+                r.status = status
+                r.result_json = json.dumps(res, ensure_ascii=False)
+                s.commit()
+        # Also update in-memory for backward compat
+        if run_id in _runs:
+            _runs[run_id]["status"] = status
+            _runs[run_id]["result"] = res
     except Exception as e:
-        _runs[run_id]["status"] = "failed"
-        _runs[run_id]["error"] = str(e)
+        import json as _json
+
+        with SessionLocal() as s:
+            r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
+            if r:
+                r.status = "failed"
+                r.result_json = _json.dumps({"error": str(e)}, ensure_ascii=False)
+                s.commit()
+        if run_id in _runs:
+            _runs[run_id]["status"] = "failed"
+            _runs[run_id]["error"] = str(e)
 
 
 @app.post("/pipelines/run", dependencies=[Depends(check_rate_limit)])
 async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, username: str = Depends(get_current_user)):
+    import json
     import uuid
 
-    if pipeline_id not in _pipelines or _pipelines[pipeline_id]["owner"] != username:
+    from src.core.database import Pipeline, PipelineRun, SessionLocal
+
+    # Check existence via DB or in-memory
+    exists = False
+    with SessionLocal() as s:
+        p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
+        if p and p.owner == username:
+            exists = True
+    if not exists and (pipeline_id not in _pipelines or _pipelines[pipeline_id]["owner"] != username):
         raise HTTPException(status_code=404, detail="Pipeline not found")
     run_id = str(uuid.uuid4())[:8]
+    # Persist run in DB
+    with SessionLocal() as s:
+        r = PipelineRun(id=run_id, pipeline_id=pipeline_id, status="queued")
+        s.add(r)
+        s.commit()
     _runs[run_id] = {
         "run_id": run_id,
         "pipeline_id": pipeline_id,
@@ -557,11 +648,42 @@ async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, user
     }
     background_tasks.add_task(_run_pipeline_task, pipeline_id, run_id)
     _runs[run_id]["status"] = "running"
+    # Update DB to running
+    with SessionLocal() as s:
+        r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
+        if r:
+            r.status = "running"
+            s.commit()
     return {"run_id": run_id, "status": "queued"}
 
 
 @app.get("/runs/{run_id}", dependencies=[Depends(check_rate_limit)])
 async def get_run(run_id: str, username: str = Depends(get_current_user)):
+    from src.core.database import PipelineRun, SessionLocal
+    import json
+
+    with SessionLocal() as s:
+        r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
+        if r:
+            # Check owner via pipeline
+            from src.core.database import Pipeline
+
+            p = s.query(Pipeline).filter(Pipeline.id == r.pipeline_id).first()
+            if p and p.owner == username:
+                result = {}
+                if r.result_json:
+                    try:
+                        result = json.loads(r.result_json)
+                    except Exception:
+                        result = {"raw": r.result_json}
+                return {
+                    "run_id": r.id,
+                    "pipeline_id": r.pipeline_id,
+                    "status": r.status,
+                    "result": result,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+    # Fallback in-memory
     r = _runs.get(run_id)
     if not r or r["owner"] != username:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -570,6 +692,28 @@ async def get_run(run_id: str, username: str = Depends(get_current_user)):
 
 @app.get("/runs", dependencies=[Depends(check_rate_limit)])
 async def list_runs(username: str = Depends(get_current_user)):
+    from src.core.database import PipelineRun, Pipeline, SessionLocal
+
+    with SessionLocal() as s:
+        # Join to filter by owner
+        rows = (
+            s.query(PipelineRun)
+            .join(Pipeline, Pipeline.id == PipelineRun.pipeline_id)
+            .filter(Pipeline.owner == username)
+            .all()
+        )
+        if rows:
+            items = [
+                {
+                    "run_id": r.id,
+                    "pipeline_id": r.pipeline_id,
+                    "status": r.status,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+            return {"runs": items, "count": len(items)}
+    # Fallback
     items = [v for v in _runs.values() if v["owner"] == username]
     return {"runs": items, "count": len(items)}
 
