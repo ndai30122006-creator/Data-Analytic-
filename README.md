@@ -1,6 +1,6 @@
-# 🎓 Learning Analytics Thống kê
+# 🧠 AI Data Engineering Workbench — local-first
 
-**Nền tảng phân tích dữ liệu học tập** — Phân tích điểm số, nhóm rủi ro, kiểm định thống kê và học máy cho sinh viên ngành Thống kê.
+**Workbench AI cho Data Engineering** — Ingest → Pipeline (ETL/ELT) → Brief → Dashboard, local-first với DuckDB + BYOK. Giữ nguyên **Statistics Lab** (engine thống kê) từ “Learning Analytics Thống kê”.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.29%2B-red)
@@ -8,7 +8,9 @@
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## ✨ Tính năng chính
+> **Pivot P0:** UI mới 6 screens **Ingest → Pipeline → Brief → Dashboard → Lab (Statistics)** + **Settings BYOK** (`POST /auth/api-key`). Xem `docs/plan/README.md` và `docs/plan/implement_plan.md`.
+
+## ✨ Tính năng chính (Workbench)
 
 ### 📂 Data Input
 - Upload nhiều CSV / Excel files cùng lúc
