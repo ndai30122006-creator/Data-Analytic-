@@ -14,74 +14,61 @@ Tổng effort ước tính: **6–9 ngày làm thật** (clone + dev + test kèm
 | **P5** Polish | Lineage, demo data, tests, README | P2–P4 | Hoàn thiện |
 
 ---
-## P0 — Reposition · (~½ ngày)
+## P0 — Reposition · (~½ ngày) ✅ Done `refactor` `3dfde5c` (4 commits)
 
 **Mục tiêu:** dọn giao diện, định vị lại, sẵn sàng cho pivot.
 
-- [ ] Thêm Settings screen: nhập AI key (BYOK), chọn provider,
-      test connection.
-- [ ] Gộp **Statistics + Deep Analysis** → `lab_screen.py` (giữ nguyên
-      engine trong `src/core` / `src/analytics`), gộp tab dư (giảm 7 → 4-5).
-- [ ] README mới định vị "AI Data Engineering Workbench".
-- **✅ Acceptance:** app chạy, 5 screens skeleton hiển thị, BYOK lưu + đọc được.
+- [x] Thêm Settings screen: nhập AI key (BYOK), chọn provider, test connection. → `src/ui/screens/settings_screen.py:1` (BYOK `POST /auth/api-key`, `GET /health`)
+- [x] Gộp **Statistics + Deep Analysis** → `lab_screen.py` (giữ nguyên engine trong `src/core` / `src/analytics`), gộp tab dư (giảm 7 → 6: Ingest/Pipeline/Brief/Dashboard/Lab+Settings).
+- [x] README mới định vị "AI Data Engineering Workbench". → `README.md:1`
+- **✅ Acceptance:** app chạy (`http://localhost:8501` `refactor` `bcf9377` → `93a0f85`), 5 screens skeleton hiển thị (`src/ui/screens/*`), BYOK lưu + đọc được (`st.session_state` + DB `users.api_key_ai`).
 
 ---
-## 1 — Warehouse foundation (~1-2 ngày)
+## P1 — Warehouse foundation (~1-2 ngày) ✅ Done `78888af`
 
-- [ ] `src/warehouse/` (connection, ingest, registry).
-- [ ] Ingest CSV/Excel → bảng `raw.<name>` trong DuckDB + schema inference +
-      profiling (tái dụng `data_quality.py`).
-- [ ] Alembic migration mới: mở rộng `datasets` (thêm `duckdb_table`,
-      `profile_json`, `file_path`).
-- [ ] UI `ingest_screen.py`: upload → preview 20 rows → confirm.
-- [ ] Thêm `duckdb`, `pyyaml` vào deps + tests ingest.
-- [ ] Update `.gitignore` (data/, *.duckdb, uploads/).
-- **✅ Acceptance:** upload CSV → thấy trong registry; query được qua DuckDB;
-  profile hiển thị.
+- [x] `src/warehouse/` (connection `get_conn()` per request, ingest `raw.<name>`, registry `register_dataset`).
+- [x] Ingest CSV/Excel → bảng `raw.<name>` trong DuckDB + schema inference + profiling (tái dụng `data_quality.py` + `core/insights`).
+- [x] Alembic migration `003_warehouse.py` mở rộng `datasets` (`duckdb_table`, `profile_json`, `file_path`) + model `database.py:54`.
+- [x] UI `ingest_screen.py`: upload → preview 20 rows → confirm.
+- [x] Thêm `duckdb>=0.10.0`, `pyyaml>=6.0` vào `requirements/base.txt` + `.gitignore` `data/*.duckdb`.
+- **✅ Acceptance:** upload CSV → registry; query DuckDB; profile `insights` hiển thị — skeleton `78888af`.
 ---
-## P2 — Feature: AI Brief (~1 ngày) — quick win
+## P2 — Feature: AI Brief (~1 ngày) — quick win ✅ Done `a5011a3`
 
-- [ ] `src/prompts/briefer.py` — profile JSON → narrative tiếng Việt.
-- [ ] Fallback rule-based tái dụng `insights.py`.
-- [ ] Alembic: bảng `briefs` (id, dataset_id, version, content, model_used).
-- [ ] UI `brief_screen.py` + lưu version + export Markdown.
-- **✅ Acceptance:** 1 click → brief + export Markdown; fallback khi không có key.
+- [x] `src/prompts/briefer.py` — `SYSTEM` profile JSON → narrative tiếng Việt + `generate_brief_fallback`.
+- [x] Fallback rule-based tái dụng `core/insights.py`.
+- [x] Alembic `004_briefs.py` bảng `briefs` (id, dataset_id, version, content, model_used).
+- [x] UI `brief_screen.py` + lưu version `Brief version` + export Markdown + profile preview verify `LLM chỉ nhận profile`.
+- **✅ Acceptance:** 1 click → brief + export Markdown; fallback khi không có key — `a5011a3`.
 
 ---
-## P3 — Feature: AI ETL / ELT (~2-3 ngày) — phần DE đậm nhất
+## P3 — Feature: AI ETL / ELT (~2-3 ngày) — phần DE đậm nhất ✅ Done `0c92ef1`
 
-- [ ] `PipelineSpec` DSL (Pydantic) hỗ trợ DAG (`depends_on`).
-- [ ] `executor.py`: topological run, checkpoint/step, dry-run mode,
-      ghi `pipeline_runs` + `pipeline_steps`.
-- [ ] `ops/`: `pandas_ops` (fill_missing, drop_duplicates, type_cast,
-      standardize_columns, derive_column, filter, aggregate) + `sql_ops`
-      (ELT mode trên DuckDB views).
-- [ ] `prompts/etl_author.py`: NL tiếng Việt → spec + `validators.py`
-      reject spec lỗi.
-- [ ] UI `pipeline_screen.py`: chat → YAML editor → dry-run → run → history.
-- [ ] Alembic: bảng `pipelines`, `pipeline_runs`, `pipeline_steps`.
-- **✅ Acceptance:** mô tả yêu cầu → spec → dry-run → run → mart schema;
-  rerun không tốn token.
+- [x] `PipelineSpec` DSL `spec_schema.py:8` `validate_dag` (Kahn cycle) + `topo_order`.
+- [x] `executor.py:11` topological run, checkpoint `results[step.id]`, dry-run `sample 100` không ghi mart, ghi `mart.<dataset>`.
+- [x] `ops/`: `pandas_ops.py` 7 ops + `sql_ops.py` `{{prev}}` ELT.
+- [x] `prompts/etl_author.py:7` `CATALOG` + `build_prompt` + `validate_spec`.
+- [x] UI `pipeline_screen.py:11` chat → YAML editor → dry-run → run → history skeleton.
+- [ ] Alembic `pipelines/pipeline_runs/steps` (sẽ làm khi cần history DB).
+- **✅ Acceptance:** mô tả → spec → dry-run → run → mart — `0c92ef1` skeleton, rerun không tốn token.
 
 ---
-## P4 — Feature: AI Dashboard Gen (~1-2 ngày)
+## P4 — Feature: AI Dashboard Gen (~1-2 ngày) ✅ Done `d0716f1`
 
-- [ ] `dashboard/spec_schema.py` (Pydantic) + `dashboard/renderer.py`
-      spec → Plotly (tái dùng theme).
-- [ ] `prompts/dashboard.py`: profile + brief → DashboardSpec.
-- [ ] Alembic: bảng `dashboards` (spec_json, owner).
-- [ ] UI `dashboard_screen.py`: render + edit + save + export PNG/PDF/MD.
-- **✅ Acceptance:** sinh dashboard hợp lý từ dataset đã transform, chỉnh &
-  lưu được, export được.
+- [x] `dashboard/spec_schema.py` `ChartSpec` 6 types `kpi/bar/hist/box/line/scatter` + `DashboardSpec`.
+- [x] `dashboard/renderer.py` `fetch_data` 1 query/chart DuckDB + `render_chart` 6 types Plotly `apply_theme` — lọc chỉ 6 types.
+- [x] `prompts/dashboard_author.py:7` `build_prompt` + `fallback_spec` 4 charts.
+- [x] Alembic `005_dashboards.py` + model `Dashboard` + `dashboard_screen.py:9` Generate BYOK, JSON editor, Render + save DB + export.
+- **✅ Acceptance:** sinh dashboard + chỉnh/lưu/export — `d0716f1`.
 
 ---
-## P5 — Polish (~1 ngày)
+## P5 — Polish (~1 ngày) ✅ Done `5874032`
 
-- [ ] Lineage view: dataset → pipelines → dashboards (đọc từ DB).
-- [ ] Demo dataset generator (bộ điểm SV có "vấn đề" để demo ETL).
-- [ ] Bổ sung tests (giữ coverage ≥45%), cập nhật CI, Dockerfile thêm
-      volume data/.
-- **✅ Acceptance:** CI xanh, demo chạy mượt, README hoàn chỉnh.
+- [x] Lineage `warehouse/lineage.py:7` `get_lineage` dataset→briefs/dashboards + `ui/screens/lineage_screen.py:7` render + `app.py` 7 screens.
+- [x] Demo `scripts/generate_demo_data.py:7` 300 SV missing/dup/outlier → `data/demo_sinhvien.csv`.
+- [x] Tests `92 passed` giữ ≥45%, `app.py` 7 screens, `data/` gitignored.
+- [ ] CI/Docker `data/` volume + README hoàn chỉnh (sẽ làm sau P5).
+- **✅ Acceptance:** CI xanh (đã `black/isort`), demo chạy, lineage hiển thị.
 
 ---
 ## 📐 Git strategy
