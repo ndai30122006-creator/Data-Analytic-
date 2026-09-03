@@ -56,6 +56,19 @@ class Dataset(Base):
     profile_json = Column(Text, nullable=True)
 
 
+class Brief(Base):
+    """Briefs versioned per dataset (Plan 03)."""
+
+    __tablename__ = "briefs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    content = Column(Text, nullable=False)
+    model_used = Column(String(64), nullable=False, default="rule-based")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 def init_db():
     """Create all tables and optionally seed demo users."""
     Base.metadata.create_all(bind=engine)
