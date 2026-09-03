@@ -52,18 +52,21 @@ def _safe_import(module_name: str, attr: str, *, fallback: bool = True):
         return None, False
 
 
-# ── Safe imports for every render_* function ──
+# ── Safe imports for theme/sidebar ──
 render_theme, _ = _safe_import("src.ui.theme", "render_theme")
 render_sidebar, _ = _safe_import("src.ui.sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("src.ui.tabs.landing", "render_landing_page")
-render_overview_tab, _ = _safe_import("src.ui.tabs.overview", "render_overview_tab")
-render_learning_analytics_tab, _ = _safe_import("src.ui.tabs.learning", "render_learning_analytics_tab")
-render_statistics_tab, _ = _safe_import("src.ui.tabs.statistics", "render_statistics_tab")
-render_compare_tab, _ = _safe_import("src.ui.tabs.compare", "render_compare_tab")
-render_analytics_tab, _ = _safe_import("src.ui.tabs.analytics", "render_analytics_tab")
-render_ai_insights_tab, _ = _safe_import("src.ui.tabs.ai_insights", "render_ai_insights_tab")
 
-# Deep analysis – canonical via core (P0: analytics_engine)
+# ── New 5 screens (P0 Reposition) ──
+render_ingest_screen, _ = _safe_import("src.ui.screens.ingest_screen", "render_ingest_screen")
+render_pipeline_screen, _ = _safe_import("src.ui.screens.pipeline_screen", "render_pipeline_screen")
+render_brief_screen, _ = _safe_import("src.ui.screens.brief_screen", "render_brief_screen")
+render_dashboard_screen, _ = _safe_import("src.ui.screens.dashboard_screen", "render_dashboard_screen")
+render_lab_screen, _ = _safe_import("src.ui.screens.lab_screen", "render_lab_screen")
+
+# Legacy tabs kept for backward compat (Lab merges them)
+render_overview_tab, _ = _safe_import("src.ui.tabs.overview", "render_overview_tab")
+render_statistics_tab, _ = _safe_import("src.ui.tabs.statistics", "render_statistics_tab")
 render_deep_analysis_tab, DEEP_ANALYSIS_AVAIL = _safe_import(
     "src.core.analytics_engine", "render_deep_analysis_tab", fallback=False
 )
@@ -197,14 +200,8 @@ def main() -> None:
         dat = raw.select_dtypes(include=["datetime"]).columns.tolist()
         df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-        try:
-            from src.utils.config import MAIN_TABS, TAB_DEEP_ANALYSIS
-        except Exception as exc:
-            logger.error("Failed to import MAIN_TABS from config: %s", exc, exc_info=True)
-            st.error("⚠️ Configuration error: tab definitions could not be loaded.")
-            st.stop()
-
-        # ── Header section before tabs ──
+        # ── Header — same but with 5 screens badge ──
+        SCREENS = ["📥 Ingest", "⚙️ Pipeline", "📋 Brief", "📊 Dashboard", "🧪 Lab"]
         st.markdown(
             f"""
         <div style="
@@ -229,49 +226,36 @@ def main() -> None:
                 font-size:0.82rem;
                 color:var(--text-secondary);
             ">
-                🎯 {len(MAIN_TABS)} analysis tabs
+                🎯 {len(SCREENS)} screens (pivot P0)
             </div>
         </div>
         """,
             unsafe_allow_html=True,
         )
 
-        # ── Dynamic tab dispatch ──
-        # Map each tab name to its renderer (with pre-bound args).
-        # If a tab has no entry, a warning is shown instead.
-        TAB_RENDERERS = {
-            "📊 Overview": lambda: render_overview_tab(df, num, cat),
-            "🎓 Learning Analytics": lambda: render_learning_analytics_tab(df, num, cat),
-            "📈 Statistics": lambda: render_statistics_tab(df, num, cat),
-            "⚖️ Compare": lambda: render_compare_tab(),
-            "🔬 Analytics": lambda: render_analytics_tab(df, num, cat),
-            "🤖 AI Insights": lambda: render_ai_insights_tab(df, num, cat),
+        # ── 5 screens dispatch (P0) ──
+        SCREEN_RENDERERS = {
+            "📥 Ingest": lambda: render_ingest_screen(df, num, cat),
+            "⚙️ Pipeline": lambda: render_pipeline_screen(df, num, cat),
+            "📋 Brief": lambda: render_brief_screen(df, num, cat),
+            "📊 Dashboard": lambda: render_dashboard_screen(df, num, cat),
+            "🧪 Lab": lambda: render_lab_screen(df, num, cat, dat),
         }
 
-        main_tabs = st.tabs(MAIN_TABS)
+        main_tabs = st.tabs(SCREENS)
 
-        for tab_idx, tab_name in enumerate(MAIN_TABS):
+        for tab_idx, tab_name in enumerate(SCREENS):
             with main_tabs[tab_idx]:
                 try:
-                    if tab_name == TAB_DEEP_ANALYSIS:
-                        if DEEP_ANALYSIS_AVAIL:
-                            render_deep_analysis_tab(df, num, cat, dat)
-                        else:
-                            st.error("Advanced Analytics module unavailable.")
-                            with st.expander("🔧 Install dependencies", expanded=True):
-                                st.code("pip install scipy scikit-learn statsmodels matplotlib seaborn")
-                                if st.button("🔄 Refresh", key="da_refresh"):
-                                    st.rerun()
-                    elif tab_name in TAB_RENDERERS:
-                        TAB_RENDERERS[tab_name]()
+                    if tab_name in SCREEN_RENDERERS:
+                        SCREEN_RENDERERS[tab_name]()
                     else:
-                        st.warning(f"⚠️ No renderer registered for tab **{tab_name}**.")
-                        logger.warning("Missing renderer for tab: %s", tab_name)
+                        st.warning(f"No renderer for **{tab_name}**.")
                 except Exception as exc:
-                    st.error(f"⚠️ An error occurred in the **{tab_name}** tab. " f"Check the logs for details.")
-                    logger.error("Renderer for tab %s failed: %s", tab_name, exc, exc_info=True)
+                    st.error(f"Error in **{tab_name}**.")
+                    logger.error("Screen %s failed: %s", tab_name, exc, exc_info=True)
 
-    st.caption("📊 Data Analyst Pro v3.0 — Practical Statistics for Data Scientists, 2nd Ed")
+    st.caption("AI Data Engineering Workbench — local-first · DuckDB + BYOK · P0 Reposition")
 
 
 if __name__ == "__main__":
