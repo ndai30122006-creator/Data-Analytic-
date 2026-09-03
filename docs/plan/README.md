@@ -15,6 +15,7 @@ Trang này là **index** cho toàn bộ kế hoạch chuyển đổi (pivot) d�
 | [`05-feature-dashboard.md`](./05-feature-dashboard.md) | Feature 3 — AI sinh Dashboard |
 | [`06-roadmap.md`](./06-roadmap.md) | Kế hoạch theo phase (P0–P5) & acceptance |
 | [`07-api-design.md`](./07-api-design.md) | Thiết kế REST API mới |
+| [`ui/`](./ui/README.md) | Plan UI mới — Node.js (Web/Desktop + Mobile) |
 
 ## 🎯 Bối cảnh
 
