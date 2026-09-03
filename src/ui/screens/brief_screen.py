@@ -40,6 +40,12 @@ def render_brief_screen(*args, **kwargs):
     sel_label = st.selectbox("Chọn dataset", list(opts.keys()), key="brief_ds")
     ds = opts[sel_label]
 
+    # Review: show profile preview (no raw data) to verify LLM only receives profile
+    with st.expander("Xem profile (JSON) sẽ gửi cho LLM — không có raw data", expanded=False):
+        prof_preview = _get_profile_for_dataset(ds.id)
+        st.json(prof_preview)
+        st.caption("Verify log: LLM chỉ nhận profile này, BYOK fallback `rule-based` nếu không key")
+
     if st.button("Generate Brief", key="brief_gen", type="primary"):
         profile = _get_profile_for_dataset(ds.id)
         # Try AI gateway if BYOK key exists
