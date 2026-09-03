@@ -375,6 +375,322 @@ async def delete_dataset_endpoint(
     return {"message": f"Dataset {dataset_name} deleted"}
 
 
+# ── Plan 07: Datasets ingest/profile ──
+class IngestRequest(BaseModel):
+    dataset_name: str
+    rows: int = 0
+    cols: int = 0
+    profile: Dict[str, Any] = {}
+
+
+@app.post("/datasets/ingest", dependencies=[Depends(check_rate_limit)])
+async def ingest_dataset(request: IngestRequest, username: str = Depends(get_current_user)):
+    """Ingest dataset -> raw + profile (Plan 07, P1)."""
+    from src.core.database import SessionLocal, Dataset
+    import json
+
+    ds = db_get_dataset(username, request.dataset_name)
+    if ds:
+        raise HTTPException(status_code=400, detail="Dataset already exists")
+    ds = db_create_dataset(username, request.dataset_name, request.rows, request.cols)
+    # Store profile_json if provided
+    if request.profile:
+        with SessionLocal() as s:
+            obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
+            obj.profile_json = json.dumps(request.profile, ensure_ascii=False)
+            s.commit()
+    return {"message": f"Ingested {ds.dataset_name}", "dataset_id": ds.id, "profile": request.profile}
+
+
+@app.get("/datasets/{dataset_id}/profile", dependencies=[Depends(check_rate_limit)])
+async def get_dataset_profile(dataset_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dataset
+    import json
+
+    with SessionLocal() as s:
+        ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not ds or ds.username != username:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        profile = {}
+        if ds.profile_json:
+            try:
+                profile = json.loads(ds.profile_json)
+            except Exception:
+                profile = {"raw": ds.profile_json}
+        # No raw data, only profile (Plan 03/07)
+        return {"dataset_id": ds.id, "dataset_name": ds.dataset_name, "profile": profile}
+
+
+# ── Plan 07: Pipelines (in-memory for now, P3) ──
+from fastapi import BackgroundTasks
+
+_pipelines: Dict[str, Dict[str, Any]] = {}
+_runs: Dict[str, Dict[str, Any]] = {}
+
+
+class PipelineCreateRequest(BaseModel):
+    name: str
+    source: str
+    target: str
+    steps: list = []
+
+
+@app.post("/pipelines", dependencies=[Depends(check_rate_limit)])
+async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(get_current_user)):
+    import uuid
+
+    pid = str(uuid.uuid4())[:8]
+    _pipelines[pid] = {
+        "id": pid,
+        "owner": username,
+        **req.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    return {"pipeline_id": pid, "spec": _pipelines[pid]}
+
+
+@app.get("/pipelines", dependencies=[Depends(check_rate_limit)])
+async def list_pipelines(username: str = Depends(get_current_user)):
+    items = [v for v in _pipelines.values() if v["owner"] == username]
+    return {"pipelines": items, "count": len(items)}
+
+
+@app.get("/pipelines/{pipeline_id}", dependencies=[Depends(check_rate_limit)])
+async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_user)):
+    p = _pipelines.get(pipeline_id)
+    if not p or p["owner"] != username:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    return p
+
+
+@app.post("/pipelines/preview", dependencies=[Depends(check_rate_limit)])
+async def preview_pipeline(req: PipelineCreateRequest, username: str = Depends(get_current_user)):
+    """Dry-run on sample 100 rows (Plan 07)."""
+    try:
+        from src.pipeline.spec_schema import PipelineSpec
+        from src.pipeline.executor import execute
+
+        spec = PipelineSpec(**req.model_dump())
+        res = execute(spec, sample=True)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def _run_pipeline_task(pipeline_id: str, run_id: str):
+    try:
+        from src.pipeline.spec_schema import PipelineSpec
+        from src.pipeline.executor import execute
+
+        spec_dict = _pipelines[pipeline_id]
+        spec = PipelineSpec(
+            name=spec_dict["name"], source=spec_dict["source"], target=spec_dict["target"], steps=spec_dict["steps"]
+        )
+        res = execute(spec, sample=False)
+        _runs[run_id]["status"] = "done" if res.get("status") == "done" else "failed"
+        _runs[run_id]["result"] = res
+    except Exception as e:
+        _runs[run_id]["status"] = "failed"
+        _runs[run_id]["error"] = str(e)
+
+
+@app.post("/pipelines/run", dependencies=[Depends(check_rate_limit)])
+async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, username: str = Depends(get_current_user)):
+    import uuid
+
+    if pipeline_id not in _pipelines or _pipelines[pipeline_id]["owner"] != username:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    run_id = str(uuid.uuid4())[:8]
+    _runs[run_id] = {
+        "run_id": run_id,
+        "pipeline_id": pipeline_id,
+        "owner": username,
+        "status": "queued",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    background_tasks.add_task(_run_pipeline_task, pipeline_id, run_id)
+    _runs[run_id]["status"] = "running"
+    return {"run_id": run_id, "status": "queued"}
+
+
+@app.get("/runs/{run_id}", dependencies=[Depends(check_rate_limit)])
+async def get_run(run_id: str, username: str = Depends(get_current_user)):
+    r = _runs.get(run_id)
+    if not r or r["owner"] != username:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return r
+
+
+@app.get("/runs", dependencies=[Depends(check_rate_limit)])
+async def list_runs(username: str = Depends(get_current_user)):
+    items = [v for v in _runs.values() if v["owner"] == username]
+    return {"runs": items, "count": len(items)}
+
+
+# ── Plan 07: Brief ──
+class BriefCreateRequest(BaseModel):
+    dataset_id: int
+
+
+@app.post("/brief/{dataset_id}", dependencies=[Depends(check_rate_limit)])
+async def create_brief(dataset_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dataset, Brief
+    import json
+
+    with SessionLocal() as s:
+        ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not ds or ds.username != username:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        # Get profile
+        profile = {}
+        if ds.profile_json:
+            try:
+                profile = json.loads(ds.profile_json)
+            except Exception:
+                profile = {}
+        # Generate via briefer fallback (no LLM raw)
+        from src.prompts.briefer import generate_brief_fallback
+
+        content = generate_brief_fallback(profile)
+        max_v = s.query(Brief).filter(Brief.dataset_id == dataset_id).count()
+        b = Brief(dataset_id=dataset_id, version=max_v + 1, content=content, model_used="rule-based")
+        s.add(b)
+        s.commit()
+        s.refresh(b)
+        return {"brief_id": b.id, "version": b.version, "content": content, "model_used": "rule-based"}
+
+
+@app.get("/brief/{dataset_id}", dependencies=[Depends(check_rate_limit)])
+async def list_briefs(dataset_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dataset, Brief
+
+    with SessionLocal() as s:
+        ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not ds or ds.username != username:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        briefs = s.query(Brief).filter(Brief.dataset_id == dataset_id).order_by(Brief.version.desc()).all()
+        return {
+            "briefs": [
+                {
+                    "version": b.version,
+                    "content": b.content[:200],
+                    "model_used": b.model_used,
+                    "created_at": b.created_at.isoformat() if b.created_at else None,
+                }
+                for b in briefs
+            ]
+        }
+
+
+@app.get("/brief/{dataset_id}/{version}", dependencies=[Depends(check_rate_limit)])
+async def get_brief_version(dataset_id: int, version: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dataset, Brief
+
+    with SessionLocal() as s:
+        ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not ds or ds.username != username:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        b = s.query(Brief).filter(Brief.dataset_id == dataset_id, Brief.version == version).first()
+        if not b:
+            raise HTTPException(status_code=404, detail="Brief version not found")
+        return {"version": b.version, "content": b.content, "model_used": b.model_used}
+
+
+# ── Plan 07: Dashboards ──
+class DashboardCreateRequest(BaseModel):
+    name: str
+    spec: Dict[str, Any]
+
+
+@app.post("/dashboards", dependencies=[Depends(check_rate_limit)])
+async def create_dashboard(req: DashboardCreateRequest, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dashboard
+    import json
+
+    with SessionLocal() as s:
+        d = Dashboard(name=req.name, spec_json=json.dumps(req.spec, ensure_ascii=False), owner=username)
+        s.add(d)
+        s.commit()
+        s.refresh(d)
+        return {"dashboard_id": d.id, "name": d.name}
+
+
+@app.get("/dashboards", dependencies=[Depends(check_rate_limit)])
+async def list_dashboards(username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dashboard
+
+    with SessionLocal() as s:
+        items = s.query(Dashboard).filter(Dashboard.owner == username).all()
+        return {
+            "dashboards": [
+                {"id": d.id, "name": d.name, "created_at": d.created_at.isoformat() if d.created_at else None}
+                for d in items
+            ]
+        }
+
+
+@app.get("/dashboards/{dashboard_id}", dependencies=[Depends(check_rate_limit)])
+async def get_dashboard(dashboard_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dashboard
+    import json
+
+    with SessionLocal() as s:
+        d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+        if not d or d.owner != username:
+            raise HTTPException(status_code=404, detail="Dashboard not found")
+        return {"id": d.id, "name": d.name, "spec": json.loads(d.spec_json) if d.spec_json else {}}
+
+
+@app.put("/dashboards/{dashboard_id}", dependencies=[Depends(check_rate_limit)])
+async def update_dashboard(dashboard_id: int, req: DashboardCreateRequest, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dashboard
+    import json
+
+    with SessionLocal() as s:
+        d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+        if not d or d.owner != username:
+            raise HTTPException(status_code=404, detail="Dashboard not found")
+        d.spec_json = json.dumps(req.spec, ensure_ascii=False)
+        d.name = req.name
+        s.commit()
+        return {"message": "Updated", "id": d.id}
+
+
+@app.post("/dashboards/{dashboard_id}/data", dependencies=[Depends(check_rate_limit)])
+async def dashboard_data(dashboard_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dashboard
+    import json
+
+    with SessionLocal() as s:
+        d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+        if not d or d.owner != username:
+            raise HTTPException(status_code=404, detail="Dashboard not found")
+        spec = json.loads(d.spec_json) if d.spec_json else {}
+        # Each chart 1 query (skeleton)
+        return {"dashboard_id": d.id, "spec": spec, "data": "1 query per chart skeleton"}
+
+
+@app.post("/dashboards/generate", dependencies=[Depends(check_rate_limit)])
+async def generate_dashboard(dataset_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import SessionLocal, Dataset
+    import json
+
+    with SessionLocal() as s:
+        ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not ds or ds.username != username:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        profile = {}
+        if ds.profile_json:
+            try:
+                profile = json.loads(ds.profile_json)
+            except Exception:
+                profile = {}
+        from src.prompts.dashboard_author import fallback_spec
+
+        spec = fallback_spec(profile, ds.duckdb_table or f"mart.{ds.dataset_name}")
+        return {"spec": spec}
+
+
 @app.delete("/auth/user")
 async def delete_user_endpoint(username: str = Depends(get_current_user)):
     """Delete the authenticated user's own account."""
