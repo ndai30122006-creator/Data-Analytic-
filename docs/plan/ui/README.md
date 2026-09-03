@@ -1,6 +1,6 @@
 # 🎨 UI Plan — Node.js UI Layer
 
-> **Nhánh:** `refactor` · **Trạng thái:** đang ở giai đoạn **brainstorm**.
+> **Nhánh:** `refactor` · **Trạng thái:** plan đã sẵn sàng để **bắt đầu build** (Giai đoạn 0).
 
 ## ✅ Quyết định đã chốt
 - **Giữ 1 repo** (monorepo, folder lớn `frontend/` ngay root).
@@ -20,8 +20,9 @@ Cả 2 chỉ gọi FastAPI `api.py` qua REST (JWT + BYOK), **không** chạm tr�
 DuckDB/engine — giữ kiến trúc hiện tại không đổi.
 
 ## 📄 Tài liệu
-- [`brainstorm.md`](./brainstorm.md) — hướng đã mở + quyết định đã chốt + câu hỏi còn mở.
+- [`plan.md`](./plan.md) — **Build plan chi tiết** (cấu trúc `frontend/` + 20 commit nhỏ theo giai đoạn).
+- [`brainstorm.md`](./brainstorm.md) — quyết định đã chốt + câu hỏi còn mở.
 
 ## ✅ Việc kế tiếp
-Chốt các câu hỏi còn mở trong [§7 brainstorm](./brainstorm.md#7-câu-hỏi-chốt-cần-trả-lời-trước-khi-chi-tiết-hoá)
-rồi viết plan chi tiết (kiến trúc + roadmap).
+Bắt đầu **Giai đoạn 0** theo [`plan.md`](./plan.md): scaffold `frontend/` monorepo
+(package.json, workspaces, `.gitignore`, `.env.example`) — commit nhỏ + push lên `refactor`.
