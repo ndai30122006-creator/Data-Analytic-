@@ -81,6 +81,32 @@ class Dashboard(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class Pipeline(Base):
+    """Pipelines spec (Plan 03/07)."""
+
+    __tablename__ = "pipelines"
+
+    id = Column(String(16), primary_key=True)
+    owner = Column(String(50), nullable=False, index=True)
+    name = Column(String(128), nullable=False)
+    source = Column(String(128), nullable=False)
+    target = Column(String(128), nullable=False)
+    spec_json = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class PipelineRun(Base):
+    """Pipeline runs history (Plan 03)."""
+
+    __tablename__ = "pipeline_runs"
+
+    id = Column(String(16), primary_key=True)
+    pipeline_id = Column(String(16), ForeignKey("pipelines.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(16), nullable=False, default="queued")
+    result_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 def init_db():
     """Create all tables and optionally seed demo users."""
     Base.metadata.create_all(bind=engine)
