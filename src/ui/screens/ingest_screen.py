@@ -27,37 +27,50 @@ def render_ingest_screen(*args, **kwargs):
                 st.text(generate_data_summary(df))
 
             if st.button("Confirm Ingest → DuckDB raw", key="ingest_confirm", type="primary"):
-                try:
-                    from src.warehouse.ingest import ingest_file
-                    from src.warehouse.registry import register_dataset
-                    import json
-
-                    # Use current user from session or demo
-                    user = st.session_state.get("username", "demo")
-                    result = ingest_file(user, uploaded)
-                    # Register (if ingest_file already does, skip)
-                    # For now, result already registered via API path, but direct warehouse path:
-                    # Ensure registry
+                # P0 fix: frontend → API (not direct DB) when backend available
+                token = st.session_state.get("access_token")
+                if token:
                     try:
-                        ds = register_dataset(
-                            user,
-                            uploaded.name,
-                            result["table"],
-                            file_path=uploaded.name,
-                            profile_json=(
-                                json.dumps(result["profile"], ensure_ascii=False)
-                                if isinstance(result["profile"], dict)
-                                else result["profile"]
-                            ),
+                        import requests
+
+                        files = {"file": (uploaded.name, uploaded.getvalue(), "multipart/form-data")}
+                        r = requests.post(
+                            "http://localhost:8000/datasets/ingest",
+                            files=files,
+                            headers={"Authorization": f"Bearer {token}"},
+                            timeout=30,
                         )
-                        st.success(
-                            f"Ingested {uploaded.name} → {result['table']} ({result['rows']} rows). Profile lưu registry id={ds.id}"
-                        )
-                    except Exception as reg_e:
-                        st.success(f"Ingested {result['table']} ({result['rows']} rows) — {reg_e}")
-                    st.json({"table": result["table"], "quality": result.get("quality")})
-                except Exception as e:
-                    st.error(f"Ingest failed: {e}")
+                        if r.ok:
+                            st.success(f"Ingested via API: {r.json()}")
+                            st.json(r.json())
+                        else:
+                            st.warning(f"API ingest failed {r.status_code}: {r.text[:200]} — fallback direct")
+                            raise RuntimeError(r.text)
+                    except Exception as api_e:
+                        st.caption(f"Fallback direct (API {api_e})")
+                        # Fallback direct (dev without backend)
+                        try:
+                            from src.warehouse.ingest import ingest_file
+                            import json
+
+                            user = st.session_state.get("username", "demo")
+                            result = ingest_file(user, uploaded)
+                            st.success(f"Ingested (fallback) {result['table']} ({result['rows']} rows)")
+                            st.json({"table": result["table"], "quality": result.get("quality")})
+                        except Exception as e:
+                            st.error(f"Ingest failed: {e}")
+                else:
+                    # No token — direct (dev)
+                    try:
+                        from src.warehouse.ingest import ingest_file
+                        import json
+
+                        user = st.session_state.get("username", "demo")
+                        result = ingest_file(user, uploaded)
+                        st.success(f"Ingested (dev direct) {result['table']} ({result['rows']} rows)")
+                        st.json({"table": result["table"], "quality": result.get("quality")})
+                    except Exception as e:
+                        st.error(f"Ingest failed: {e} — hãy đăng nhập để dùng API")
         else:
             st.error("Không đọc được file hoặc file rỗng")
     else:
