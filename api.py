@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import jwt
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -375,7 +375,7 @@ async def delete_dataset_endpoint(
     return {"message": f"Dataset {dataset_name} deleted"}
 
 
-# ── Plan 07: Datasets ingest/profile ──
+# ── Plan 07: Datasets ingest/profile (P1 Step 6) ──
 class IngestRequest(BaseModel):
     dataset_name: str
     rows: int = 0
@@ -384,22 +384,69 @@ class IngestRequest(BaseModel):
 
 
 @app.post("/datasets/ingest", dependencies=[Depends(check_rate_limit)])
-async def ingest_dataset(request: IngestRequest, username: str = Depends(get_current_user)):
-    """Ingest dataset -> raw + profile (Plan 07, P1)."""
+async def ingest_dataset(
+    request: Request,
+    file: Optional[UploadFile] = File(None),
+    username: str = Depends(get_current_user),
+):
+    """Ingest dataset -> raw + profile (supports JSON or file upload, Plan 07 P1)."""
     from src.core.database import SessionLocal, Dataset
     import json
 
-    ds = db_get_dataset(username, request.dataset_name)
+    # File upload path (multipart) — used by ingest_screen
+    if file is not None and getattr(file, "filename", None):
+        # Handle file upload via warehouse ingest
+        try:
+            from src.warehouse.ingest import ingest_file
+
+            # Pass file-like; warehouse ingest handles CSV/Excel
+            result = ingest_file(username, file)
+            # Register in registry
+            from src.warehouse.registry import register_dataset
+            import json as _json
+
+            ds = register_dataset(
+                username,
+                file.filename,
+                result["table"],
+                file_path=file.filename,
+                profile_json=(
+                    _json.dumps(result["profile"], ensure_ascii=False)
+                    if isinstance(result["profile"], str)
+                    else _json.dumps({"profile": result["profile"]}, ensure_ascii=False)
+                ),
+            )
+            # Update rows/cols
+            with SessionLocal() as s:
+                obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
+                obj.rows = result["rows"]
+                obj.cols = result["cols"]
+                s.commit()
+            return {
+                "message": f"Ingested {file.filename} -> {result['table']}",
+                "dataset_id": ds.id,
+                "profile": result["profile"],
+                "quality": result.get("quality"),
+            }
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Ingest failed: {e}")
+
+    # JSON path (for tests / programmatic)
+    try:
+        body = await request.json()
+        req = IngestRequest(**body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ingest request: need JSON {dataset_name} or file upload")
+    ds = db_get_dataset(username, req.dataset_name)
     if ds:
         raise HTTPException(status_code=400, detail="Dataset already exists")
-    ds = db_create_dataset(username, request.dataset_name, request.rows, request.cols)
-    # Store profile_json if provided
-    if request.profile:
+    ds = db_create_dataset(username, req.dataset_name, req.rows, req.cols)
+    if req.profile:
         with SessionLocal() as s:
             obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
-            obj.profile_json = json.dumps(request.profile, ensure_ascii=False)
+            obj.profile_json = json.dumps(req.profile, ensure_ascii=False)
             s.commit()
-    return {"message": f"Ingested {ds.dataset_name}", "dataset_id": ds.id, "profile": request.profile}
+    return {"message": f"Ingested {ds.dataset_name}", "dataset_id": ds.id, "profile": req.profile}
 
 
 @app.get("/datasets/{dataset_id}/profile", dependencies=[Depends(check_rate_limit)])
