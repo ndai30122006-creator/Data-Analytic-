@@ -57,12 +57,13 @@ render_theme, _ = _safe_import("src.ui.theme", "render_theme")
 render_sidebar, _ = _safe_import("src.ui.sidebar", "render_sidebar")
 render_landing_page, _ = _safe_import("src.ui.tabs.landing", "render_landing_page")
 
-# ── New 5 screens (P0 Reposition) ──
+# ── New 5 screens (P0 Reposition) + Settings BYOK ──
 render_ingest_screen, _ = _safe_import("src.ui.screens.ingest_screen", "render_ingest_screen")
 render_pipeline_screen, _ = _safe_import("src.ui.screens.pipeline_screen", "render_pipeline_screen")
 render_brief_screen, _ = _safe_import("src.ui.screens.brief_screen", "render_brief_screen")
 render_dashboard_screen, _ = _safe_import("src.ui.screens.dashboard_screen", "render_dashboard_screen")
 render_lab_screen, _ = _safe_import("src.ui.screens.lab_screen", "render_lab_screen")
+render_settings_screen, _ = _safe_import("src.ui.screens.settings_screen", "render_settings_screen")
 
 # Legacy tabs kept for backward compat (Lab merges them)
 render_overview_tab, _ = _safe_import("src.ui.tabs.overview", "render_overview_tab")
@@ -200,8 +201,8 @@ def main() -> None:
         dat = raw.select_dtypes(include=["datetime"]).columns.tolist()
         df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 
-        # ── Header — same but with 5 screens badge ──
-        SCREENS = ["📥 Ingest", "⚙️ Pipeline", "📋 Brief", "📊 Dashboard", "🧪 Lab"]
+        # ── Header — 5 main + Settings ──
+        SCREENS = ["📥 Ingest", "⚙️ Pipeline", "📋 Brief", "📊 Dashboard", "🧪 Lab", "⚙️ Settings"]
         st.markdown(
             f"""
         <div style="
@@ -233,13 +234,14 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-        # ── 5 screens dispatch (P0) ──
+        # ── 5+1 screens dispatch (P0) ──
         SCREEN_RENDERERS = {
             "📥 Ingest": lambda: render_ingest_screen(df, num, cat),
             "⚙️ Pipeline": lambda: render_pipeline_screen(df, num, cat),
             "📋 Brief": lambda: render_brief_screen(df, num, cat),
             "📊 Dashboard": lambda: render_dashboard_screen(df, num, cat),
             "🧪 Lab": lambda: render_lab_screen(df, num, cat, dat),
+            "⚙️ Settings": lambda: render_settings_screen(df, num, cat),
         }
 
         main_tabs = st.tabs(SCREENS)
