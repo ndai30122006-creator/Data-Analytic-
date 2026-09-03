@@ -69,6 +69,18 @@ class Brief(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class Dashboard(Base):
+    """Dashboards spec JSON (Plan 05)."""
+
+    __tablename__ = "dashboards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(128), nullable=False)
+    spec_json = Column(Text, nullable=False)
+    owner = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 def init_db():
     """Create all tables and optionally seed demo users."""
     Base.metadata.create_all(bind=engine)
