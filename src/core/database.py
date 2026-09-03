@@ -107,6 +107,19 @@ class PipelineRun(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class PipelineStep(Base):
+    """Pipeline steps log (Plan 03)."""
+
+    __tablename__ = "pipeline_steps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_id = Column(String(16), ForeignKey("pipeline_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    step_id = Column(String(32), nullable=False)
+    status = Column(String(16), nullable=False)
+    log = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 def init_db():
     """Create all tables and optionally seed demo users."""
     Base.metadata.create_all(bind=engine)
