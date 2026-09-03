@@ -26,6 +26,10 @@ def get_jwt_secret_key() -> str:
     if env_key:
         return env_key
 
+    # Production must have explicit key
+    if os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod"):
+        raise RuntimeError("JWT_SECRET_KEY must be set in production (ENVIRONMENT=production)")
+
     # Development fallback: persist key to file so restarts don't invalidate tokens
     secret_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".jwt_secret")
     try:
@@ -37,9 +41,14 @@ def get_jwt_secret_key() -> str:
         key = generate_secret_key()
         with open(secret_file, "w") as f:
             f.write(key)
+        # Set restrictive permissions 0600
+        try:
+            os.chmod(secret_file, 0o600)
+        except Exception:
+            pass
         logger.warning(
             "JWT_SECRET_KEY not set in environment. "
-            "Generated development key saved to %s. "
+            "Generated development key saved to %s (0600). "
             "For production, set JWT_SECRET_KEY environment variable.",
             secret_file,
         )
