@@ -6,9 +6,9 @@
 > chia **2 client riêng biệt**: web/desktop (Desktop web) + mobile (điện thoại).
 >
 > **✅ Đã chốt:**
-> - Giữ nguyên **1 repo duy nhất** (monorepo, cấu trúc `ui/`).
-> - Xây **kiến trúc modular frontend trước** — tách feature thành module độc lập,
->   dùng chung core, trước khi làm chi tiết từng screen.
+> - Giữ nguyên **1 repo duy nhất** (monorepo, cấu trúc `frontend/`).
+> - Xây **kiến trúc modular frontend trước** — tách feature thành module độc lập
+>   dùng chung trong `shared/`, web & mobile chỉ là 2 UI riêng lắp ghép.
 
 ---
 
@@ -84,10 +84,13 @@ Mà là **UI web tối ưu cho điện thoại** (responsive/PWA), nằm folder 
 bottom-nav, card xếp dọc, layout đọc-là-chính (Brief/Dashboard/Lineage dễ xem trước),
 nhưng **cùng logic** trong `shared/`.
 
-### 2.4 Data-visualization (chart)
+### 2.4 Data-visualization (chart) — ✅ Đã chốt: ECharts cho dashboard + ag-grid (tuỳ)
 - Streamlit hiện dùng **Plotly** (backend render JSON figure).
-- UI Node không kéo Plotly JS → chọn: **ECharts** (mạnh, tree-shake), **Recharts** (React-native),
-  cho dashboard; **ag-grid** cho bảng lớn.
+- UI Node **không kéo Plotly JS**.
+- **Quyết định:**
+  - Dashboard chart → **Apache ECharts** (mạnh, tree-shake, rich interactions) — dùng cho cả web & mobile.
+  - Bảng dữ liệu lớn → **ag-Grid** (cộng đồng, free) cho web/desktop.
+  - Mobile chart → cũng dùng ECharts (responsive) hoặc bản đơn giản CSS-based cho KPI nhỏ.
 - Backend trả **data aggregated** (JSON) từ `/dashboards/{id}/data` → frontend vẽ, tương tự renderer hiện tại.
 
 ---
@@ -227,14 +230,20 @@ frontend/
 
 ---
 
-## 7. Câu hỏi chốt cần trả lời trước khi chi tiết hoá
+## 7. Quyết định đã chốt (câu hỏi trước khi chi tiết hoá)
 
 - [x] **Monorepo** hay tách repo? → **Giữ 1 repo** (monorepo `frontend/` trong repo này) ✅
 - [x] **Kiến trúc modular frontend?** → **Đã chốt hướng: modular trước** (feature-first, xem §2.5) ✅
 - [x] **Web framework** → **React + Vite** (xem §2.2) ✅
 - [x] **Mobile** → **Không app**, là **web UI trên điện thoại** (folder `mobile/`, xem §2.3) ✅
-- [ ] **Package manager**: npm / pnpm / yarn workspaces?
-- [ ] **Data viz**: ECharts / Recharts / khác?
-- [ ] **Database mới**: có cần migration backend, hay backend đã đủ?
-- [ ] **Thứ tự feature**: bắt đầu bằng screen nào để "dùng được" sớm nhất?
-- [ ] **Giữ Streamlit song song** bao lâu trước khi xoá?
+- [x] **Data viz** → **Apache ECharts** (dashboard) + **ag-Grid** (bảng lớn, web). Xem §2.4 ✅
+- [x] **Package manager** → **pnpm workspaces** (đã cài pnpm 11. sẵn). Xem `plan.md` ✅
+- [x] **Database/backend** → **không thay đổi backend cho giai đoạn building UI**;
+      backend `api.py` đã đủ endpoint. Chỉ cần CORS config khi deploy. ✅
+- [x] **Thứ tự feature web** → làm **Ingest trước** (để có data từ đầu), rồi Brief/Lineage,
+      Dashboard, Pipeline, Lab. Xem `plan.md` GĐ3. ✅
+- [x] **Giữ Streamlit song song?** → **giữ trong suốt giai đoạn build Node** (fallback),
+      loại bỏ sau khi web hoàn tất GĐ3 & mobile GĐ4 chạy ổn. ✅
+
+> Tất cả quyết định đã chốt → build theo `plan.md` (kế hoạch triển khai) +
+> `tasks.md` (task breakdown chi tiết).

@@ -21,9 +21,11 @@
 
 → Có thể dùng **pnpm workspaces** (khuyến nghị, nhanh + tiết kiệm disk) hoặc npm workspaces.
 
-## 📌 Chuẩn bị docs (commit nhỏ này)
-- [x] `brainstorm.md` — quyết định: monorepo `frontend/`, 2 UI riêng, shared logic, React+Vite, mobile=web.
-- [~] `plan.md` (file này) — build plan chi tiết.
+## 📌 Chuẩn bị docs (hoàn tất)
+- [x] `brainstorm.md` — quyết định: monorepo `frontend/`, 2 UI riêng, shared logic, React+Vite, mobile=web, ECharts, pnpm.
+- [x] `plan.md` (file này) — build plan chi tiết (20 commit theo 6 giai đoạn).
+- [x] `tasks.md` — task breakdown cụ thể: contract API, TS types, routing, acceptance, rủi ro.
+- [x] `README.md` — index tài liệu, hướng dẫn bắt đầu.
 
 ---
 
