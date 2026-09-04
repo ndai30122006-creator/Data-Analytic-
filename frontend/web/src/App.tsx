@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DesktopShell from "./layout/DesktopShell";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
+import Ingest from "./pages/Ingest";
 
 export default function App() {
   return (
@@ -10,7 +11,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route element={<DesktopShell />}>
           <Route path="/" element={<Navigate to="/ingest" replace />} />
-          <Route path="/ingest" element={<div>Ingest — web</div>} />
+          <Route path="/ingest" element={<Ingest />} />
           <Route path="/pipeline" element={<div>Pipeline — web</div>} />
           <Route path="/brief" element={<div>Brief — web</div>} />
           <Route path="/dashboard" element={<div>Dashboard — web</div>} />
