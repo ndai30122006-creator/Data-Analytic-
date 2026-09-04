@@ -99,6 +99,11 @@ docker compose --profile production up --build -d  # + nginx 80/443
 6. **Settings:** `⚙️ Settings` → Chọn provider + key → Save (session + DB encrypt) → Test Connection `GET /health`
 7. **Lineage:** `🔗 Lineage` → Chọn dataset → xem `table/briefs/dashboards` count
 
+**Frontend 2 bản (GĐ3/GĐ4):**
+- `frontend/web` — React+Vite desktop (sidebar 220px, 7 routes, ECharts, proxy `/api` → 8000) — `pnpm --filter @app/web dev` (5173)
+- `frontend/mobile` — React+Vite mobile web (BottomNav 44px touch, 6 routes read-first) — `pnpm --filter @app/mobile dev` (5174)
+- `frontend/shared` — logic dùng chung `@app/shared` (`api` + `features` + `hooks`), `vitest` test `client.ts`
+
 ## 🏗️ Cấu trúc dự án (mới)
 
 ```
