@@ -65,12 +65,21 @@ pip install -r requirements/base.txt -r requirements/dev.txt
 
 ### 4. Chạy dev (2 terminal)
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — Backend (dùng chung cho cả Streamlit & UI mới)
 .\.venv\Scripts\python.exe -m uvicorn api:app --host 0.0.0.0 --port 8000 --reload
-# Terminal 2 — Frontend
+# Terminal 2 — Frontend (chọn 1 trong 2)
+
+# (a) UI mới — React + Vite (web desktop, khuyến nghị)
+cd frontend && pnpm install && pnpm dev:web        # → http://localhost:5173
+#    Mobile UI: pnpm dev:mobile                    # → http://localhost:5174
+
+# (b) Streamlit (bản cũ, vẫn giữ song song)
 .\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8501
 ```
-Mở `http://localhost:8501` (frontend) + `http://localhost:8000/docs` (API)
+Mở `http://localhost:5173` (UI mới) hoặc `http://localhost:8501` (Streamlit) + `http://localhost:8000/docs` (API)
+
+> 📘 **Hướng dẫn đầy đủ chạy local dev UI mới** (cài Node/pnpm, tạo tài khoản đăng nhập, troubleshooting):
+> xem [`docs/plan/ui/local-dev.md`](docs/plan/ui/local-dev.md).
 
 ### Đăng nhập (demo)
 > Chỉ dev. Production `DEMO_MODE=false` + `JWT_SECRET_KEY` mạnh.
