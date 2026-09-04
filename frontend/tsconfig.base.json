@@ -7,6 +7,9 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "paths": { "@app/shared": ["./shared/src"] }
+    "paths": {
+      "@app/shared": ["./shared/src"],
+      "@app/shared/*": ["./shared/src/*"]
+    }
   }
 }

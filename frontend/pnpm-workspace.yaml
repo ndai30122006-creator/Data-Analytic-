@@ -2,3 +2,5 @@ packages:
   - 'shared'
   - 'web'
   - 'mobile'
+allowBuilds:
+  esbuild: true
