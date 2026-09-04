@@ -67,32 +67,32 @@ PARAM_GRIDS = {
 # Pro Max Data-Dense: Fira Sans + blue/amber palette — 4.5:1 contrast
 FONT_FAMILY = "'Fira Sans', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif"
 
-# Light-mode chart theme — Pro Max blue data (#1E40AF) + amber (#D97706) highlights
+# Light-mode chart theme — Mono (đen/xám)
 CHART_THEME_LIGHT: Dict[str, Any] = dict(
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    font=dict(family=FONT_FAMILY, size=12, color="#475569"),
-    title=dict(font=dict(size=15, color="#1E3A8A"), x=0.5, xanchor="center"),
-    xaxis=dict(gridcolor="rgba(30,64,175,0.08)", zerolinecolor="rgba(30,64,175,0.12)"),
-    yaxis=dict(gridcolor="rgba(30,64,175,0.08)", zerolinecolor="rgba(30,64,175,0.12)"),
-    hoverlabel=dict(bgcolor="#FFFFFF", font_size=11, font_family="Fira Sans"),
+    font=dict(family=FONT_FAMILY, size=12, color="#4B5563"),
+    title=dict(font=dict(size=15, color="#111827"), x=0.5, xanchor="center"),
+    xaxis=dict(gridcolor="rgba(17,24,39,0.08)", zerolinecolor="rgba(17,24,39,0.12)"),
+    yaxis=dict(gridcolor="rgba(17,24,39,0.08)", zerolinecolor="rgba(17,24,39,0.12)"),
+    hoverlabel=dict(bgcolor="#FFFFFF", font_size=11, font_family="Nunito"),
     margin=dict(l=40, r=20, t=40, b=40),
     legend=dict(font=dict(size=11), bgcolor="rgba(0,0,0,0)"),
-    colorway=["#1E40AF", "#3B82F6", "#D97706", "#059669", "#0284C7", "#DC2626", "#7C3AED"],
+    colorway=["#111827", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#374151", "#1F2937"],
 )
 
-# Dark-mode chart theme — Pro Max dark (light blue / amber)
+# Dark-mode chart theme — Mono (trắng/xám)
 CHART_THEME_DARK: Dict[str, Any] = dict(
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    font=dict(family=FONT_FAMILY, size=12, color="#CBD5E1"),
-    title=dict(font=dict(size=15, color="#F1F5F9"), x=0.5, xanchor="center"),
-    xaxis=dict(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)"),
-    yaxis=dict(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)"),
-    hoverlabel=dict(bgcolor="#111D33", font_size=11, font_family="Fira Sans"),
+    font=dict(family=FONT_FAMILY, size=12, color="#D1D5DB"),
+    title=dict(font=dict(size=15, color="#F9FAFB"), x=0.5, xanchor="center"),
+    xaxis=dict(gridcolor="rgba(255,255,255,0.08)", zerolinecolor="rgba(255,255,255,0.12)"),
+    yaxis=dict(gridcolor="rgba(255,255,255,0.08)", zerolinecolor="rgba(255,255,255,0.12)"),
+    hoverlabel=dict(bgcolor="#0A0A1A", font_size=11, font_family="Nunito"),
     margin=dict(l=40, r=20, t=40, b=40),
     legend=dict(font=dict(size=11), bgcolor="rgba(0,0,0,0)"),
-    colorway=["#60A5FA", "#38BDF8", "#FBBF24", "#34D399", "#22D3EE", "#F87171", "#A78BFA"],
+    colorway=["#FFFFFF", "#D1D5DB", "#9CA3AF", "#6B7280", "#4B5563", "#E5E7EB", "#F3F4F6"],
 )
 
 # Back-compat alias (dark theme was the only theme before mode-aware charts).
@@ -120,16 +120,16 @@ def get_chart_theme(mode: str | None = None) -> Dict[str, Any]:
     return CHART_THEME_DARK if str(mode).lower() == "dark" else CHART_THEME_LIGHT
 
 
-# ── Shared Chart Colors (Pro Max: blue data + amber) ───────
+# ── Shared Chart Colors (Mono) ───────
 CHART_COLORS: Dict[str, str] = {
-    "primary": "#8B5CF6",
-    "primary_alt": "#A78BFA",
-    "secondary": "#EC4899",
-    "accent": "#06B6D4",
-    "success": "#10B981",
-    "warning": "#F59E0B",
-    "danger": "#EF4444",
-    "info": "#06B6D4",
+    "primary": "#111827",
+    "primary_alt": "#4B5563",
+    "secondary": "#6B7280",
+    "accent": "#9CA3AF",
+    "success": "#374151",
+    "warning": "#6B7280",
+    "danger": "#1F2937",
+    "info": "#4B5563",
 }
 
 # ── UI Constants ────────────────────────────────────────────
