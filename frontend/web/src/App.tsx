@@ -3,6 +3,11 @@ import DesktopShell from "./layout/DesktopShell";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import Ingest from "./pages/Ingest";
+import Pipeline from "./pages/Pipeline";
+import Brief from "./pages/Brief";
+import Dashboard from "./pages/Dashboard";
+import Lab from "./pages/Lab";
+import Lineage from "./pages/Lineage";
 
 export default function App() {
   return (
@@ -12,12 +17,12 @@ export default function App() {
         <Route element={<DesktopShell />}>
           <Route path="/" element={<Navigate to="/ingest" replace />} />
           <Route path="/ingest" element={<Ingest />} />
-          <Route path="/pipeline" element={<div>Pipeline — web</div>} />
-          <Route path="/brief" element={<div>Brief — web</div>} />
-          <Route path="/dashboard" element={<div>Dashboard — web</div>} />
-          <Route path="/lab" element={<div>Lab — web</div>} />
+          <Route path="/pipeline" element={<Pipeline />} />
+          <Route path="/brief" element={<Brief />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/lab" element={<Lab />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/lineage" element={<div>Lineage — web</div>} />
+          <Route path="/lineage" element={<Lineage />} />
         </Route>
         <Route path="*" element={<div>Not Found</div>} />
       </Routes>
