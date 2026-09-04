@@ -8,6 +8,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      // Match subpath imports "@app/shared/src/..." FIRST (longest prefix),
+      // otherwise "@app/shared" -> shared/src would double the "src" segment.
+      "@app/shared/src": sharedSrc,
       "@app/shared": sharedSrc,
     },
   },
