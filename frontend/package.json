@@ -1,0 +1,13 @@
+{
+  "name": "app-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @app/web dev",
+    "dev:mobile": "pnpm --filter @app/mobile dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "workspaces": ["shared", "web", "mobile"]
+}
