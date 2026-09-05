@@ -1,4 +1,8 @@
-# Task Progress - Cải thiện Data Analyst Pro ✅
+# Task Progress — workbench-ai (09/2026) ✅
+
+> **Lưu ý 09/2026:** Dự án đã rename `Data-Analytic-` → `workbench-ai` (`532b8f6`), bỏ Streamlit (`87337f5`), chuyển sang **AI Data Engineering Workbench** local-first (DuckDB + BYOK). File này lưu lịch sử P1-P7 cũ; tiến độ mới xem `docs/plan/06-roadmap.md` + `docs/plan/ui/plan.md`.
+
+# Task Progress - Cải thiện Data Analyst Pro (lịch sử) ✅
 
 ## Priority 1: Cấu trúc & Bảo mật ✅
 - [x] 1.1 Di chuyển root modules vào src/ (statistics_tab.py, overview_tab.py, analytics_tab.py, ai_insights.py, landing.py, sidebar.py, learning_analytics.py, helpers.py, components.py, utils.py, report_utils.py, theme_config.py, config.py)
@@ -71,3 +75,42 @@
 
 ### 8. Legacy Migration (In Progress) ⏳
 - [ ] Hoàn tất migration root files → src/ (cần thêm thời gian để đảm bảo backward compatibility)
+
+---
+
+## 🆕 Workbench AI — 05-09/09/2026 (P0-P5 + P1.1.x)
+
+### P0 Reposition ✅ `3dfde5c`
+- [x] 7 screens `Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage` + BYOK `POST /auth/api-key`
+
+### P1 Warehouse ✅ `78888af`
+- [x] DuckDB `raw.mart` + ingest CSV/Excel + profile + `003_warehouse.py`
+
+### P2 Brief ✅ `a5011a3`
+- [x] `src/prompts/briefer.py` fallback `core/insights` + `004_briefs.py` versioned
+
+### P3 ETL/ELT ✅ `0c92ef1`
+- [x] `PipelineSpec` DAG + `executor` + 7 ops + `sql {{prev}}` + `warehouse_write_lock` fix medium `983768a`
+
+### P4 Dashboard ✅ `d0716f1`
+- [x] `ChartSpec` 6 types + `renderer` + `005_dashboards.py` + `fallback_spec` 4 charts
+
+### P5 Polish ✅ `5874032`
+- [x] `warehouse/lineage` + demo `scripts/generate_demo_data.py` 300 SV
+
+### Frontend GĐ0-5 ✅ `44035f1..10a58d1`
+- [x] `frontend/shared` api 8 module + `web` 7 routes `5173` + `mobile` 5 routes `5174` + full pages `Pipeline/Dashboard/Ingest/Brief/Lab/Lineage` (`10a58d1`)
+
+### P1.1.1 E2E ✅ `b163421`
+- [x] `tests/test_e2e.py` full workflow register→ingest→pipeline→dashboard→lineage — 103 tests (102+1)
+
+### P1.1.2/1.3 Error Handling ✅ `f92032b`
+- [x] Frontend `ErrorBoundary` + `useErrorHandler/useApiCall` retry 1s→2s→4s + `client ApiError {code,message,detail,trace_id}`
+- [x] API `src/utils/exceptions` standardized + `GET /lineage/{id}` + `global_exception_handler` E500
+
+### Chores 09/2026 ✅
+- [x] Rename `workbench-ai` `532b8f6`, remove Streamlit `87337f5` + `src/ui` `27f5369`, nginx React `nginx.conf:24`, `pyproject.toml` workbench-ai, CI `PYTHONUTF8` `00318ae`, lifespan fix `23b43cf`, Plan A D1-D4 `246eb6c..0795436` (Inter/JetBrains Mono, Button/Card/Input/Badge, Desktop 240px, ECharts theme)
+
+### Hiện tại
+- [x] `pytest 103 passed` (7 warn scipy only), `black/isort 0`, `flake8 0`
+- [ ] Tiếp: `src/analytics` tách khỏi `streamlit`, `vitest` shared, `nginx` prod `/api` proxy verify

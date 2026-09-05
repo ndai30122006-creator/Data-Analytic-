@@ -53,7 +53,8 @@ test_output/
 .pytest_cache/
 
 # ── Archive legacy (filtered per docs/plan) ──
-archive/
+/archive/
+!docs/archive/
 data/
 *.duckdb
 data/uploads/
