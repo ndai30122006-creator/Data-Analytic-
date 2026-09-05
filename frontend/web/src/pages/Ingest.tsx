@@ -2,19 +2,24 @@ import { useEffect, useState } from "react";
 import { datasets } from "@app/shared/src/api/datasets";
 import { Button } from "@app/shared/src/components/ui/Button";
 import { Card } from "@app/shared/src/components/ui/Card";
+import { EmptyState, Skeleton, Toast } from "@app/shared/src/components/ui/Skeleton";
 
 export default function Ingest() {
   const [file, setFile] = useState<File | null>(null);
   const [msg, setMsg] = useState("");
   const [list, setList] = useState<any[]>([]);
   const [profile, setProfile] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const refresh = async () => {
+    setLoading(true);
     try {
       const res = await datasets.list();
       setList(res.datasets ?? []);
     } catch (e: any) {
       setMsg(`List error: ${e.message}`);
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => { refresh(); }, []);
@@ -47,13 +52,13 @@ export default function Ingest() {
       <Card style={{ borderStyle: "dashed" }}>
         <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <Button onClick={upload} disabled={!file} style={{ marginLeft: 12, background: file ? "var(--accent)" : "rgba(255,255,255,0.1)" }}>Upload & Ingest</Button>
-        <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>{msg}</div>
+        {msg && <div style={{ marginTop: 8 }}><Toast message={msg} type={msg.startsWith("Error") || msg.startsWith("List error") ? "error" : msg.startsWith("Ingested") ? "success" : "info"} onClose={() => setMsg("")} /></div>}
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 16 }}>
         <Card>
           <h4>Datasets ({list.length}) — preview 20 rows profile</h4>
-          {list.length === 0 ? <div style={{ opacity: 0.5, fontSize: 13, color: "var(--text-muted)" }}>Chưa có dataset</div> : list.map((d: any) => (
+          {loading ? <><Skeleton height={18} style={{ marginBottom: 8 }} /><Skeleton height={18} style={{ marginBottom: 8 }} /><Skeleton height={18} /></> : list.length === 0 ? <EmptyState title="Chưa có dataset" hint="Upload CSV/Excel ở trên để bắt đầu" /> : list.map((d: any) => (
             <div key={d.dataset_name} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
               <span>{d.dataset_name} <span style={{ opacity: 0.5 }}>{d.rows}×{d.cols}</span></span>
               <Button variant="ghost" size="sm" onClick={() => d.id && viewProfile(d.id)}>Profile</Button>
