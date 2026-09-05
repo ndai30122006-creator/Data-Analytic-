@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "learning-analytics"
+name = "workbench-ai"
 version = "3.0.0"
-description = "Learning Analytics Thống kê — Practical Statistics for Data Scientists Edition"
+description = "Workbench AI — Local-first AI Data Engineering Workbench (DuckDB + BYOK)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

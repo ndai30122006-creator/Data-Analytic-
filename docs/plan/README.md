@@ -1,7 +1,7 @@
 # 📘 AI Data Engineering Workbench — Kế hoạch Pivot
 
 Trang này là **index** cho toàn bộ kế hoạch chuyển đổi (pivot) dự án
-`Data-Analytic-` từ "Learning Analytics / Data Analyst Pro" sang một
+`workbench-ai` (trước là `Data-Analytic-`) từ "Learning Analytics / Data Analyst Pro" sang một
 **local-first AI Data Engineering Workbench**.
 
 ## 📁 Danh mục kế hoạch
