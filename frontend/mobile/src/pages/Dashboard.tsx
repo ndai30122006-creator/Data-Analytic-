@@ -4,7 +4,7 @@ import { datasets } from "@app/shared/src/api/datasets";
 import { Button } from "@app/shared/src/components/ui/Button";
 import { Card } from "@app/shared/src/components/ui/Card";
 import { Input, Textarea } from "@app/shared/src/components/ui/Input";
-import { Chart, mockOption } from "@app/shared/src/components/Chart";
+import { Chart } from "@app/shared/src/components/Chart";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);
@@ -95,7 +95,7 @@ export default function Dashboard() {
         {(["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
           <Card key={t} style={{ background: "rgba(255,255,255,0.02)", padding: 12 }}>
             <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{t}</div>
-            <Chart option={mockOption(t)} height={140} />
+            <Chart type={t} height={140} />
           </Card>
         ))}
       </div>
