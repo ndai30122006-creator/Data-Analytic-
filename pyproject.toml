@@ -9,7 +9,7 @@ description = "Workbench AI — Local-first AI Data Engineering Workbench (DuckD
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-keywords = ["analytics", "statistics", "machine-learning", "education", "streamlit"]
+keywords = ["analytics", "statistics", "machine-learning", "education", "workbench-ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Education",

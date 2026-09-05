@@ -15,8 +15,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: backend
-    image: learning-analytics-backend:latest
-    container_name: la-backend
+    image: workbench-ai-backend:latest
+    container_name: wb-backend
     ports:
       - "8000:8000"
     env_file:
@@ -38,38 +38,27 @@ services:
     networks:
       - app-network
 
-  # ── Streamlit Frontend ──
+  # ── Web Frontend (Nginx serving web+mobile) ──
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
       target: frontend
-    image: learning-analytics-frontend:latest
-    container_name: la-frontend
+    image: workbench-ai-frontend:latest
+    container_name: wb-frontend
     ports:
-      - "8501:8501"
-    env_file:
-      - path: .env
-        required: false
-    environment:
-      ENVIRONMENT: production
+      - "80:80"
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8501/_stcore/health"]
-      interval: 30s
-      timeout: 5s
-      start_period: 15s
-      retries: 3
     networks:
       - app-network
 
   # ── Nginx Reverse Proxy (chỉ chạy với profile production) ──
   nginx:
     image: nginx:alpine
-    container_name: la-nginx
+    container_name: wb-nginx
     profiles: ["production"]
     ports:
       - "80:80"

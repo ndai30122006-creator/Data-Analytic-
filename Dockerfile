@@ -54,21 +54,19 @@ EXPOSE 8000
 
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# ── Stage 2: frontend (Streamlit, port 8501) ───────────────────────
-FROM base AS frontend
+# ── Stage 2: web frontend (Node.js, Vite) ──────────────────────────
+# Build React web+mobile via Node, serve via nginx (production)
+FROM node:20-alpine AS web-build
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/pnpm-workspace.yaml frontend/pnpm-lock.yaml ./
+COPY frontend/shared ./shared
+COPY frontend/web ./web
+COPY frontend/mobile ./mobile
+RUN corepack enable && pnpm install --frozen-lockfile && pnpm -r build
 
-# Copy toàn bộ mã nguồn (tôn trọng .dockerignore)
-COPY . /app
-
-# Streamlit health endpoint chuẩn: /_stcore/health
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -fsS http://localhost:8501/_stcore/health || exit 1
-
-EXPOSE 8501
-
-CMD ["streamlit", "run", "app.py", \
-     "--server.port=8501", \
-     "--server.address=0.0.0.0", \
-     "--server.headless=true", \
-     "--server.fileWatcherType=none", \
-     "--browser.gatherUsageStats=false"]
+FROM nginx:alpine AS frontend
+COPY --from=web-build /app/frontend/web/dist /usr/share/nginx/html/web
+COPY --from=web-build /app/frontend/mobile/dist /usr/share/nginx/html/mobile
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

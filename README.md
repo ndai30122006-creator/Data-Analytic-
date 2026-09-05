@@ -3,8 +3,8 @@
 **Workbench AI cho Data Engineering** — `Ingest → Pipeline (ETL/ELT) → Brief → Dashboard`, local-first với **DuckDB** + **BYOK** (Bring Your Own Key). Giữ **Statistics Lab** từ “Learning Analytics”.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.29%2B-red)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-green)
+![React](https://img.shields.io/badge/React-Vite-61DAFB)
 ![DuckDB](https://img.shields.io/badge/DuckDB-1.5%2B-yellow)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -60,23 +60,18 @@ python -m venv .venv
 ### 3. Deps
 ```bash
 pip install -r requirements/base.txt -r requirements/dev.txt
-# base đã có duckdb>=0.10.0, pyyaml>=6.0, streamlit, fastapi, sqlalchemy, langchain
+# base đã có duckdb>=0.10.0, pyyaml>=6.0, fastapi, sqlalchemy, langchain
 ```
 
 ### 4. Chạy dev (2 terminal)
 ```bash
-# Terminal 1 — Backend (dùng chung cho cả Streamlit & UI mới)
+# Terminal 1 — Backend
 .\.venv\Scripts\python.exe -m uvicorn api:app --host 0.0.0.0 --port 8000 --reload
-# Terminal 2 — Frontend (chọn 1 trong 2)
-
-# (a) UI mới — React + Vite (web desktop, khuyến nghị)
+# Terminal 2 — Frontend
 cd frontend && pnpm install && pnpm dev:web        # → http://localhost:5173
 #    Mobile UI: pnpm dev:mobile                    # → http://localhost:5174
-
-# (b) Streamlit (bản cũ, vẫn giữ song song)
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8501
 ```
-Mở `http://localhost:5173` (UI mới) hoặc `http://localhost:8501` (Streamlit) + `http://localhost:8000/docs` (API)
+Mở `http://localhost:5173` (web) / `http://localhost:5174` (mobile) + `http://localhost:8000/docs` (API)
 
 > 📘 **Hướng dẫn đầy đủ chạy local dev UI mới** (cài Node/pnpm, tạo tài khoản đăng nhập, troubleshooting):
 > xem [`docs/plan/ui/local-dev.md`](docs/plan/ui/local-dev.md).
@@ -93,7 +88,7 @@ DEMO_USER_USERNAME=user DEMO_USER_PASSWORD=user123
 ```bash
 copy .env.example .env
 # JWT_SECRET_KEY=python -c "import secrets; print(secrets.token_hex(32))"
-docker compose up --build          # dev (8501+8000)
+docker compose up --build          # dev (web+api)
 docker compose --profile production up --build -d  # + nginx 80/443
 ```
 `data/warehouse.duckdb` + `users.db` trong volume `app_data:/app/data` → `docker compose down -v` mới mất.
@@ -117,7 +112,6 @@ docker compose --profile production up --build -d  # + nginx 80/443
 
 ```
 project1/
-├── app.py                 # Streamlit — 7 screens (Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage)
 ├── api.py                 # FastAPI — execution layer + BYOK + rate-limit
 ├── src/
 │   ├── warehouse/         # DuckDB local-first (connection, ingest, registry, lineage)
@@ -133,7 +127,7 @@ project1/
 ├── migrations/            # 007_* (users→datasets→warehouse→briefs→dashboards→pipelines)
 ├── data/                  # warehouse.duckdb (gitignored) + demo_sinhvien.csv
 ├── docs/plan/             # pivot plan P0-P5 + implement_plan.md
-└── requirements/base.txt  # duckdb, pyyaml, streamlit, fastapi, langchain
+└── requirements/base.txt  # duckdb, pyyaml, fastapi, langchain
 ```
 
 ## 🔌 API Endpoints (Plan 07)
@@ -166,7 +160,7 @@ MIT
 
 ## 🙏 Credits
 
-Built with Streamlit, FastAPI, **DuckDB**, Plotly, scikit-learn, scipy, statsmodels, pandas, Docker.
+Built with FastAPI, **DuckDB**, React+Vite, ECharts, scikit-learn, scipy, statsmodels, pandas, Docker.
 
 ---
 **🧠 AI Data Engineering Workbench** — local-first · DuckDB + BYOK · P0-P5 Done (docs/plan)
