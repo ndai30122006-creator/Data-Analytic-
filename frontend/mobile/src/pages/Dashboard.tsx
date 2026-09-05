@@ -4,7 +4,7 @@ import { datasets } from "@app/shared/src/api/datasets";
 import { Button } from "@app/shared/src/components/ui/Button";
 import { Card } from "@app/shared/src/components/ui/Card";
 import { Input, Textarea } from "@app/shared/src/components/ui/Input";
-import { echartsDarkTheme } from "@app/shared/src/utils/chartTheme";
+import { Chart, mockOption } from "@app/shared/src/components/Chart";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);
@@ -91,11 +91,11 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12 }}>
         {(["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
-          <Card key={t} style={{ background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>{t} <span style={{ color: echartsDarkTheme.color[0], fontSize: 10 }}>● accent</span></div>
-            <div style={{ marginTop: 8, height: 60, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.2)", borderRadius: "var(--radius-input)", fontSize: 11, color: "var(--text-muted)", border: "1px solid var(--border)" }}>ECharts {t} — dark theme</div>
+          <Card key={t} style={{ background: "rgba(255,255,255,0.02)", padding: 12 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{t}</div>
+            <Chart option={mockOption(t)} height={140} />
           </Card>
         ))}
       </div>
