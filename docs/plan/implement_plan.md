@@ -1,5 +1,7 @@
 # 🛠 IMPLEMENTATION PLAN — Hướng dẫn triển khai
 
+> **Lưu ý 09/2026:** P0-P5 ban đầu cho Streamlit (`app.py` + `src/ui/screens`), đã hoàn tất và **đã thay bằng React** `frontend/web+mobile` (`87337f5` xóa Streamlit). Các bước dưới giữ lại để tham khảo lịch sử; dev mới xem `docs/plan/ui/plan.md` (React 20 commits) + `docs/plan/ui/local-dev.md`.
+>
 > Đây là bản **cầm tay chỉ việc** (implementation guide) để thực thi các kế
 > hoạch trong `docs/plan/`. Đọc theo thứ tự: bắt đầu từ đây, tham chiếu các
 > file `0X-*.md` khi cần chi tiết lý thuyết.
@@ -34,9 +36,9 @@
 - **Chạy dev:**
   ```bash
   uvicorn api:app --reload --port 8000   # backend
-  streamlit run app.py                   # frontend (terminal 2)
+  cd frontend && pnpm install && pnpm dev:web   # frontend React 5173 (mobile: pnpm dev:mobile 5174)
   ```
-- **Kiểm tra:** `pytest -q` · **lint:** `flake8` · **format:** `black .`
+- **Kiểm tra:** `pytest -q` · **lint:** `flake8` · **format:** `black .` (đã bỏ Streamlit `app.py` `87337f5`)
 
 ---
 

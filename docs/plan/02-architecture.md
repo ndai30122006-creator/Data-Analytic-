@@ -3,12 +3,13 @@
 ## 🏗 Sơ đồ kiến trúc
 
 ```
-┌─────────────────────── Streamlit UI ───────────────────────┐
-│  📥 Ingest   ⚙️ Pipeline   📋 Brief   📊 Dashboard   🧪 Lab │
-└────────────────────────┬───────────────────────────────────┘
-                         │ HTTP (JSON)
+┌──────────────── React UI (web 5173 + mobile 5174) ─────────────────┐
+│  📥 Ingest   ⚙️ Pipeline   📋 Brief   📊 Dashboard   🧪 Lab          │
+│  (frontend/web + mobile via shared/api)                             │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │ HTTP (JSON) JWT + BYOK
                          ▼
-┌──────────────────────── FastAPI (execution layer) ─────────┐
+┌──────────────────────── FastAPI (execution layer) ─────────────────┐
 │  /datasets/*   /pipelines/*   /runs/*   /brief/*           │
 │  /dashboards/*  /settings/api-key      + AI Gateway (BYOK) │
 └──────┬───────────────────┬──────────────────┬──────────────┘
@@ -45,12 +46,10 @@ src/
 │   ├── briefer.py            #   profile → narrative brief
 │   ├── etl_author.py         #   NL → PipelineSpec
 │   └── dashboard_author.py   #   NL → DashboardSpec
-└── ui/screens/
-    ├── ingest_screen.py      # upload → preview → confirm
-    ├── pipeline_screen.py    # chat → spec review → run → history
-    ├── brief_screen.py       # 1-click brief + lưu version
-    ├── dashboard_screen.py   # spec dashboard + edit + export
-    └── lab_screen.py         # Statistics Lab (gộp Statistics + Deep Analysis)
+└── frontend/                 # 09/2026 React Vite (thay src/ui cũ đã xóa)
+    ├── shared/               #   api + features + hooks + ui (Button/Card)
+    ├── web/                  #   7 routes Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage (5173)
+    └── mobile/               #   BottomNav read-first (5174)
 ```
 
 ## 💾 Data layout (local, gitignored)
@@ -68,8 +67,8 @@ Thêm `data/` và `*.duckdb` vào `.gitignore`.
 
 1. **LLM authoring ≠ runtime**: AI sinh spec một lần; mọi lần chạy sau là
    deterministic, reproducible, không tốn token.
-2. **FastAPI là execution layer duy nhất**: Streamlit không gọi trực tiếp
-   DuckDB/executor; mọi thứ qua API → tách UI khỏi logic, học API design.
+2. **FastAPI là execution layer duy nhất**: React (web/mobile) không gọi trực tiếp
+   DuckDB/executor; mọi thứ qua API `shared/api` → tách UI khỏi logic, học API design.
 3. **LLM chỉ nhận profile, không nhận raw data**.
 4. **BYOK gateway**: key AI lấy từ `users.api_key_ai`, lưu encrypted trong
    `.env` / DB; fallback rule-based nếu không có key.

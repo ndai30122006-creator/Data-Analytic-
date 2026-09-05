@@ -1,6 +1,6 @@
 # 07 — Thiết kế REST API mới
 
-FastAPI làm **execution layer**; Streamlit gọi qua HTTP. Dưới đây là bổ sung
+FastAPI làm **execution layer**; React (web 5173 + mobile 5174) gọi qua HTTP (`frontend/shared/src/api/*`). Dưới đây là bổ sung
 vào `api.py` hiện tại, tái dụng:
 
 - Auth: `JWT + get_current_user` (đã có)
@@ -51,7 +51,7 @@ vào `api.py` hiện tại, tái dụng:
 ## Async & execution
 
 - `POST /pipelines/run` dùng **`BackgroundTasks`** của FastAPI → trả ngay
-  `run_id`, job chạy nền; Streamlit poll `/runs/{id}`.
+  `run_id`, job chạy nền; React poll `/runs/{id}` với backoff `1s→2s→4s` (`useApiCall`).
 - Nếu cần scale: nối thêm queue (Redis / Dramatiq) ở phase sau — giữ interface
   `/runs/{id}` ổn định.
 

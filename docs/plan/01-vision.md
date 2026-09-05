@@ -45,7 +45,7 @@ Workbench** — một công cụ local chạy trên máy cá nhân, nơi:
 - Xử lý dữ liệu khổng lồ (Big Data / distributed).
 - Thay thế hoàn toàn database hiện có; SQLite/SQLAlchemy/Alembic giữ cho
   metadata.
-- Giao diện thuần HTML/JS bên ngoài Streamlit.
+- ~~Giao diện thuần HTML/JS bên ngoài Streamlit~~ → **Đã làm 09/2026: React Vite `frontend/web (5173)` + `mobile (5174)` thay Streamlit (xóa `app.py` `87337f5`).**
 
 ## 🔁 Mối quan hệ với code hiện tại
 
@@ -55,4 +55,4 @@ Workbench** — một công cụ local chạy trên máy cá nhân, nơi:
 | `src/core/database.py` + Alembic | Metadata store (users, datasets, pipelines, runs, briefs, dashboards) |
 | `src/core/ai_service.py` | Nâng cấp → **AI Gateway** hỗ trợ BYOK |
 | FastAPI `api.py` | **Execution layer** (job runner + API) |
-| Streamlit UI | 4 screens mới + Statistics Lab |
+| Streamlit UI (cũ, đã xóa `87337f5`) | **Đã thay bằng React** `frontend/web` + `mobile` (7 routes) + Statistics Lab (`Lab` page `POST /analysis/run`) |
