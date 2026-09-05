@@ -3,6 +3,11 @@ import MobileShell from "./layout/MobileShell";
 import Login from "./pages/Login";
 import Brief from "./pages/Brief";
 import Dashboard from "./pages/Dashboard";
+import Lineage from "./pages/Lineage";
+import Lab from "./pages/Lab";
+import Settings from "./pages/Settings";
+import Ingest from "./pages/Ingest";
+import Pipeline from "./pages/Pipeline";
 
 export default function App() {
   return (
@@ -13,9 +18,11 @@ export default function App() {
           <Route path="/" element={<Navigate to="/brief" replace />} />
           <Route path="/brief" element={<Brief />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/lineage" element={<div>Lineage — mobile</div>} />
-          <Route path="/lab" element={<div>Lab — mobile</div>} />
-          <Route path="/settings" element={<div>Settings — mobile</div>} />
+          <Route path="/lineage" element={<Lineage />} />
+          <Route path="/lab" element={<Lab />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/ingest" element={<Ingest />} />
+          <Route path="/pipeline" element={<Pipeline />} />
         </Route>
       </Routes>
     </BrowserRouter>
