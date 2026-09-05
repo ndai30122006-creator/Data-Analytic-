@@ -1,4 +1,4 @@
-# ── Learning Analytics Thống kê — Dependencies ──
+# ── Workbench AI — Dependencies ──
 # Requirements are now split across files in requirements/:
 #
 #   requirements/base.txt    — core runtime dependencies
