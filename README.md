@@ -120,7 +120,6 @@ project1/
 │   ├── prompts/           # briefer/etl_author/dashboard_author (profile-only)
 │   ├── core/              # database (users/datasets/briefs/dashboards/pipelines), ai_service BYOK encrypt, insights, statistical_tests
 │   ├── analytics/         # Lab engine (8 tabs, archived 3 heavy)
-│   ├── ui/screens/        # 7 screens + theme Glassmorphism (Nunito pill)
 │   ├── utils/             # validators, helpers, security
 │   └── services/          # report/session (legacy)
 ├── tests/                 # 102 tests (warehouse, pipeline, briefer, api, db, stats)
