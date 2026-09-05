@@ -5,6 +5,7 @@ import { Button } from "@app/shared/src/components/ui/Button";
 import { Card } from "@app/shared/src/components/ui/Card";
 import { Textarea } from "@app/shared/src/components/ui/Input";
 import { Badge } from "@app/shared/src/components/ui/Badge";
+import { useErrorHandler } from "@app/shared/src/hooks/useErrorHandler";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -20,14 +21,17 @@ export default function Pipeline() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [nl, setNl] = useState("xóa dòng trùng, điền missing cột diem bằng median");
+  const { error: apiError, handleError, clearError } = useErrorHandler();
 
   const refresh = async () => {
     try {
+      clearError();
       const [p, r] = await Promise.all([pipelines.list(), pipelines.listRuns()]);
       setPipelinesList(p.pipelines ?? []);
       setRuns(r.runs ?? []);
     } catch (e: any) {
-      setOutput(`List error: ${e.message}`);
+      const info = handleError(e);
+      setOutput(`List error [${info.code}]: ${info.message} ${info.traceId ? `(trace ${info.traceId})` : ""}`);
     }
   };
 
@@ -101,6 +105,14 @@ export default function Pipeline() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <h2>Pipeline — ETL/ELT (AI author → DAG)</h2>
+      {apiError && (
+        <Card style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "var(--danger)" }}>
+            [{apiError.code}] {apiError.message} {apiError.traceId && <span style={{ opacity: 0.6 }}>trace:{apiError.traceId}</span>}
+          </span>
+          <Button variant="ghost" size="sm" onClick={clearError}>Dismiss</Button>
+        </Card>
+      )}
 
       <Card style={{ background: "rgba(139,92,246,0.08)", borderColor: "rgba(139,92,246,0.2)" }}>
         <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, hiện manual edit):</label>
