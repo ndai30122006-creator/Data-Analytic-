@@ -1,8 +1,9 @@
 # 💡 UI/Brainstorm — Node.js UI Layer (2 nền tảng: Mobile + Web/Desktop)
 
-> **Trạng thái:** Brainstorm — đã chốt một số quyết định cốt lõi (✅), còn mở các hướng khác.
-> **Nhánh:** `refactor`.
-> **Target:** thay thế dần Streamlit bằng một **bộ UI riêng trên Node.js**,
+> **Trạng thái:** **ĐÃ HOÀN TẤT** — UI Node.js (web + mobile) đã build xong, merge `main`,
+> Streamlit đã xoá. Repo đổi tên **workbench-ai**.
+> **Nhánh:** `refactor` (= `main`). 
+> **Target (đã đạt):** thay thế Streamlit bằng một bộ UI riêng trên Node.js,
 > chia **2 client riêng biệt**: web/desktop (Desktop web) + mobile (điện thoại).
 >
 > **✅ Đã chốt:**
@@ -84,13 +85,13 @@ Mà là **UI web tối ưu cho điện thoại** (responsive/PWA), nằm folder 
 bottom-nav, card xếp dọc, layout đọc-là-chính (Brief/Dashboard/Lineage dễ xem trước),
 nhưng **cùng logic** trong `shared/`.
 
-### 2.4 Data-visualization (chart) — ✅ Đã chốt: ECharts cho dashboard + ag-grid (tuỳ)
-- Streamlit hiện dùng **Plotly** (backend render JSON figure).
+### 2.4 Data-visualization (chart) — ✅ Đã chốt: ApexCharts cho dashboard
+- Streamlit (đã xoá) trước dùng **Plotly** (backend render JSON figure).
 - UI Node **không kéo Plotly JS**.
-- **Quyết định:**
-  - Dashboard chart → **Apache ECharts** (mạnh, tree-shake, rich interactions) — dùng cho cả web & mobile.
-  - Bảng dữ liệu lớn → **ag-Grid** (cộng đồng, free) cho web/desktop.
-  - Mobile chart → cũng dùng ECharts (responsive) hoặc bản đơn giản CSS-based cho KPI nhỏ.
+- **Quyết định (đã chốt, GĐ-D đã switch):**
+  - Dashboard chart → **Apache ECharts** (mạnh, tree-shake) — *ban đầu chốt*, sau đó **switch sang ApexCharts** (lighter bundle, khoẻ cho cả web & mobile).
+  - Bảng dữ liệu lớn → **ag-Grid** (cộng đồng, free) cho web/desktop *(hiện chưa bắt buộc)*.
+  - Mobile chart → dùng ApexCharts (responsive) hoặc bản đơn giản CSS-based cho KPI nhỏ.
 - Backend trả **data aggregated** (JSON) từ `/dashboards/{id}/data` → frontend vẽ, tương tự renderer hiện tại.
 
 ---
@@ -221,7 +222,7 @@ frontend/
    chỉ dùng `shared`.
 3. **Giai đoạn C — Web/Desktop UI:** `frontend/web` = UI riêng cho PC (layout,
    components, pages) lắp ghép logic từ `shared`. Bắt đầu thay Streamlit Ingest.
-4. **Giai đoạn D — Web workflow đầy đủ:** Dashboard (render chart ECharts) +
+4. **Giai đoạn D — Web workflow đầy đủ:** Dashboard (render chart — ECharts rồi switch ApexCharts) +
    Lab (`/analysis/run`) + Pipeline/Brief — toàn bộ workflow trên web/desktop.
 5. **Giai đoạn E — Mobile UI:** `frontend/mobile` = UI riêng cho điện thoại
    (bottom-nav, card dọc, touch-first, read-first) dùng lại logic `shared`.
@@ -236,14 +237,13 @@ frontend/
 - [x] **Kiến trúc modular frontend?** → **Đã chốt hướng: modular trước** (feature-first, xem §2.5) ✅
 - [x] **Web framework** → **React + Vite** (xem §2.2) ✅
 - [x] **Mobile** → **Không app**, là **web UI trên điện thoại** (folder `mobile/`, xem §2.3) ✅
-- [x] **Data viz** → **Apache ECharts** (dashboard) + **ag-Grid** (bảng lớn, web). Xem §2.4 ✅
+- [x] **Data viz** → **Apache ECharts** (chốt đầu) → **đã switch sang ApexCharts** (dashboard). Bảng lớn tuỳ dùng ag-Grid. Xem §2.4 ✅
 - [x] **Package manager** → **pnpm workspaces** (đã cài pnpm 11. sẵn). Xem `plan.md` ✅
 - [x] **Database/backend** → **không thay đổi backend cho giai đoạn building UI**;
       backend `api.py` đã đủ endpoint. Chỉ cần CORS config khi deploy. ✅
 - [x] **Thứ tự feature web** → làm **Ingest trước** (để có data từ đầu), rồi Brief/Lineage,
       Dashboard, Pipeline, Lab. Xem `plan.md` GĐ3. ✅
-- [x] **Giữ Streamlit song song?** → **giữ trong suốt giai đoạn build Node** (fallback),
-      loại bỏ sau khi web hoàn tất GĐ3 & mobile GĐ4 chạy ổn. ✅
+- [x] **Giữ Streamlit song song?** → **đã giữ trong lúc build Node**, và **đã loại bỏ hoàn toàn** (app.py, .streamlit, src/ui/ xoá; Node UI là frontend duy nhất). ✅
 
 > Tất cả quyết định đã chốt → build theo `plan.md` (kế hoạch triển khai) +
 > `tasks.md` (task breakdown chi tiết).

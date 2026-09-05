@@ -1,7 +1,8 @@
 # 🛠 UI/PLAN — Build plan chi tiết cho frontend Node.js
 
-> **Nhánh:** `refactor` · **Trạng thái:** plan để **bắt đầu build UI**.
-> Nguyên tắc làm việc: **commit nhỏ + push từng phần** lên `refactor`.
+> **Nhánh:** `refactor` · **Trạng thái:** build đã **hoàn tất** (merge `main`) + Giai đoạn D UI Polish.
+> Nguyên tắc đã làm: commit nhỏ + push từng phần lên `refactor`.
+> Ghi chú mới: **ECharts → ApexCharts** (GĐ-D), **Streamlit đã xoá**, repo đổi tên **workbench-ai**.
 > Đọc kèm: [`brainstorm.md`](./brainstorm.md) (quyết định đã chốt), `../07-api-design.md` (API), `../implement_plan.md`.
 
 ## 🎯 Tổng quan target (đã chốt)
@@ -22,7 +23,7 @@
 → Có thể dùng **pnpm workspaces** (khuyến nghị, nhanh + tiết kiệm disk) hoặc npm workspaces.
 
 ## 📌 Chuẩn bị docs (hoàn tất)
-- [x] `brainstorm.md` — quyết định: monorepo `frontend/`, 2 UI riêng, shared logic, React+Vite, mobile=web, ECharts, pnpm.
+- [x] `brainstorm.md` — quyết định: monorepo `frontend/`, 2 UI riêng, shared logic, React+Vite, mobile=web, ApexCharts (switch từ ECharts), pnpm.
 - [x] `plan.md` (file này) — build plan chi tiết (20 commit theo 6 giai đoạn).
 - [x] `tasks.md` — task breakdown cụ thể: contract API, TS types, routing, acceptance, rủi ro.
 - [x] `README.md` — index tài liệu, hướng dẫn bắt đầu.
@@ -160,7 +161,7 @@ Mục tiêu: thay Streamlit ở bản desktop.
 **Commit 10 — Brief + Lineage pages:** 1-click brief + version; lineage (read-only).
 
 **Commit 11 — Dashboard page:** `features/dashboard` → render chart. Chọn lib §2.4
-  (ECharts hoặc Recharts).
+  (ApexCharts — đã switch từ ECharts).
 
 **Commit 12 — Pipeline page:** NL → spec (YAML) → dry-run → run → history (`features/pipeline`).
 

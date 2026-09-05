@@ -118,7 +118,7 @@ Sau đó mở UI (`http://localhost:5173`) và đăng nhập bằng tài khoản
 | Ingest | `/ingest` | upload CSV/Excel (`file` multipart) |
 | Pipeline | `/pipeline` | ETL/ELT async → poll runs |
 | Brief | `/brief` | AI narrative (BYOK trong Settings) |
-| Dashboard | `/dashboard` | ECharts |
+| Dashboard | `/dashboard` | ApexCharts |
 | Lab | `/lab` | Statistics Lab |
 | Lineage | `/lineage` | dataset → pipeline → dashboard |
 | Settings | `/settings` | BYOK API key (`/auth/api-key`) |

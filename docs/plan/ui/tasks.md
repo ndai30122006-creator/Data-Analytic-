@@ -1,7 +1,7 @@
-# ✅ UI/TASKS — Task breakdown chi tiết để bắt đầu build
+# ✅ UI/TASKS — Task breakdown chi tiết để build
 
-> **Nhánh:** `refactor` · **Đọc kèm:** 《[`plan.md`](./plan.md)》(kiến trúc + giai đoạn), 《[`brainstorm.md`](./brainstorm.md)》(quyết định).
-> File này là **danh sách task cụ thể, có contract kỹ thuật + acceptance**, mỗi task = 1 commit nhỏ, push lên `refactor`.
+> **Nhánh:** `refactor` · **Trạng thái:** toàn bộ task đã **hoàn tất** (build + merge `main` + GĐ-D). Đọc kèm: 《[`plan.md`](./plan.md)》(kiến trúc + giai đoạn), 《[`brainstorm.md`](./brainstorm.md)》(quyết định, **chart dùng ApexCharts**).
+> File này là danh sách task cụ thể, có contract kỹ thuật + acceptance; dùng làm reference khi mở rộng/tuỳ chỉnh frontend.
 
 ## 0. Contract cố định (đối chiếu code `api.py` thực tế)
 
@@ -198,7 +198,7 @@ export const api = {
 ```
 
 ### Commit 7 — scaffold web
-- [ ] `web/package.json` (`@app/web`), add: `react`, `react-dom`, `react-router-dom`, `echarts` (ECharts).
+- [ ] `web/package.json` (`@app/web`), add: `react`, `react-dom`, `react-router-dom`, `apexcharts` (ApexCharts — đã switch từ ECharts).
 - [ ] `vite.config.ts`: proxy `/api` → `http://localhost:8000` (để giảm lệ thuộc CORS khi dev cùng origin).
 - [ ] `index.html` + `src/main.tsx` + `src/App.tsx` (router).
 - [ ] `src/styles/theme.css`: CSS vars (dark, desktop: sidebar, max-width container).
@@ -217,7 +217,7 @@ export const api = {
 - [ ] `features/lineage/LineagePage`: danh sách dataset → lineage (dataset→briefs/dashboards/pipelines) (đọc).
 
 ### Commit 11 — Dashboard
-- [ ] `features/dashboard/DashboardPage`: chọn dataset → `dashboards.generate` or manual spec → ECharts render từ `dashboards.data`.
+- [ ] `features/dashboard/DashboardPage`: chọn dataset → `dashboards.generate` or manual spec → ApexCharts render từ `dashboards.data`.
 
 ### Commit 12 — Pipeline
 - [ ] `features/pipeline/PipelinePage`: NL mô tả → nhận spec (YAML editor) → `pipelines.preview` → `pipelines.run` → poll `getRun` → history.
@@ -236,7 +236,7 @@ export const api = {
 /          → redirect → /login or /brief
 /login     → Login (form mobile)
 /brief     → Brief (read-first)
-/dashboard → Dashboard (ECharts responsive)
+/dashboard → Dashboard (ApexCharts responsive)
 /lineage   → Lineage
 /lab       → Lab (chọn nhanh)
 /settings  → Settings (BYOK)
@@ -247,7 +247,7 @@ export const api = {
 ### Đặc thù mobile
 - `BottomNav` (4–5 mục chính: Brief, Dashboard, Lineage, Lab, Settings).
 - `Card` xếp dọc, touch target ≥ 44px, tối ưu đọc (read-first).
-- Chart: ECharts responsive; KPI nhỏ render bằng CSS (không cần chart lib).
+- Chart: ApexCharts responsive; KPI nhỏ render bằng CSS (không cần chart lib).
 
 ### Commit 14–18
 - [ ] 14: scaffold `mobile` (Vite) + theme mobile (`.env.example`, proxy). 
@@ -275,7 +275,7 @@ export const api = {
 | CORS khi dev (web gọi `:8000` khác origin) | dùng Vite proxy `/api` hoặc bật `CORS_ALLOW_ALL=true` (không credentials) |
 | 401 timeout JWT | client lắng nghe `app:unauthorized` → logout → redirect /login |
 | Poll `/runs` spam (rate limit) | backoff: poll 2s → 4s → 8s, dừng khi status khác running |
-| ECharts bundle to trên mobile | `echarts/core` + import chart/component theo nhu cầu (tree-shake) |
+| Chart bundle (ApexCharts) quá to trên mobile | import `react-apexcharts`/dynamic import để giảm bundle (tree-shake) |
 | Xung đột backend CORS mới (`be498fe`) | không dùng credentials; chỉnh `cors_origins` khi deploy |
 | OpenAI/Gemini key thiếu | BYOK fallback rule-based (đã có backend); UI chỉ thông báo |
 
