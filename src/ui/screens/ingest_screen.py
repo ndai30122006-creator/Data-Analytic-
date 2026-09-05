@@ -50,8 +50,9 @@ def render_ingest_screen(*args, **kwargs):
                         st.caption(f"Fallback direct (API {api_e})")
                         # Fallback direct (dev without backend)
                         try:
-                            from src.warehouse.ingest import ingest_file
                             import json
+
+                            from src.warehouse.ingest import ingest_file
 
                             user = st.session_state.get("username", "demo")
                             result = ingest_file(user, uploaded)
@@ -62,8 +63,9 @@ def render_ingest_screen(*args, **kwargs):
                 else:
                     # No token — direct (dev)
                     try:
-                        from src.warehouse.ingest import ingest_file
                         import json
+
+                        from src.warehouse.ingest import ingest_file
 
                         user = st.session_state.get("username", "demo")
                         result = ingest_file(user, uploaded)
@@ -75,7 +77,7 @@ def render_ingest_screen(*args, **kwargs):
             st.error("Không đọc được file hoặc file rỗng")
     else:
         # Show registry
-        from src.core.database import SessionLocal, Dataset
+        from src.core.database import Dataset, SessionLocal
 
         with SessionLocal() as s:
             datasets = s.query(Dataset).all()

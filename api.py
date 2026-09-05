@@ -19,19 +19,12 @@ except ImportError:
     pass
 
 from src.core.database import create_dataset as db_create_dataset
-from src.core.database import (
-    create_user,
-)
+from src.core.database import create_user
 from src.core.database import delete_dataset as db_delete_dataset
-from src.core.database import (
-    delete_user,
-)
+from src.core.database import delete_user
 from src.core.database import get_dataset as db_get_dataset
 from src.core.database import list_datasets as db_list_datasets
-from src.core.database import (
-    update_api_key,
-    verify_user_password,
-)
+from src.core.database import update_api_key, verify_user_password
 from src.utils.security import (
     get_access_token_expire_minutes,
     get_cors_origins,
@@ -403,8 +396,9 @@ async def ingest_dataset(
     username: str = Depends(get_current_user),
 ):
     """Ingest dataset -> raw + profile (supports JSON or file upload, Plan 07 P1)."""
-    from src.core.database import SessionLocal, Dataset
     import json
+
+    from src.core.database import Dataset, SessionLocal
 
     # File upload path (multipart) — used by ingest_screen
     if file is not None and getattr(file, "filename", None):
@@ -415,8 +409,9 @@ async def ingest_dataset(
             # Pass file-like; warehouse ingest handles CSV/Excel
             result = ingest_file(username, file)
             # Register in registry
-            from src.warehouse.registry import register_dataset
             import json as _json
+
+            from src.warehouse.registry import register_dataset
 
             ds = register_dataset(
                 username,
@@ -464,8 +459,9 @@ async def ingest_dataset(
 
 @app.get("/datasets/{dataset_id}/profile", dependencies=[Depends(check_rate_limit)])
 async def get_dataset_profile(dataset_id: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dataset
     import json
+
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
@@ -544,8 +540,9 @@ async def list_pipelines(username: str = Depends(get_current_user)):
 
 @app.get("/pipelines/{pipeline_id}", dependencies=[Depends(check_rate_limit)])
 async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_user)):
-    from src.core.database import Pipeline, SessionLocal
     import json
+
+    from src.core.database import Pipeline, SessionLocal
 
     with SessionLocal() as s:
         p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
@@ -568,8 +565,8 @@ async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_use
 async def preview_pipeline(req: PipelineCreateRequest, username: str = Depends(get_current_user)):
     """Dry-run on sample 100 rows (Plan 07)."""
     try:
-        from src.pipeline.spec_schema import PipelineSpec
         from src.pipeline.executor import execute
+        from src.pipeline.spec_schema import PipelineSpec
 
         spec = PipelineSpec(**req.model_dump())
         res = execute(spec, sample=True)
@@ -584,8 +581,8 @@ def _run_pipeline_task(pipeline_id: str, run_id: str):
     from src.core.database import Pipeline, PipelineRun, SessionLocal
 
     try:
-        from src.pipeline.spec_schema import PipelineSpec
         from src.pipeline.executor import execute
+        from src.pipeline.spec_schema import PipelineSpec
 
         # Fetch spec from DB or in-memory fallback
         spec_dict = None
@@ -672,8 +669,9 @@ async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, user
 
 @app.get("/runs/{run_id}", dependencies=[Depends(check_rate_limit)])
 async def get_run(run_id: str, username: str = Depends(get_current_user)):
-    from src.core.database import PipelineRun, SessionLocal
     import json
+
+    from src.core.database import PipelineRun, SessionLocal
 
     with SessionLocal() as s:
         r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
@@ -705,7 +703,7 @@ async def get_run(run_id: str, username: str = Depends(get_current_user)):
 
 @app.get("/runs", dependencies=[Depends(check_rate_limit)])
 async def list_runs(username: str = Depends(get_current_user)):
-    from src.core.database import PipelineRun, Pipeline, SessionLocal
+    from src.core.database import Pipeline, PipelineRun, SessionLocal
 
     with SessionLocal() as s:
         # Join to filter by owner
@@ -738,8 +736,9 @@ class BriefCreateRequest(BaseModel):
 
 @app.post("/brief/{dataset_id}", dependencies=[Depends(check_rate_limit)])
 async def create_brief(dataset_id: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dataset, Brief
     import json
+
+    from src.core.database import Brief, Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
@@ -766,7 +765,7 @@ async def create_brief(dataset_id: int, username: str = Depends(get_current_user
 
 @app.get("/brief/{dataset_id}", dependencies=[Depends(check_rate_limit)])
 async def list_briefs(dataset_id: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dataset, Brief
+    from src.core.database import Brief, Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
@@ -788,7 +787,7 @@ async def list_briefs(dataset_id: int, username: str = Depends(get_current_user)
 
 @app.get("/brief/{dataset_id}/{version}", dependencies=[Depends(check_rate_limit)])
 async def get_brief_version(dataset_id: int, version: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dataset, Brief
+    from src.core.database import Brief, Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
@@ -808,8 +807,9 @@ class DashboardCreateRequest(BaseModel):
 
 @app.post("/dashboards", dependencies=[Depends(check_rate_limit)])
 async def create_dashboard(req: DashboardCreateRequest, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dashboard
     import json
+
+    from src.core.database import Dashboard, SessionLocal
 
     with SessionLocal() as s:
         d = Dashboard(name=req.name, spec_json=json.dumps(req.spec, ensure_ascii=False), owner=username)
@@ -821,7 +821,7 @@ async def create_dashboard(req: DashboardCreateRequest, username: str = Depends(
 
 @app.get("/dashboards", dependencies=[Depends(check_rate_limit)])
 async def list_dashboards(username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dashboard
+    from src.core.database import Dashboard, SessionLocal
 
     with SessionLocal() as s:
         items = s.query(Dashboard).filter(Dashboard.owner == username).all()
@@ -835,8 +835,9 @@ async def list_dashboards(username: str = Depends(get_current_user)):
 
 @app.get("/dashboards/{dashboard_id}", dependencies=[Depends(check_rate_limit)])
 async def get_dashboard(dashboard_id: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dashboard
     import json
+
+    from src.core.database import Dashboard, SessionLocal
 
     with SessionLocal() as s:
         d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
@@ -847,8 +848,9 @@ async def get_dashboard(dashboard_id: int, username: str = Depends(get_current_u
 
 @app.put("/dashboards/{dashboard_id}", dependencies=[Depends(check_rate_limit)])
 async def update_dashboard(dashboard_id: int, req: DashboardCreateRequest, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dashboard
     import json
+
+    from src.core.database import Dashboard, SessionLocal
 
     with SessionLocal() as s:
         d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
@@ -862,8 +864,9 @@ async def update_dashboard(dashboard_id: int, req: DashboardCreateRequest, usern
 
 @app.post("/dashboards/{dashboard_id}/data", dependencies=[Depends(check_rate_limit)])
 async def dashboard_data(dashboard_id: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dashboard
     import json
+
+    from src.core.database import Dashboard, SessionLocal
 
     with SessionLocal() as s:
         d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
@@ -876,8 +879,9 @@ async def dashboard_data(dashboard_id: int, username: str = Depends(get_current_
 
 @app.post("/dashboards/generate", dependencies=[Depends(check_rate_limit)])
 async def generate_dashboard(dataset_id: int, username: str = Depends(get_current_user)):
-    from src.core.database import SessionLocal, Dataset
     import json
+
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()

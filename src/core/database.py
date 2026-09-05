@@ -146,9 +146,10 @@ def _verify_password(password: str, password_hash: str) -> bool:
 def _get_fernet():
     """Get Fernet for BYOK encryption (uses JWT secret as key, fallback deterministic)."""
     try:
-        from cryptography.fernet import Fernet
-        import hashlib
         import base64
+        import hashlib
+
+        from cryptography.fernet import Fernet
 
         secret = os.environ.get("JWT_SECRET_KEY") or "dev-fallback-secret-please-change"
         # Derive 32-byte key from secret

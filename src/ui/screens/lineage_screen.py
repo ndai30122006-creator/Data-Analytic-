@@ -6,7 +6,7 @@ import streamlit as st
 def render_lineage_screen(*args, **kwargs):
     st.markdown("## 🔗 Lineage — Dataset → Pipeline → Dashboard")
     st.caption("Truy vết nguồn gốc (Plan P5) — đọc từ SQLite metadata")
-    from src.core.database import SessionLocal, Dataset
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         datasets = s.query(Dataset).all()

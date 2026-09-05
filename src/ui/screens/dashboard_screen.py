@@ -10,7 +10,7 @@ def render_dashboard_screen(*args, **kwargs):
     st.caption("AI đề xuất 4-6 charts từ DashboardSpec, renderer Plotly, chỉnh tay, lưu/export (Plan 05)")
 
     # Dataset selector (mart)
-    from src.core.database import SessionLocal, Dataset
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         datasets = s.query(Dataset).all()
@@ -92,16 +92,17 @@ def render_dashboard_screen(*args, **kwargs):
     if st.button("Render Dashboard", key="dash_render"):
         try:
             spec_dict2 = json.loads(spec_text)
-            from src.dashboard.spec_schema import DashboardSpec
             from src.dashboard.renderer import render
+            from src.dashboard.spec_schema import DashboardSpec
 
             spec = DashboardSpec(**spec_dict2)
             figs = render(spec)
             for fig in figs:
                 st.plotly_chart(fig, use_container_width=True)
             # Save to DB
-            from src.core.database import Dashboard
             import json as _json
+
+            from src.core.database import Dashboard
 
             with SessionLocal() as s:
                 d = Dashboard(name=spec.title, spec_json=_json.dumps(spec_dict2, ensure_ascii=False), owner="local")

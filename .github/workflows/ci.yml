@@ -9,6 +9,9 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     strategy:
       matrix:
         python-version: ["3.10", "3.11"]
@@ -47,6 +50,9 @@ jobs:
           black --check --diff --line-length=120 .
 
       - name: Check import ordering with isort
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: "utf-8"
         run: |
           isort --check-only --diff --line-length=120 .
 

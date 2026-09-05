@@ -11,7 +11,7 @@ def render_pipeline_screen(*args, **kwargs):
     st.caption("Mô tả tiếng Việt → AI sinh PipelineSpec YAML → dry-run 100 rows → run → history (Plan 04)")
 
     # Dataset selector from warehouse
-    from src.core.database import SessionLocal, Dataset
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         datasets = s.query(Dataset).all()

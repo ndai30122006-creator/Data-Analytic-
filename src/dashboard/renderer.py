@@ -1,5 +1,6 @@
 """Renderer — spec -> plotly (Plan 05, filter thừa: chỉ 6 types)."""
 
+import re
 from typing import List
 
 import pandas as pd
@@ -9,9 +10,6 @@ import plotly.graph_objects as go
 from src.dashboard.spec_schema import ChartSpec, DashboardSpec
 from src.utils.helpers import apply_theme
 from src.warehouse.connection import get_conn
-
-
-import re
 
 _VALID_SRC = re.compile(r"^(raw|mart)\.[a-zA-Z_][a-zA-Z0-9_]{0,63}$")
 

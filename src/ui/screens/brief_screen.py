@@ -7,8 +7,9 @@ import streamlit as st
 
 def _get_profile_for_dataset(dataset_id: int) -> dict:
     """Fetch profile_json from DB (no raw data)."""
-    from src.core.database import SessionLocal, Dataset
     import json as _json
+
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
@@ -27,7 +28,7 @@ def render_brief_screen(*args, **kwargs):
     st.caption("Profile JSON → narrative (LLM chỉ nhận profile, fallback rule-based) — Plan 03")
 
     # List datasets from registry
-    from src.core.database import SessionLocal, Dataset, Brief
+    from src.core.database import Brief, Dataset, SessionLocal
 
     with SessionLocal() as s:
         datasets = s.query(Dataset).all()
