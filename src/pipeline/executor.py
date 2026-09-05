@@ -1,13 +1,12 @@
 """Executor — topological DAG run with checkpoint (Plan 04)."""
 
+import re
 from typing import Dict
 
 import pandas as pd
 
-import re
-
 from src.pipeline.spec_schema import PipelineSpec
-from src.warehouse.connection import get_conn
+from src.warehouse.connection import get_conn, warehouse_write_lock
 
 _VALID_ID = re.compile(r"^(raw|mart)\.[a-zA-Z_][a-zA-Z0-9_]{0,63}$")
 
@@ -89,12 +88,18 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
             except Exception as e:
                 return {"status": "failed", "error": f"Step {step.id} ({op}) failed: {e}"}
 
-        # Write to target if not sample
+        # Write to target if not sample — Medium fix: atomic + serialized
         if not sample:
             conn.register("final_df", current)
-            conn.execute(f"DROP TABLE IF EXISTS {tgt_q}")
-            conn.execute(f"CREATE TABLE {tgt_q} AS SELECT * FROM final_df")
-            conn.unregister("final_df")
+            try:
+                with warehouse_write_lock(timeout=30.0):
+                    # CREATE OR REPLACE là 1 statement atomic, tránh race DROP+CREATE
+                    conn.execute(f"CREATE OR REPLACE TABLE {tgt_q} AS SELECT * FROM final_df")
+            finally:
+                try:
+                    conn.unregister("final_df")
+                except Exception:
+                    pass
 
         return {
             "status": "done",
