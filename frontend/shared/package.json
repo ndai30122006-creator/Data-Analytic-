@@ -13,6 +13,10 @@
     ".": "./src/index.ts",
     "./*": "./src/*"
   },
+  "dependencies": {
+    "apexcharts": "^3.54.1",
+    "react-apexcharts": "^1.7.0"
+  },
   "peerDependencies": {
     "react": "^18.2.0"
   },
