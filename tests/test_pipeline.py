@@ -20,8 +20,9 @@ def test_dag_topo():
 
 
 def test_dag_cycle():
-    from src.pipeline.spec_schema import PipelineSpec
     import pytest
+
+    from src.pipeline.spec_schema import PipelineSpec
 
     spec = PipelineSpec(
         name="cycle",
@@ -47,9 +48,10 @@ def test_fill_missing_dedup():
 
 
 def test_dry_run_no_overwrite(tmp_path):
-    from src.pipeline.spec_schema import PipelineSpec
-    from src.pipeline.executor import execute
     import pandas as pd
+
+    from src.pipeline.executor import execute
+    from src.pipeline.spec_schema import PipelineSpec
     from src.warehouse.connection import get_conn
 
     df = pd.DataFrame({"a": [1, 2, 3]})

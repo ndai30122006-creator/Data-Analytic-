@@ -42,18 +42,22 @@ from src.utils.security import (
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Learning Analytics API", version="1.3.0")
+from contextlib import asynccontextmanager
 
 
-@app.on_event("startup")
-def _startup_init_db():
-    """Initialize DB on startup (P0 fix: database.py no longer auto init on import)."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan: replace deprecated @app.on_event('startup')."""
     try:
         from src.core.database import init_db
 
         init_db()
     except Exception as exc:
         logger.warning("DB init on startup failed: %s", exc)
+    yield
+
+
+app = FastAPI(title="Learning Analytics API", version="1.3.0", lifespan=lifespan)
 
 
 # ── Configuration ──

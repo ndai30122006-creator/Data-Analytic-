@@ -144,7 +144,7 @@ class TestApiKey:
             assert result is True
 
             # Verify the key was stored encrypted, but decrypts correctly
-            from src.core.database import get_api_key, _decrypt_api_key
+            from src.core.database import _decrypt_api_key, get_api_key
 
             updated_user = get_user(username)
             # Stored value should be encrypted (not plaintext) if Fernet available

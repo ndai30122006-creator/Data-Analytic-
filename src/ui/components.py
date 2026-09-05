@@ -288,7 +288,7 @@ def render_sidebar_stats(df: pd.DataFrame) -> None:
         st.markdown("---")
         with st.expander("📊 Dataset Stats", expanded=False):
             n: List[str] = df.select_dtypes(include=[np.number]).columns.tolist()
-            c: List[str] = df.select_dtypes(include=["object", "category"]).columns.tolist()
+            c: List[str] = df.select_dtypes(include=["object", "category", "string"]).columns.tolist()
             st.metric("Rows", f"{len(df):,}")
             st.metric("Columns", len(df.columns))
             st.metric("Numeric", len(n))

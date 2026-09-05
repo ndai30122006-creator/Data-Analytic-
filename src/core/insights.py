@@ -9,7 +9,7 @@ def generate_data_summary(df: pd.DataFrame) -> str:
     summary = []
     summary.append(f"Dataset có {len(df):,} dòng và {len(df.columns)} cột.")
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+    cat_cols = df.select_dtypes(include=["object", "category", "string"]).columns.tolist()
     date_cols = df.select_dtypes(include=["datetime64", "datetime64[ns]"]).columns.tolist()
     summary.append(f"- {len(num_cols)} cột numeric: {', '.join(num_cols[:5])}{'...' if len(num_cols) > 5 else ''}")
     summary.append(f"- {len(cat_cols)} cột categorical: {', '.join(cat_cols[:5])}{'...' if len(cat_cols) > 5 else ''}")

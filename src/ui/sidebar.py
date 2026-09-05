@@ -191,7 +191,7 @@ def render_sidebar():
 
             df = st.session_state.df
             num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+            cat_cols = df.select_dtypes(include=["object", "category", "string"]).columns.tolist()
 
             if st.button("Generate PDF Report", use_container_width=True, key="gen_pdf"):
                 with st.spinner("Generating PDF report..."):

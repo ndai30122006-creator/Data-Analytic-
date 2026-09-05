@@ -195,7 +195,7 @@ def main() -> None:
     else:
         raw = st.session_state.df
         num = raw.select_dtypes(include=[np.number]).columns.tolist()
-        cat = raw.select_dtypes(include=["object", "category"]).columns.tolist()
+        cat = raw.select_dtypes(include=["object", "category", "string"]).columns.tolist()
         dat = raw.select_dtypes(include=["datetime"]).columns.tolist()
         df = st.session_state.cleaned_df if st.session_state.cleaned_df is not None else raw
 

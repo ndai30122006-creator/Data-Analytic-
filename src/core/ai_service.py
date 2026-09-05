@@ -105,7 +105,7 @@ class AIService:
     ) -> str:
         """Build a prompt for the LLM based on the data and analysis type."""
         num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+        cat_cols = df.select_dtypes(include=["object", "category", "string"]).columns.tolist()
         date_cols = df.select_dtypes(include=["datetime64", "datetime64[ns]"]).columns.tolist()
 
         prompt = f"""You are a data science expert analyzing a dataset. Provide insights in Vietnamese.
@@ -187,7 +187,8 @@ Format your response as JSON with these keys:
             specific_insights = generate_learning_insights(df, score_col, group_col)
 
         ai_insights_list = []
-        missing_pct = (df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100
+        total_cells = len(df) * len(df.columns) if len(df.columns) else 0
+        missing_pct = (df.isnull().sum().sum() / total_cells * 100) if total_cells else 0
 
         if missing_pct > 10:
             ai_insights_list.append(
@@ -264,7 +265,7 @@ Format your response as JSON with these keys:
             recommendations.append("Xử lý missing values trước khi phân tích sâu")
         if dupes > 0:
             recommendations.append("Loại bỏ dữ liệu trùng lặp")
-        if len(df.select_dtypes(include=[np.number]).columns) >= 2:
+        if len(df.select_dtypes(include=[np.number]).columns.tolist()) >= 2:
             recommendations.append("Thực hiện phân tích tương quan giữa các biến numeric")
         if analysis_type == "learning" and score_col:
             recommendations.append("Phân tích yếu tố ảnh hưởng đến điểm số")

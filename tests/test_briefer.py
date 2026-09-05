@@ -24,7 +24,7 @@ def test_fallback_rule_based():
 
 
 def test_brief_versioning(tmp_path):
-    from src.core.database import SessionLocal, Dataset, Brief
+    from src.core.database import Brief, Dataset, SessionLocal
 
     # Create temp dataset
     with SessionLocal() as s:

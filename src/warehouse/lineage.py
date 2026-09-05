@@ -1,6 +1,6 @@
 """Lineage — dataset -> pipelines -> dashboards (Plan P5)."""
 
-from src.core.database import SessionLocal, Dataset, Brief
+from src.core.database import Brief, Dataset, SessionLocal
 
 try:
     from src.core.database import Dashboard

@@ -130,28 +130,34 @@ _ANIM = """
 </style>
 """
 
+
 def get_light_mode_css():
     return _LIGHT_TOKENS + _BASE_CSS + _ANIM
+
 
 def get_dark_mode_css():
     return _DARK_TOKENS + _BASE_CSS + _ANIM
 
+
 def metric_card(title, value, change="", icon="◯", color="primary"):
     tone = "" if color == "primary" else f"tone-{color}"
     change_html = f'<span class="badge badge-{color}">{change}</span>' if change else ""
-    return f'''
+    return f"""
     <div class="metric-card {tone} animate-fade-in">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <span class="metric-label">{title}</span><span style="font-size:18px">{icon}</span>
         </div>
         <div class="metric-value">{value}</div>{change_html}
-    </div>'''
+    </div>"""
+
 
 def status_badge(text, status="primary"):
     return f'<span class="badge badge-{status}">{text}</span>'
 
+
 def gradient_text(text, color1="#111827", color2="#6B7280"):
     return f'<span style="font-weight:800; font-family:var(--font-display); color:var(--text-primary); font-size:1.15em">{text}</span>'
+
 
 def render_theme():
     if "theme_mode" not in st.session_state:
@@ -161,18 +167,23 @@ def render_theme():
     css = get_dark_mode_css() if mode == "dark" else get_light_mode_css()
     st.markdown(css, unsafe_allow_html=True)
 
+
 def get_theme_colors(mode="light"):
     return COLORS.get(mode, COLORS["light"])
 
+
 def render_theme_switcher():
-    c1,c2 = st.columns(2)
+    c1, c2 = st.columns(2)
     with c1:
         if st.button("Light", use_container_width=True):
-            st.session_state.theme_mode = "light"; st.rerun()
+            st.session_state.theme_mode = "light"
+            st.rerun()
     with c2:
         if st.button("Dark", use_container_width=True):
-            st.session_state.theme_mode = "dark"; st.rerun()
+            st.session_state.theme_mode = "dark"
+            st.rerun()
     st.caption(f"Mono — {st.session_state.theme_mode}")
+
 
 def debug_theme_config():
     if st.checkbox("Debug Mono"):

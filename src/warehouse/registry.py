@@ -14,7 +14,7 @@ from src.core.database import Base  # noqa: F401
 
 def register_dataset(user: str, name: str, table: str, file_path: str = "", profile_json: str = ""):
     """Register dataset metadata (call after ingest)."""
-    from src.core.database import SessionLocal, Dataset
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = Dataset(username=user, dataset_name=name, rows=0, cols=0)
@@ -38,7 +38,7 @@ def list_datasets(user: str):
 
 
 def get_profile(dataset_id: int) -> Optional[str]:
-    from src.core.database import SessionLocal, Dataset
+    from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()

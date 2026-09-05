@@ -7,15 +7,28 @@ def render_settings_screen(*args, **kwargs):
     st.markdown("## ⚙️ Settings — BYOK")
     st.caption("Bring Your Own Key — OpenAI / Gemini, lưu vào users.api_key_ai via POST /auth/api-key")
 
-    provider = st.selectbox("Provider", ["openai", "gemini"], key="settings_provider", index=0 if st.session_state.get("ai_provider", "openai") == "openai" else 1)
-    api_key = st.text_input("API Key", value=st.session_state.get("ai_api_key", ""), type="password", key="settings_api_key", help="Lưu local, không gửi raw data cho LLM")
+    provider = st.selectbox(
+        "Provider",
+        ["openai", "gemini"],
+        key="settings_provider",
+        index=0 if st.session_state.get("ai_provider", "openai") == "openai" else 1,
+    )
+    api_key = st.text_input(
+        "API Key",
+        value=st.session_state.get("ai_api_key", ""),
+        type="password",
+        key="settings_api_key",
+        help="Lưu local, không gửi raw data cho LLM",
+    )
 
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Save Key", key="settings_save"):
             st.session_state["ai_provider"] = provider
             st.session_state["ai_api_key"] = api_key
-            st.success(f"Saved provider={provider} (session). Để persist server, gọi POST /auth/api-key sau khi đăng nhập.")
+            st.success(
+                f"Saved provider={provider} (session). Để persist server, gọi POST /auth/api-key sau khi đăng nhập."
+            )
             # Try to persist via API if logged in (requires JWT)
             try:
                 import requests
@@ -49,8 +62,9 @@ def render_settings_screen(*args, **kwargs):
                 else:
                     st.warning(f"Backend status {r.status_code}")
                 # Also test ai_service fallback
-                from src.core.ai_service import get_ai_service
                 import pandas as pd
+
+                from src.core.ai_service import get_ai_service
 
                 svc = get_ai_service(api_key, provider)
                 df = pd.DataFrame({"a": [1, 2, 3]})
@@ -61,4 +75,6 @@ def render_settings_screen(*args, **kwargs):
 
     st.divider()
     st.markdown("**Hiện tại session:**")
-    st.json({"provider": st.session_state.get("ai_provider", "openai"), "has_key": bool(st.session_state.get("ai_api_key"))})
+    st.json(
+        {"provider": st.session_state.get("ai_provider", "openai"), "has_key": bool(st.session_state.get("ai_api_key"))}
+    )
