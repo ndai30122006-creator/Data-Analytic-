@@ -123,8 +123,16 @@ def guess_learning_column(columns: List[str], keywords: List[str]) -> Optional[s
     return None
 
 
-@st.cache_data(hash_funcs={"streamlit.runtime.uploaded_file_manager.UploadedFile": lambda f: (f.name, f.size)})
-def load_and_process_data(file) -> Optional[pd.DataFrame]:
+@st.cache_data(
+    hash_funcs={
+        "streamlit.runtime.uploaded_file_manager.UploadedFile": lambda f: (
+            getattr(f, "name", getattr(f, "filename", "")),
+            getattr(f, "size", 0),
+        ),
+        "starlette.datastructures.UploadFile": lambda f: (getattr(f, "filename", ""), getattr(f, "size", 0)),
+    }
+)
+def load_and_process_data(_file) -> Optional[pd.DataFrame]:
     """
     Load và cache dữ liệu từ file upload (CSV/Excel).
 
@@ -138,23 +146,50 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
         Không raise — tất cả exception được catch và xử lý qua handle_error()
     """
     try:
-        if file is None:
+        if _file is None:
             raise DataValidationError("File không tồn tại")
 
-        file.seek(0, 2)
-        file_size = file.tell()
-        file.seek(0)
+        # Support both Streamlit UploadedFile (.name) and Starlette UploadFile (.filename, .file)
+        fname = getattr(_file, "name", None) or getattr(_file, "filename", "") or "upload.csv"
+        # Starlette UploadFile wraps .file; ensure seek/tell work
+        underlying = getattr(_file, "file", _file)
+        try:
+            _file.seek(0, 2)
+            file_size = _file.tell()
+            _file.seek(0)
+        except Exception:
+            try:
+                underlying.seek(0, 2)
+                file_size = underlying.tell()
+                underlying.seek(0)
+                _file.seek(0)
+            except Exception:
+                file_size = 0
         valid_size, size_msg = check_file_size(file_size, MAX_FILE_SIZE_BYTES)
         if not valid_size:
             raise DataValidationError(size_msg)
 
-        if file.name.endswith(".csv"):
-            df = pd.read_csv(file)
-        elif file.name.endswith((".xlsx", ".xls")):
-            df = pd.read_excel(file, engine="openpyxl")
+        # Reset before read
+        try:
+            _file.seek(0)
+        except Exception:
+            pass
+        if fname.endswith(".csv"):
+            # For Starlette, read via underlying file if needed
+            try:
+                df = pd.read_csv(_file)
+            except Exception:
+                underlying.seek(0)
+                df = pd.read_csv(underlying)
+        elif fname.endswith((".xlsx", ".xls")):
+            try:
+                df = pd.read_excel(_file, engine="openpyxl")
+            except Exception:
+                underlying.seek(0)
+                df = pd.read_excel(underlying, engine="openpyxl")
         else:
             raise DataValidationError(
-                f"Định dạng '{file.name.split('.')[-1]}' không hỗ trợ. " "Chấp nhận: .csv, .xlsx, .xls"
+                f"Định dạng '{fname.split('.')[-1]}' không hỗ trợ. " "Chấp nhận: .csv, .xlsx, .xls"
             )
 
         if df.empty:
@@ -162,9 +197,12 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
 
         warning = warn_if_large_dataset(len(df), len(df.columns), MAX_ROWS_UPLOAD, MAX_COLS_UPLOAD)
         if warning:
-            st.warning(warning)
+            try:
+                st.warning(warning)
+            except Exception:
+                pass
 
-        logger.info("Loaded file '%s': %d rows x %d cols", file.name, *df.shape)
+        logger.info("Loaded file '%s': %d rows x %d cols", fname, *df.shape)
         return df
 
     except DataValidationError as e:
@@ -177,7 +215,15 @@ def load_and_process_data(file) -> Optional[pd.DataFrame]:
         handle_error(DataValidationError(f"Lỗi parse file: {e}"), "load_and_process_data")
         return None
     except Exception as e:
-        logger.error("Unexpected error loading file '%s': %s", getattr(file, "name", "unknown"), e, exc_info=True)
-        st.error(f"❌ **Lỗi đọc file:** {str(e)}")
-        st.caption("💡 Kiểm tra file có bị hỏng hoặc không đúng định dạng")
+        logger.error(
+            "Unexpected error loading file '%s': %s",
+            getattr(_file, "name", getattr(_file, "filename", "unknown")),
+            e,
+            exc_info=True,
+        )
+        try:
+            st.error(f"❌ **Lỗi đọc file:** {str(e)}")
+            st.caption("💡 Kiểm tra file có bị hỏng hoặc không đúng định dạng")
+        except Exception:
+            pass
         return None

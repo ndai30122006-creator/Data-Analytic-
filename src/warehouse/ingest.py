@@ -19,14 +19,26 @@ def _sanitize_table(name: str) -> str:
 
 def ingest_file(user: str, file, table: str = None) -> dict:
     """Ingest file-like (CSV/Excel) into DuckDB raw schema. Returns profile."""
-    # Read file via helpers
-    from src.utils.helpers import load_and_process_data
+    fname = getattr(file, "name", None) or getattr(file, "filename", "") or "upload"
+    # FastAPI UploadFile (starlette) has .file SpooledTemporaryFile sync - avoid async helper
+    if hasattr(file, "filename") and hasattr(file, "file"):
+        try:
+            file.file.seek(0)
+            if fname.lower().endswith(".csv"):
+                df = pd.read_csv(file.file)
+            elif fname.lower().endswith((".xlsx", ".xls")):
+                df = pd.read_excel(file.file, engine="openpyxl")
+            else:
+                raise ValueError(f"Unsupported format: {fname}")
+        except Exception as e:
+            raise ValueError(f"File rỗng hoặc không đọc được: {e}")
+    else:
+        from src.utils.helpers import load_and_process_data
 
-    df = load_and_process_data(file)
-    if df is None or df.empty:
-        raise ValueError("File rỗng hoặc không đọc được")
-
-    tname = _sanitize_table(table or Path(file.name).stem)
+        df = load_and_process_data(file)
+        if df is None or df.empty:
+            raise ValueError("File rỗng hoặc không đọc được")
+    tname = _sanitize_table(table or Path(fname).stem)
     full = f"raw.{tname}"
 
     conn = get_conn()

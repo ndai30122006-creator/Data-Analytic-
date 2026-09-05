@@ -148,32 +148,32 @@ def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
             dup_rows (int): Số dòng trùng lặp
             outlier_count (int): Số giá trị ngoại lai (IQR method)
     """
-    total_cells = df.shape[0] * df.shape[1]
-    filled_cells = total_cells - df.isnull().sum().sum()
-    completeness = filled_cells / total_cells * 100 if total_cells > 0 else 0
+    total_cells = int(df.shape[0] * df.shape[1])
+    filled_cells = int(total_cells - int(df.isnull().sum().sum()))
+    completeness = float(filled_cells / total_cells * 100) if total_cells > 0 else 0.0
 
-    dup_rows = df.duplicated().sum()
-    uniqueness = (1 - dup_rows / len(df)) * 100 if len(df) > 0 else 0
+    dup_rows = int(df.duplicated().sum())
+    uniqueness = float((1 - dup_rows / len(df)) * 100) if len(df) > 0 else 0.0
 
     num_cols = df.select_dtypes(include=[np.number]).columns
     outlier_count = 0
     for c in num_cols:
-        q1, q3 = df[c].quantile(0.25), df[c].quantile(0.75)
+        q1, q3 = float(df[c].quantile(0.25)), float(df[c].quantile(0.75))
         iqr = q3 - q1
-        outliers = ((df[c] < q1 - 1.5 * iqr) | (df[c] > q3 + 1.5 * iqr)).sum()
+        outliers = int(((df[c] < q1 - 1.5 * iqr) | (df[c] > q3 + 1.5 * iqr)).sum())
         outlier_count += outliers
 
-    validity = max(0, 100 - (outlier_count / total_cells * 100)) if total_cells > 0 else 0
+    validity = float(max(0, 100 - (outlier_count / total_cells * 100))) if total_cells > 0 else 0.0
 
-    quality_score = completeness * 0.3 + uniqueness * 0.25 + validity * 0.25 + 100 * 0.2
+    quality_score = float(completeness * 0.3 + uniqueness * 0.25 + validity * 0.25 + 100 * 0.2)
 
     return {
-        "completeness": round(completeness, 1),
-        "uniqueness": round(uniqueness, 1),
-        "validity": round(validity, 1),
-        "overall": round(quality_score, 1),
-        "total_cells": total_cells,
-        "filled_cells": filled_cells,
+        "completeness": round(float(completeness), 1),
+        "uniqueness": round(float(uniqueness), 1),
+        "validity": round(float(validity), 1),
+        "overall": round(float(quality_score), 1),
+        "total_cells": int(total_cells),
+        "filled_cells": int(filled_cells),
         "dup_rows": int(dup_rows),
         "outlier_count": int(outlier_count),
     }

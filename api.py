@@ -899,6 +899,20 @@ async def generate_dashboard(dataset_id: int, username: str = Depends(get_curren
         return {"spec": spec}
 
 
+@app.get("/lineage/{dataset_id}", dependencies=[Depends(check_rate_limit)])
+async def get_lineage_endpoint(dataset_id: int, username: str = Depends(get_current_user)):
+    from src.core.database import Dataset, SessionLocal
+
+    with SessionLocal() as s:
+        ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not ds or ds.username != username:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+    from src.warehouse.lineage import get_lineage
+
+    lin = get_lineage(dataset_id)
+    return lin
+
+
 @app.delete("/auth/user")
 async def delete_user_endpoint(username: str = Depends(get_current_user)):
     """Delete the authenticated user's own account."""
