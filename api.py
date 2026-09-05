@@ -156,16 +156,30 @@ else:
     )
 
 
-# ── Global exception handler ──
+# ── Standardized error handlers (P1.1.3) ──
+from src.utils.exceptions import make_error_response
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    # Already standardized (AppHTTPException) → keep as is
+    if isinstance(exc.detail, dict) and "code" in exc.detail:
+        content = exc.detail
+    else:
+        # Legacy raise HTTPException(detail="string") → wrap
+        content = make_error_response(exc.status_code, str(exc.detail), code=f"E{exc.status_code}")
+    return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(
         "Unhandled exception: %s | Path: %s | Detail: %s", type(exc).__name__, request.url.path, str(exc), exc_info=True
     )
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error. Please try again later."},
+    content = make_error_response(
+        status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error. Please try again later.", str(exc), code="E500"
     )
+    return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=content)
 
 
 # ── Models ─────────────────────────────────────────────────
