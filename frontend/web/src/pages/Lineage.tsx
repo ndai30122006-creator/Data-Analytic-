@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { datasets } from "@app/shared/src/api/datasets";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
+import { datasets } from "@app/shared/api/datasets";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
 
 export default function Lineage() {
   const [list, setList] = useState<any[]>([]);

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { brief } from "@app/shared/src/api/brief";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { Input } from "@app/shared/src/components/ui/Input";
+import { brief } from "@app/shared/api/brief";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { Input } from "@app/shared/components/ui/Input";
 
 export default function Brief() {
   const [datasetId, setDatasetId] = useState(1);

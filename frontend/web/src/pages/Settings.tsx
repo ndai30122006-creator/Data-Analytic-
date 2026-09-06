@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSettings } from "@app/shared/src/features/settings/useSettings";
+import { useSettings } from "@app/shared/features/settings/useSettings";
 
 export default function Settings() {
   const { provider, saving, saveApiKey, PROVIDERS } = useSettings();

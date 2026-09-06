@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { analysis } from "@app/shared/src/api/analysis";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { Input, Textarea } from "@app/shared/src/components/ui/Input";
+import { analysis } from "@app/shared/api/analysis";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { Input, Textarea } from "@app/shared/components/ui/Input";
 
 const types = ["ttest_independent", "ttest_onesample", "ttest_paired", "anova", "mannwhitney", "kruskal", "bootstrap", "ab_test"] as const;
 

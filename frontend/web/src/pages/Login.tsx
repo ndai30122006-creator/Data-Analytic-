@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@app/shared/src/features/auth/useAuth";
+import { useAuth } from "@app/shared/features/auth/useAuth";
 
 export default function Login() {
   const { login, register, loading } = useAuth();

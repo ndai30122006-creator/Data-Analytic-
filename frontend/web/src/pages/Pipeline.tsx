@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { pipelines } from "@app/shared/src/api/pipelines";
-import type { PipelineSpec } from "@app/shared/src/types/index";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { Textarea } from "@app/shared/src/components/ui/Input";
-import { Badge } from "@app/shared/src/components/ui/Badge";
-import { useErrorHandler } from "@app/shared/src/hooks/useErrorHandler";
+import { pipelines } from "@app/shared/api/pipelines";
+import type { PipelineSpec } from "@app/shared/types/index";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { Textarea } from "@app/shared/components/ui/Input";
+import { Badge } from "@app/shared/components/ui/Badge";
+import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { dashboards } from "@app/shared/src/api/dashboards";
-import { datasets } from "@app/shared/src/api/datasets";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { Input, Textarea } from "@app/shared/src/components/ui/Input";
-import { Chart } from "@app/shared/src/components/Chart";
+import { dashboards } from "@app/shared/api/dashboards";
+import { datasets } from "@app/shared/api/datasets";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { Input, Textarea } from "@app/shared/components/ui/Input";
+import { Chart } from "@app/shared/components/Chart";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { datasets } from "@app/shared/src/api/datasets";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { EmptyState, Skeleton, Toast } from "@app/shared/src/components/ui/Skeleton";
+import { datasets } from "@app/shared/api/datasets";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { EmptyState, Skeleton, Toast } from "@app/shared/components/ui/Skeleton";
 
 export default function Ingest() {
   const [file, setFile] = useState<File | null>(null);
