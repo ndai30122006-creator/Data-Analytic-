@@ -1,0 +1,24 @@
+/* Terminal Dark for Swagger UI — phosphor green on near-black */
+.swagger-ui { background: #070B07; color: #CFF5D8; font-family: "JetBrains Mono", ui-monospace, monospace; }
+.swagger-ui .topbar { background: #0B120B; border-bottom: 1px solid rgba(74,222,128,0.35); }
+.swagger-ui .topbar .download-url-wrapper .select-label { color: #6B8F71; }
+.swagger-ui .info .title { color: #CFF5D8; font-family: "JetBrains Mono", monospace; }
+.swagger-ui .info .description, .swagger-ui .info p, .swagger-ui .info li { color: #6B8F71; }
+.swagger-ui .scheme-container { background: #0B120B; border: 1px solid rgba(74,222,128,0.16); }
+.swagger-ui .opblock-tag { color: #4ADE80; border-bottom: 1px solid rgba(74,222,128,0.16); }
+.swagger-ui .opblock { background: #0B120B; border: 1px solid rgba(74,222,128,0.16); }
+.swagger-ui .opblock .opblock-summary-method { font-family: "JetBrains Mono", monospace; }
+.swagger-ui .opblock.opblock-get { border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.04); }
+.swagger-ui .opblock.opblock-get .opblock-summary-method { background: #22C55E; }
+.swagger-ui .opblock.opblock-post { border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.04); }
+.swagger-ui .opblock.opblock-post .opblock-summary-method { background: #16A34A; }
+.swagger-ui .opblock.opblock-put .opblock-summary-method { background: #A16207; }
+.swagger-ui .opblock.opblock-delete .opblock-summary-method { background: #B91C1C; }
+.swagger-ui .opblock-summary-path, .swagger-ui .opblock-summary-description { color: #CFF5D8; }
+.swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #6B8F71; }
+.swagger-ui .parameter__name, .swagger-ui .response-col_status { color: #4ADE80; }
+.swagger-ui .btn { border: 1px solid rgba(74,222,128,0.35); color: #4ADE80; background: transparent; border-radius: 2px; }
+.swagger-ui input, .swagger-ui select, .swagger-ui textarea { background: #070B07; color: #CFF5D8; border: 1px solid rgba(74,222,128,0.35); }
+.swagger-ui .model, .swagger-ui .model-title { color: #6B8F71; }
+.swagger-ui section.models { border: 1px solid rgba(74,222,128,0.16); background: #0B120B; }
+.swagger-ui ::selection { background: rgba(74,222,128,0.3); }

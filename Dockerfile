@@ -42,6 +42,7 @@ FROM base AS backend
 # LƯU Ý: api.py import từ package src/ → phải copy CẢ src/
 COPY api.py .
 COPY src/ ./src/
+COPY static/ ./static/
 
 # Thư mục dữ liệu bền vững (users.db + warehouse.duckdb) — mount Docker volume tại đây
 RUN mkdir -p /app/data

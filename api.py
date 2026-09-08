@@ -38,7 +38,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Learning Analytics API", version="1.3.0", lifespan=lifespan)
+app = FastAPI(
+    title="Learning Analytics API",
+    version="1.3.0",
+    lifespan=lifespan,
+    swagger_css_url="/static/terminal-swagger.css",
+)
 
 
 # ── CORS Configuration ──

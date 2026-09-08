@@ -19,6 +19,21 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@router.get("/static/terminal-swagger.css", include_in_schema=False)
+async def terminal_swagger_css():
+    """CSS Terminal Dark cho Swagger /docs (khong can them dependency staticfiles)."""
+    from pathlib import Path
+
+    from fastapi.responses import Response
+
+    css_path = Path(__file__).resolve().parents[3] / "static" / "terminal-swagger.css"
+    try:
+        content = css_path.read_text(encoding="utf-8")
+    except Exception:
+        content = "/* terminal theme missing */"
+    return Response(content=content, media_type="text/css")
+
+
 @router.get("/env/validate")
 async def validate_env():
     """Validate environment configuration and return warnings."""
