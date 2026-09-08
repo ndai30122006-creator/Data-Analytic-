@@ -3,7 +3,9 @@ import { datasets } from "@app/shared/api/datasets";
 import { lineage, type LineageResponse } from "@app/shared/api/lineage";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
+import { Badge } from "@app/shared/components/ui/Badge";
 import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
+import PageHead from "../components/PageHead";
 
 const KIND_STYLE: Record<string, { bg: string; border: string }> = {
   dataset: { bg: "rgba(0,255,136,0.15)", border: "rgba(0,255,136,0.5)" },
@@ -40,11 +42,18 @@ export default function Lineage() {
   const byKind = (kind: string) => (detail?.nodes ?? []).filter((n) => n.kind === kind);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Lineage — Dataset → Pipeline → Dashboard</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead
+        path="lineage"
+        title="Lineage"
+        desc="Đồ thị dataset → brief/pipeline → mart → dashboard. Hover node để xem quan hệ."
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 7fr)", gap: 20 }}>
         <Card>
-          <h4>Datasets ({list.length})</h4>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h4>Datasets</h4>
+            <Badge variant="neutral">{list.length}</Badge>
+          </div>
           {list.length === 0 ? <EmptyState title="Chưa có dataset" hint="Upload ở Ingest trước" /> : list.map((d: any) => (
             <div key={d.dataset_name} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
               <span>{d.dataset_name} <span style={{ color: "var(--text-muted)" }}>{d.rows}×{d.cols}</span></span>

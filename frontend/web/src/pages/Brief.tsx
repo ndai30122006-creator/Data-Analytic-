@@ -2,7 +2,9 @@ import { useState } from "react";
 import { brief } from "@app/shared/api/brief";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
+import { Badge } from "@app/shared/components/ui/Badge";
 import { Input } from "@app/shared/components/ui/Input";
+import PageHead from "../components/PageHead";
 
 export default function Brief() {
   const [datasetId, setDatasetId] = useState(1);
@@ -47,24 +49,30 @@ export default function Brief() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Brief — AI Narrative (profile-only)</h2>
-      <Card style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }}>
-        <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset ID
-          <Input type="number" value={datasetId} onChange={(e) => setDatasetId(Number(e.target.value))} style={{ marginTop: 4, width: 100 }} />
-        </label>
-        <Button onClick={create}>Generate Brief (1-click)</Button>
-        <Button variant="ghost" onClick={list}>History</Button>
-        <Button variant="ghost" onClick={exportMd} disabled={!content}>Export MD</Button>
-      </Card>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead
+        path="brief"
+        title="Brief"
+        desc="1-click narrative tiếng Việt từ profile. Có BYOK key thì dùng LLM, không thì rule-based."
+        actions={<><Button onClick={create}>Generate Brief</Button><Button variant="ghost" onClick={exportMd} disabled={!content}>Export MD</Button></>}
+      />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
-        <Card style={{ background: "rgba(0,0,0,0.2)" }}>
-          {modelUsed && <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>model: {modelUsed} (rule-based = chưa có BYOK key ở Settings)</div>}
-          <pre style={{ fontFamily: "var(--font-mono)", fontSize: 12, overflow: "auto", maxHeight: 400, whiteSpace: "pre-wrap", margin: 0 }}>{content || "Brief tiếng Việt sẽ hiện ở đây (fallback rule-based nếu không BYOK)"}</pre>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 1fr) 300px", gap: 20 }}>
+        <Card style={{ background: "#000" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-muted)" }}>Dataset ID
+              <Input type="number" value={datasetId} onChange={(e) => setDatasetId(Number(e.target.value))} style={{ width: 90 }} />
+            </label>
+            <Button variant="ghost" size="sm" onClick={list}>History</Button>
+            {modelUsed && <Badge variant={modelUsed.startsWith("rule-based") ? "neutral" : "success"}>{modelUsed}</Badge>}
+          </div>
+          <pre style={{ fontFamily: "var(--font-mono)", fontSize: 12, overflow: "auto", maxHeight: 420, whiteSpace: "pre-wrap", margin: 0 }}>{content || "Brief tiếng Việt sẽ hiện ở đây (fallback rule-based nếu không BYOK)"}</pre>
         </Card>
         <Card>
-          <h4>History versions</h4>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h4>Versions</h4>
+            <Badge variant="neutral">{history.length}</Badge>
+          </div>
           {history.length === 0 ? <div style={{ opacity: 0.5, fontSize: 12, color: "var(--text-muted)" }}>Chưa có brief</div> : history.map((b: any, i: number) => (
             <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
               <span style={{ fontWeight: 600 }}>v{b.version ?? i+1}</span> <span style={{ color: "var(--text-muted)" }}>{b.model_used ?? ""}</span>

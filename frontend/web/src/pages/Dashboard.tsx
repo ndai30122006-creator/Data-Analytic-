@@ -3,8 +3,10 @@ import { dashboards } from "@app/shared/api/dashboards";
 import { datasets } from "@app/shared/api/datasets";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
+import { Badge } from "@app/shared/components/ui/Badge";
 import { Input, Textarea } from "@app/shared/components/ui/Input";
 import { Chart } from "@app/shared/components/Chart";
+import PageHead from "../components/PageHead";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);
@@ -73,23 +75,31 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Dashboard — AI Generate & ApexCharts</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead
+        path="dashboard"
+        title="Dashboard"
+        desc="AI đề xuất 4-6 charts từ profile → lưu → xem real-data (mỗi chart 1 query DuckDB)."
+        actions={<><Button onClick={handleGenerate}>Generate</Button><Button variant="ghost" onClick={refresh}>Refresh</Button></>}
+      />
 
-      <Card style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }}>
-        <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset ID / mart
-          <Input type="number" value={datasetId} onChange={(e) => setDatasetId(Number(e.target.value))} style={{ marginTop: 4, width: 120 }} />
-        </label>
-        <Button onClick={handleGenerate}>Generate (4-6 charts)</Button>
-        <Button onClick={handleCreate} variant="ghost" style={{ background: "var(--accent)", color: "white" }}>Save Dashboard</Button>
-        <Button variant="ghost" onClick={refresh}>Refresh</Button>
+      <Card>
+        <h4>Nguồn generate</h4>
+        <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap", marginTop: 8 }}>
+          <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset ID / mart
+            <Input type="number" value={datasetId} onChange={(e) => setDatasetId(Number(e.target.value))} style={{ marginTop: 4, width: 120 }} />
+          </label>
+          <Button onClick={handleCreate}>Save Dashboard</Button>
+        </div>
+        {datasetsList.length > 0 && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>Datasets: {datasetsList.map((d: any) => `${d.dataset_name}#${d.id ?? "?"}`).join(", ")}</div>}
       </Card>
 
-      {datasetsList.length > 0 && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Datasets: {datasetsList.map((d: any) => `${d.dataset_name}#${d.id ?? "?"}`).join(", ")}</div>}
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 6fr)", gap: 20 }}>
         <Card>
-          <h4>Dashboards ({dashboardsList.length})</h4>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h4>Saved</h4>
+            <Badge variant="neutral">{dashboardsList.length}</Badge>
+          </div>
           {dashboardsList.length === 0 ? <div style={{ opacity: 0.5, fontSize: 13, color: "var(--text-muted)" }}>Chưa có dashboard</div> : dashboardsList.map((d: any) => (
             <div key={d.id} onClick={() => handleLoad(d.id)} style={{ padding: "8px", cursor: "pointer", background: selectedId === d.id ? "rgba(0,255,136,0.15)" : "transparent", borderRadius: "var(--radius-input)", borderBottom: "1px solid var(--border)" }}>
               <div style={{ fontWeight: 600, fontSize: 13 }}>{d.name} <span style={{ opacity: 0.5, fontSize: 11 }}>#{d.id}</span></div>
@@ -103,22 +113,33 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: 20 }}>
         {realCharts.length > 0 ? realCharts.map((c: any, i: number) => (
-          <Card key={c.id ?? i} style={{ background: "rgba(0,255,136,0.03)", padding: 12 }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{c.title ?? c.type}</div>
-            <Chart type={c.type} height={140} options={toOptions(c)} />
+          <Card key={c.id ?? i} style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>{c.title ?? c.type}</span>
+              <Badge variant="success">{c.type}</Badge>
+            </div>
+            <div style={{ padding: 12 }}>
+              <Chart type={c.type} height={150} options={toOptions(c)} />
+            </div>
           </Card>
         )) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
-          <Card key={t} style={{ background: "rgba(0,255,136,0.03)", padding: 12 }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{t} (mock — chọn dashboard để xem real-data)</div>
-            <Chart type={t} height={140} />
+          <Card key={t} style={{ padding: 0, overflow: "hidden", opacity: 0.75 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t} · mock</span>
+              <Badge variant="neutral">preview</Badge>
+            </div>
+            <div style={{ padding: 12 }}>
+              <Chart type={t} height={150} />
+            </div>
           </Card>
         )))}
       </div>
 
-      <Card style={{ background: "rgba(0,0,0,0.2)" }}>
-        <pre style={{ fontFamily: "var(--font-mono)", fontSize: 11, overflow: "auto", maxHeight: 200, margin: 0 }}>{output || "Output: generate/load/create"}</pre>
+      <Card style={{ background: "#000" }}>
+        <h4 style={{ marginBottom: 8 }}>Output</h4>
+        <pre style={{ fontFamily: "var(--font-mono)", fontSize: 11, overflow: "auto", maxHeight: 200, margin: 0 }}>{output || "Generate → Save → click dashboard để xem real-data."}</pre>
       </Card>
     </div>
   );

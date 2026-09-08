@@ -6,6 +6,7 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Textarea } from "@app/shared/components/ui/Input";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
+import PageHead from "../components/PageHead";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -120,10 +121,15 @@ export default function Pipeline() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Pipeline — ETL/ELT (AI author → DAG)</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead
+        path="pipeline"
+        title="Pipeline"
+        desc="AI sinh spec từ tiếng Việt → dry-run 100 rows → run ra mart.*. Mỗi run ghi steps log."
+        actions={<><Button variant="ghost" onClick={refresh} disabled={loading}>Refresh</Button></>}
+      />
       {apiError && (
-        <Card style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Card style={{ background: "rgba(255,51,102,0.07)", borderColor: "rgba(255,51,102,0.35)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "var(--danger)" }}>
             [{apiError.code}] {apiError.message} {apiError.traceId && <span style={{ opacity: 0.6 }}>trace:{apiError.traceId}</span>}
           </span>
@@ -131,27 +137,32 @@ export default function Pipeline() {
         </Card>
       )}
 
-      <Card style={{ background: "rgba(0,255,136,0.06)", borderColor: "rgba(0,255,136,0.25)" }}>
-        <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, cần BYOK key ở Settings để gọi LLM):</label>
-        <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={2} style={{ marginTop: 6 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
-        <div style={{ marginTop: 8 }}>
-          <Button onClick={handleGenerate} disabled={loading || !nl.trim()} style={{ background: "var(--accent)" }}>AI Generate Spec</Button>
-        </div>
-      </Card>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 6fr)", gap: 20 }}>
+        <Card style={{ background: "rgba(0,255,136,0.04)", borderColor: "rgba(0,255,136,0.25)" }}>
+          <h4>STEP 1 · Mô tả → spec</h4>
+          <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={4} style={{ marginTop: 8 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>Cần BYOK key ở Settings, không thì dùng spec mặc định.</div>
+          <div style={{ marginTop: 10 }}>
+            <Button onClick={handleGenerate} disabled={loading || !nl.trim()}>AI Generate Spec</Button>
+          </div>
+        </Card>
 
-      <Card>
-        <label style={{ fontWeight: 600, fontSize: 13 }}>PipelineSpec JSON</label>
-        <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} rows={12} className="mono" style={{ marginTop: 8, fontSize: 12 }} />
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <Button onClick={handlePreview} disabled={loading}>Dry-run Preview</Button>
-          <Button onClick={handleCreate} disabled={loading}>Create Pipeline</Button>
-          <Button variant="ghost" onClick={refresh} disabled={loading}>Refresh Lists</Button>
-        </div>
-      </Card>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card>
-          <h4>Pipelines ({pipelinesList.length})</h4>
+          <h4>STEP 2 · Spec → dry-run → create</h4>
+          <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} rows={8} className="mono" style={{ marginTop: 8, fontSize: 12 }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            <Button onClick={handlePreview} disabled={loading}>Dry-run Preview</Button>
+            <Button onClick={handleCreate} disabled={loading}>Create Pipeline</Button>
+          </div>
+        </Card>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h4>STEP 3 · Pipelines</h4>
+            <Badge variant="neutral">{pipelinesList.length}</Badge>
+          </div>
           {pipelinesList.length === 0 ? (
             <div style={{ opacity: 0.5, fontSize: 13, color: "var(--text-muted)" }}>Chưa có pipeline</div>
           ) : (
@@ -167,7 +178,10 @@ export default function Pipeline() {
           )}
         </Card>
         <Card>
-          <h4>Runs ({runs.length})</h4>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h4>Runs</h4>
+            <Badge variant="neutral">{runs.length}</Badge>
+          </div>
           {runs.length === 0 ? (
             <div style={{ opacity: 0.5, fontSize: 13, color: "var(--text-muted)" }}>Chưa có run</div>
           ) : (
@@ -182,7 +196,8 @@ export default function Pipeline() {
         </Card>
       </div>
 
-      <Card style={{ background: "rgba(0,0,0,0.2)" }}>
+      <Card style={{ background: "#000" }}>
+        <h4 style={{ marginBottom: 8 }}>Output</h4>
         <pre style={{ fontFamily: "var(--font-mono)", fontSize: 12, overflow: "auto", maxHeight: 300, margin: 0, whiteSpace: "pre-wrap" }}>{output || "Output sẽ hiện ở đây (preview/run)"}</pre>
       </Card>
 
