@@ -33,7 +33,7 @@ export default function MobileShell() {
             to={n.to}
             style={({ isActive }) => ({
               color: isActive ? "var(--accent)" : "var(--text-muted)",
-              background: isActive ? "rgba(74,222,128,0.12)" : "transparent",
+              background: isActive ? "rgba(45,212,191,0.12)" : "transparent",
               textDecoration: "none",
               fontSize: 11,
               fontWeight: isActive ? 600 : 400,
