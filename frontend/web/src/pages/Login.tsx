@@ -37,13 +37,12 @@ export default function Login() {
   return (
     <div style={{ maxWidth: 480, margin: "8vh auto", padding: 16 }}>
       <Card>
-        <pre style={{ margin: 0, fontSize: 11, color: "var(--accent)", lineHeight: 1.4 }}>
-{` __      __  ___  ____  _  __                    _
- \\ \\    / / / _ \\|  _ \\| |/ /__  _ __   ___| |__
-  \\ \\/\\/ / | | | | |_) | ' // _ \\| '_ \\ / __| '_ \\
-   \\    /  | |_| |  _ <| . \\ (_) | | | | (__| | | |
-    \\/\\/    \\___/|_| \\_\\_|\\_\\___/|_| |_|\\___|_| |_|`}
-        </pre>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>
+          <span style={{ color: "var(--accent)" }}>workbench</span>
+          <span style={{ color: "var(--text)" }}>-ai</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400, marginLeft: 8 }}>v1.3.0</span>
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>local-first data workbench · duckdb + byok</div>
         <div style={{ marginTop: 12, fontSize: 12, minHeight: 60 }}>
           {out.map((l, i) => (
             <div key={i} style={{ color: l.startsWith("!") ? "var(--danger)" : l.startsWith("$") ? "var(--text)" : "var(--text-muted)" }}>{l}</div>
