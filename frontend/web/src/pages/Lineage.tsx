@@ -8,7 +8,7 @@ import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
 import PageHead from "../components/PageHead";
 
 const KIND_STYLE: Record<string, { bg: string; border: string }> = {
-  dataset: { bg: "rgba(0,255,136,0.15)", border: "rgba(0,255,136,0.5)" },
+  dataset: { bg: "rgba(45,212,191,0.15)", border: "rgba(45,212,191,0.5)" },
   pipeline: { bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.5)" },
   mart: { bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.5)" },
   dashboard: { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.5)" },

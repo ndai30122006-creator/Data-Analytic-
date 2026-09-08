@@ -138,7 +138,7 @@ export default function Pipeline() {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 6fr)", gap: 20 }}>
-        <Card style={{ background: "rgba(0,255,136,0.04)", borderColor: "rgba(0,255,136,0.25)" }}>
+        <Card style={{ background: "rgba(45,212,191,0.04)", borderColor: "rgba(45,212,191,0.25)" }}>
           <h4>STEP 1 · Mô tả → spec</h4>
           <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={4} style={{ marginTop: 8 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>Cần BYOK key ở Settings, không thì dùng spec mặc định.</div>

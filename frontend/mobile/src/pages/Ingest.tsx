@@ -51,7 +51,7 @@ export default function Ingest() {
       <h2>Ingest — Datasets (raw → DuckDB)</h2>
       <Card style={{ borderStyle: "dashed" }}>
         <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <Button onClick={upload} disabled={!file} style={{ marginLeft: 12, background: file ? "var(--accent)" : "rgba(0,255,136,0.12)" }}>Upload & Ingest</Button>
+        <Button onClick={upload} disabled={!file} style={{ marginLeft: 12, background: file ? "var(--accent)" : "rgba(45,212,191,0.12)" }}>Upload & Ingest</Button>
         {msg && <div style={{ marginTop: 8 }}><Toast message={msg} type={msg.startsWith("Error") || msg.startsWith("List error") ? "error" : msg.startsWith("Ingested") ? "success" : "info"} onClose={() => setMsg("")} /></div>}
       </Card>
 

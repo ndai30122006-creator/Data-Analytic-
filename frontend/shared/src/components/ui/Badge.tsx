@@ -18,7 +18,7 @@ export function Badge({ variant = "neutral", children, style }: { variant?: Vari
         borderRadius: 6,
         fontSize: 10,
         fontWeight: 600,
-        background: variant === "neutral" ? "rgba(0,255,136,0.08)" : `${colors[variant]}20`,
+        background: variant === "neutral" ? "rgba(45,212,191,0.08)" : `${colors[variant]}20`,
         color: colors[variant],
         border: `1px solid ${colors[variant]}30`,
         ...style,

@@ -83,7 +83,7 @@ export default function Ingest() {
             : list.map((d: any) => (
               <div key={d.dataset_name}
                 onClick={() => d.id && viewProfile(d.id, d.dataset_name)}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "10px 8px", borderBottom: "1px solid var(--border)", fontSize: 12, cursor: "pointer", background: selected === d.dataset_name ? "rgba(0,255,136,0.07)" : "transparent", borderRadius: "var(--radius-input)" }}>
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "10px 8px", borderBottom: "1px solid var(--border)", fontSize: 12, cursor: "pointer", background: selected === d.dataset_name ? "rgba(45,212,191,0.07)" : "transparent", borderRadius: "var(--radius-input)" }}>
                 <div>
                   <div style={{ fontWeight: 600 }}>{d.dataset_name}</div>
                   <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{d.rows} rows × {d.cols} cols{d.version ? ` · v${d.version}` : ""}</div>

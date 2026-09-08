@@ -78,7 +78,7 @@ export default function CommandPalette() {
               key={c.name}
               onClick={() => go(i)}
               onMouseEnter={() => setIdx(i)}
-              style={{ padding: "8px 12px", fontSize: 12, cursor: "pointer", background: i === idx ? "rgba(0,255,136,0.12)" : "transparent", color: i === idx ? "var(--accent)" : "var(--text)" }}
+              style={{ padding: "8px 12px", fontSize: 12, cursor: "pointer", background: i === idx ? "rgba(45,212,191,0.12)" : "transparent", color: i === idx ? "var(--accent)" : "var(--text)" }}
             >
               <span style={{ color: "var(--accent)", marginRight: 8 }}>›</span>{c.name}
             </div>

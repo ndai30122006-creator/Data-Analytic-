@@ -39,8 +39,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <p style={{ fontSize: 13, opacity: 0.7, margin: "0 0 12px" }}>{this.state.error?.message ?? "Ứng dụng gặp sự cố không mong muốn."}</p>
           <pre style={{ fontSize: 11, opacity: 0.5, overflow: "auto", background: "rgba(0,0,0,0.3)", padding: 8, borderRadius: 6, textAlign: "left" }}>{String(this.state.error?.stack ?? "").slice(0, 500)}</pre>
           <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center" }}>
-            <button onClick={this.handleReset} style={{ padding: "8px 14px", background: "var(--accent)", color: "#03170d", border: 0, borderRadius: 4, cursor: "pointer" }}>Thử lại</button>
-            <button onClick={() => (window.location.href = "/")} style={{ padding: "8px 14px", background: "rgba(0,255,136,0.08)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 4, cursor: "pointer" }}>Về trang chủ</button>
+            <button onClick={this.handleReset} style={{ padding: "8px 14px", background: "var(--accent)", color: "#04211B", border: 0, borderRadius: 4, cursor: "pointer" }}>Thử lại</button>
+            <button onClick={() => (window.location.href = "/")} style={{ padding: "8px 14px", background: "rgba(45,212,191,0.08)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 4, cursor: "pointer" }}>Về trang chủ</button>
           </div>
         </div>
       );
