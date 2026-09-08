@@ -81,13 +81,31 @@ def test_pipeline_spec_validation():
     table = _table_of(r.json()["dataset_id"])
     bad_specs = [
         # depends_on không tồn tại
-        {"name": "x", "source": table, "target": "mart.stab_x1", "steps": [{"id": "s1", "op": "drop_duplicates", "params": {}, "depends_on": ["nope"]}]},
+        {
+            "name": "x",
+            "source": table,
+            "target": "mart.stab_x1",
+            "steps": [{"id": "s1", "op": "drop_duplicates", "params": {}, "depends_on": ["nope"]}],
+        },
         # cycle
-        {"name": "x", "source": table, "target": "mart.stab_x2", "steps": [{"id": "s1", "op": "drop_duplicates", "params": {}, "depends_on": ["s2"]}, {"id": "s2", "op": "drop_duplicates", "params": {}, "depends_on": ["s1"]}]},
+        {
+            "name": "x",
+            "source": table,
+            "target": "mart.stab_x2",
+            "steps": [
+                {"id": "s1", "op": "drop_duplicates", "params": {}, "depends_on": ["s2"]},
+                {"id": "s2", "op": "drop_duplicates", "params": {}, "depends_on": ["s1"]},
+            ],
+        },
         # identifier sai (SQLi qua tên bảng)
         {"name": "x", "source": 'raw.t"; DROP TABLE users; --', "target": "mart.stab_x3", "steps": []},
         # op không tồn tại
-        {"name": "x", "source": table, "target": "mart.stab_x4", "steps": [{"id": "s1", "op": "no_such_op", "params": {}, "depends_on": []}]},
+        {
+            "name": "x",
+            "source": table,
+            "target": "mart.stab_x4",
+            "steps": [{"id": "s1", "op": "no_such_op", "params": {}, "depends_on": []}],
+        },
     ]
     for spec in bad_specs:
         r = client.post("/pipelines", json=spec, headers=u["headers"])
@@ -200,7 +218,11 @@ def test_versioning_pipeline_dashboard_dataset():
     assert client.get(f"/pipelines/{pid}", headers=u["headers"]).json().get("version") == 1
     r = client.put(f"/pipelines/{pid}", json={**spec, "name": "vpipe2"}, headers=u["headers"])
     assert r.status_code == 200 and r.json()["version"] == 2, r.text
-    did = client.post("/dashboards", json={"name": "vd", "spec": {"id": "d", "title": "t", "source": table, "charts": []}}, headers=u["headers"]).json()["dashboard_id"]
+    did = client.post(
+        "/dashboards",
+        json={"name": "vd", "spec": {"id": "d", "title": "t", "source": table, "charts": []}},
+        headers=u["headers"],
+    ).json()["dashboard_id"]
     assert client.get(f"/dashboards/{did}", headers=u["headers"]).json().get("version") == 1
     dash = client.get(f"/dashboards/{did}", headers=u["headers"]).json()
     r = client.put(f"/dashboards/{did}", json={"name": "vd2", "spec": dash["spec"]}, headers=u["headers"])
@@ -222,7 +244,11 @@ def test_lineage_graph_shape():
     # Tao brief + pipeline -> nodes tang
     client.post(f"/brief/{dsid}", headers=u["headers"])
     table = _table_of(dsid)
-    client.post("/pipelines", json={"name": "lp", "source": table, "target": f"mart.stab_{uuid.uuid4().hex[:6]}", "steps": []}, headers=u["headers"])
+    client.post(
+        "/pipelines",
+        json={"name": "lp", "source": table, "target": f"mart.stab_{uuid.uuid4().hex[:6]}", "steps": []},
+        headers=u["headers"],
+    )
     body = client.get(f"/lineage/{dsid}", headers=u["headers"]).json()
     kinds = {n["kind"] for n in body["nodes"]}
     assert {"dataset", "brief", "pipeline"} <= kinds, kinds
