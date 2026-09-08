@@ -125,9 +125,9 @@ def verify_access_token(token: str) -> Optional[str]:
         return None
 
 
-async def get_current_user(authorization: str = Header(...)) -> str:
-    """Dependency: extract and verify Bearer JWT token."""
-    if not authorization.startswith("Bearer "):
+async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
+    """Dependency: extract and verify Bearer JWT token (thieu header -> 401, khong 422)."""
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authorization header format",

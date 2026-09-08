@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@app/shared/src/components/ErrorBoundary";
+import { RequireAuth } from "@app/shared/src/features/auth/RequireAuth";
 import MobileShell from "./layout/MobileShell";
 import Login from "./pages/Login";
 import Brief from "./pages/Brief";
@@ -16,7 +17,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route element={<MobileShell />}>
+          <Route element={<RequireAuth><MobileShell /></RequireAuth>}>
             <Route path="/" element={<Navigate to="/brief" replace />} />
             <Route path="/brief" element={<Brief />} />
             <Route path="/dashboard" element={<Dashboard />} />
