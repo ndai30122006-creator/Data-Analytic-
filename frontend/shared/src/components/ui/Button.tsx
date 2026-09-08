@@ -17,8 +17,8 @@ const base: React.CSSProperties = {
 };
 
 const variants: Record<Variant, React.CSSProperties> = {
-  primary: { background: "var(--accent)", color: "#00211B", borderColor: "var(--accent)" },
-  ghost: { background: "rgba(45,212,191,0.07)", color: "var(--text)", borderColor: "var(--border)" },
+  primary: { background: "var(--accent)", color: "#fff", borderColor: "var(--accent)", boxShadow: "0 0 14px rgba(255,42,109,0.5)" },
+  ghost: { background: "rgba(255,42,109,0.07)", color: "var(--text)", borderColor: "var(--border)" },
   danger: { background: "var(--danger)", color: "white", borderColor: "var(--danger)" },
 };
 

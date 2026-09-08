@@ -131,7 +131,7 @@ export default function Pipeline() {
         </Card>
       )}
 
-      <Card style={{ background: "rgba(45,212,191,0.06)", borderColor: "rgba(45,212,191,0.25)" }}>
+      <Card style={{ background: "rgba(255,42,109,0.06)", borderColor: "rgba(255,42,109,0.25)" }}>
         <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, cần BYOK key ở Settings để gọi LLM):</label>
         <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={2} style={{ marginTop: 6 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
         <div style={{ marginTop: 8 }}>

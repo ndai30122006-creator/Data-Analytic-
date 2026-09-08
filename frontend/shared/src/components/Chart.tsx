@@ -27,15 +27,15 @@ function getMockApexOptions(type: string): ApexOptions {
     colors: apexDarkTheme.colors,
     grid: { borderColor: apexDarkTheme.grid.borderColor, padding: apexDarkTheme.grid.padding },
     tooltip: { theme: apexDarkTheme.tooltip.theme },
-    xaxis: { labels: { style: { colors: "#5F8A80", fontSize: "11px" } }, axisBorder: { show: false }, axisTicks: { show: false } } as any,
-    yaxis: { labels: { style: { colors: "#5F8A80", fontSize: "11px" } } } as any,
+    xaxis: { labels: { style: { colors: "#8A8AB3", fontSize: "11px" } }, axisBorder: { show: false }, axisTicks: { show: false } } as any,
+    yaxis: { labels: { style: { colors: "#8A8AB3", fontSize: "11px" } } } as any,
   };
   switch (type) {
     case "kpi":
       return {
         ...common,
         chart: { ...common.chart, type: "radialBar" },
-        plotOptions: { radialBar: { dataLabels: { value: { color: "#E6FFF9", fontSize: "16px" } }, track: { background: "rgba(45,212,191,0.1)" } } } as any,
+        plotOptions: { radialBar: { dataLabels: { value: { color: "#EDEDF7", fontSize: "16px" } }, track: { background: "rgba(255,42,109,0.14)" } } } as any,
         series: [72],
         labels: ["KPI"],
       } as ApexOptions;
@@ -46,7 +46,7 @@ function getMockApexOptions(type: string): ApexOptions {
     case "box":
       return { ...common, chart: { type: "boxPlot" as any }, xaxis: { categories: ["G1", "G2"] } as any, series: [{ type: "boxPlot", data: [{ x: "G1", y: [1, 2, 3, 4, 5] }, { x: "G2", y: [2, 3, 4, 5, 6] }] } as any] } as ApexOptions;
     case "line":
-      return { ...common, chart: { type: "line" }, stroke: { curve: "smooth", width: 2, colors: ["#2DD4BF"] } as any, xaxis: { categories: ["T1", "T2", "T3", "T4"] } as any, series: [{ name: "trend", data: [5, 9, 6, 12] }] } as ApexOptions;
+      return { ...common, chart: { type: "line" }, stroke: { curve: "smooth", width: 2, colors: ["#FF2A6D"] } as any, xaxis: { categories: ["T1", "T2", "T3", "T4"] } as any, series: [{ name: "trend", data: [5, 9, 6, 12] }] } as ApexOptions;
     case "scatter":
       return { ...common, chart: { type: "scatter", zoom: { enabled: false } as any }, series: [{ name: "points", data: [[10, 20], [20, 30], [30, 15]] }] } as ApexOptions;
     default:

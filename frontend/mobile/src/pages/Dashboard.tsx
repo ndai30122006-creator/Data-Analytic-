@@ -91,7 +91,7 @@ export default function Dashboard() {
         <Card>
           <h4>Dashboards ({dashboardsList.length})</h4>
           {dashboardsList.length === 0 ? <div style={{ opacity: 0.5, fontSize: 13, color: "var(--text-muted)" }}>Chưa có dashboard</div> : dashboardsList.map((d: any) => (
-            <div key={d.id} onClick={() => handleLoad(d.id)} style={{ padding: "8px", cursor: "pointer", background: selectedId === d.id ? "rgba(45,212,191,0.15)" : "transparent", borderRadius: "var(--radius-input)", borderBottom: "1px solid var(--border)" }}>
+            <div key={d.id} onClick={() => handleLoad(d.id)} style={{ padding: "8px", cursor: "pointer", background: selectedId === d.id ? "rgba(255,42,109,0.15)" : "transparent", borderRadius: "var(--radius-input)", borderBottom: "1px solid var(--border)" }}>
               <div style={{ fontWeight: 600, fontSize: 13 }}>{d.name} <span style={{ opacity: 0.5, fontSize: 11 }}>#{d.id}</span></div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{d.created_at ?? ""}</div>
             </div>
@@ -105,12 +105,12 @@ export default function Dashboard() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12 }}>
         {realCharts.length > 0 ? realCharts.map((c: any, i: number) => (
-          <Card key={c.id ?? i} style={{ background: "rgba(45,212,191,0.03)", padding: 12 }}>
+          <Card key={c.id ?? i} style={{ background: "rgba(255,42,109,0.03)", padding: 12 }}>
             <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{c.title ?? c.type}</div>
             <Chart type={c.type} height={140} options={toOptions(c)} />
           </Card>
         )) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
-          <Card key={t} style={{ background: "rgba(45,212,191,0.03)", padding: 12 }}>
+          <Card key={t} style={{ background: "rgba(255,42,109,0.03)", padding: 12 }}>
             <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{t} (mock — chọn dashboard để xem real-data)</div>
             <Chart type={t} height={140} />
           </Card>

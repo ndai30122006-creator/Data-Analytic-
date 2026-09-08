@@ -49,7 +49,7 @@ export default function DesktopShell() {
                 to={n.to}
                 style={({ isActive }) => ({
                   color: isActive ? "var(--accent)" : "var(--text-muted)",
-                  background: isActive ? "rgba(45,212,191,0.1)" : "transparent",
+                  background: isActive ? "rgba(255,42,109,0.1)" : "transparent",
                   borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                   textDecoration: "none",
                   padding: "7px 14px",
