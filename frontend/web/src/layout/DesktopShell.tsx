@@ -22,7 +22,7 @@ export default function DesktopShell() {
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg)" }}>
       {/* terminal title bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: "1px solid var(--border-strong)", background: "var(--bg-card)", position: "sticky", top: 0, zIndex: 10 }}>
-        <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#F87171" }} />
+        <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff3366" }} />
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#FACC15" }} />
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--accent)" }} />
         <span style={{ marginLeft: 8, fontSize: 12 }}>
@@ -49,7 +49,7 @@ export default function DesktopShell() {
                 to={n.to}
                 style={({ isActive }) => ({
                   color: isActive ? "var(--accent)" : "var(--text-muted)",
-                  background: isActive ? "rgba(255,42,109,0.1)" : "transparent",
+                  background: isActive ? "rgba(0,255,136,0.1)" : "transparent",
                   borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                   textDecoration: "none",
                   padding: "7px 14px",

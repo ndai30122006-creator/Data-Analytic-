@@ -6,7 +6,7 @@ import { Card } from "@app/shared/components/ui/Card";
 import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
 
 const KIND_STYLE: Record<string, { bg: string; border: string }> = {
-  dataset: { bg: "rgba(255,42,109,0.15)", border: "rgba(255,42,109,0.5)" },
+  dataset: { bg: "rgba(0,255,136,0.15)", border: "rgba(0,255,136,0.5)" },
   pipeline: { bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.5)" },
   mart: { bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.5)" },
   dashboard: { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.5)" },
