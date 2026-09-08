@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { pipelines } from "@app/shared/src/api/pipelines";
-import type { PipelineSpec } from "@app/shared/src/types/index";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { Textarea } from "@app/shared/src/components/ui/Input";
-import { Badge } from "@app/shared/src/components/ui/Badge";
-import { useErrorHandler } from "@app/shared/src/hooks/useErrorHandler";
+import { pipelines } from "@app/shared/api/pipelines";
+import type { PipelineSpec } from "@app/shared/types/index";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { Textarea } from "@app/shared/components/ui/Input";
+import { Badge } from "@app/shared/components/ui/Badge";
+import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -45,6 +45,23 @@ export default function Pipeline() {
     } catch (e: any) {
       setOutput(`JSON parse error: ${e.message}`);
       return null;
+    }
+  };
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    try {
+      clearError();
+      const cur = parseSpec();
+      const source = cur?.source ?? "raw.demo";
+      const target = cur?.target ?? "mart.demo";
+      const res = await pipelines.generate(source, target, nl);
+      setSpecText(JSON.stringify(res.spec, null, 2));
+      setOutput(`AI Generate [${res.model_used}]:\n${(res.warnings ?? []).join("\n") || "spec OK"}`);
+    } catch (e: any) {
+      setOutput(`Generate error: ${e.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,9 +132,11 @@ export default function Pipeline() {
       )}
 
       <Card style={{ background: "rgba(139,92,246,0.08)", borderColor: "rgba(139,92,246,0.2)" }}>
-        <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, hiện manual edit):</label>
+        <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, cần BYOK key ở Settings để gọi LLM):</label>
         <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={2} style={{ marginTop: 6 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Gợi ý BYOK: sau này gọi LLM etl_author để sinh spec từ NL + profile.</div>
+        <div style={{ marginTop: 8 }}>
+          <Button onClick={handleGenerate} disabled={loading || !nl.trim()} style={{ background: "var(--accent)" }}>AI Generate Spec</Button>
+        </div>
       </Card>
 
       <Card>

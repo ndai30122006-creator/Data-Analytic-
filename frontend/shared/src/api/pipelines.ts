@@ -6,6 +6,7 @@ export const pipelines = {
   list: () => api.get<{ pipelines: any[]; count: number }>("/pipelines"),
   get: (id: string) => api.get<any>(`/pipelines/${id}`),
   preview: (spec: PipelineSpec) => api.post<any>("/pipelines/preview", spec),
+  generate: (source: string, target: string, description: string) => api.post<{ spec: PipelineSpec; warnings: string[]; model_used: string }>(`/pipelines/generate`, { source, target, description }),
   run: (id: string) => api.post<RunStarted>(`/pipelines/run?pipeline_id=${id}`),
   listRuns: () => api.get<{ runs: RunInfo[]; count: number }>("/runs"),
   getRun: (id: string) => api.get<RunInfo>(`/runs/${id}`),

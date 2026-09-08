@@ -19,6 +19,7 @@ def _sanitize_table(name: str) -> str:
 
 MAX_FILE_MB = 50
 
+
 def ingest_file(user: str, file, table: str = None) -> dict:
     """Ingest file-like (CSV/Excel) into DuckDB raw schema. Returns profile."""
     fname = getattr(file, "name", None) or getattr(file, "filename", "") or "upload"

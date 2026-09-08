@@ -148,10 +148,14 @@ async def run_analysis(
         import numpy as np
 
         def _to_python(obj):
+            import math
+
             if isinstance(obj, np.generic):
-                return obj.item()
+                obj = obj.item()
             if isinstance(obj, np.ndarray):
-                return obj.tolist()
+                return _to_python(obj.tolist())
+            if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+                return None
             if isinstance(obj, dict):
                 return {k: _to_python(v) for k, v in obj.items()}
             if isinstance(obj, list):

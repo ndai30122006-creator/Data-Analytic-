@@ -85,9 +85,7 @@ def get_lineage(dataset_id: int) -> dict:
             "dashboard_list": [{"id": d.id, "name": d.name} for d in dash_rows],
             "pipelines_count": len(pipe_rows),
             "pipelines": len(pipe_rows),
-            "pipeline_list": [
-                {"id": p.id, "name": p.name, "source": p.source, "target": p.target} for p in pipe_rows
-            ],
+            "pipeline_list": [{"id": p.id, "name": p.name, "source": p.source, "target": p.target} for p in pipe_rows],
             "nodes": nodes,
             "edges": edges,
         }

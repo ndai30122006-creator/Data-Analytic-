@@ -30,16 +30,36 @@ async def create_brief(dataset_id: int, username: str = Depends(get_current_user
                     profile = json.loads(ds.profile_json)
                 except Exception:
                     profile = {}
-            # Generate via briefer fallback (no LLM raw)
+            # AI (BYOK) neu user co key — chi gui profile, khong gui raw
+            import logging as _logging
+            import os as _os
+
             from src.prompts.briefer import generate_brief_fallback
 
-            content = generate_brief_fallback(profile)
+            _logger = _logging.getLogger(__name__)
+            content, model_used = generate_brief_fallback(profile), "rule-based"
+            try:
+                from src.core.database import get_api_key
+                from src.core.llm_client import complete_text
+                from src.prompts.briefer import build_prompt
+
+                user_key = get_api_key(username)
+                if user_key:
+                    provider = _os.environ.get("AI_PROVIDER", "openai")
+                    try:
+                        llm_text, model = complete_text(user_key, provider, build_prompt(profile))
+                        if llm_text:
+                            content, model_used = llm_text, f"{provider}:{model}"
+                    except Exception as exc:
+                        _logger.warning("LLM brief failed, fallback rule-based: %s", exc)
+            except Exception as exc:
+                _logger.warning("Brief AI path error, fallback rule-based: %s", exc)
             max_v = s.query(Brief).filter(Brief.dataset_id == dataset_id).count()
-            b = Brief(dataset_id=dataset_id, version=max_v + 1, content=content, model_used="rule-based")
+            b = Brief(dataset_id=dataset_id, version=max_v + 1, content=content, model_used=model_used)
             s.add(b)
             s.commit()
             s.refresh(b)
-            return {"brief_id": b.id, "version": b.version, "content": content, "model_used": "rule-based"}
+            return {"brief_id": b.id, "version": b.version, "content": content, "model_used": model_used}
     except HTTPException:
         raise
     except Exception as exc:

@@ -7,6 +7,7 @@ import { Input } from "@app/shared/components/ui/Input";
 export default function Brief() {
   const [datasetId, setDatasetId] = useState(1);
   const [content, setContent] = useState("");
+  const [modelUsed, setModelUsed] = useState("");
   const [history, setHistory] = useState<any[]>([]);
   const [version, setVersion] = useState<number | "">("");
 
@@ -14,6 +15,7 @@ export default function Brief() {
     try {
       const res = await brief.create(datasetId);
       setContent(res.content ?? JSON.stringify(res, null, 2));
+      setModelUsed(res.model_used ?? "");
       list();
     } catch (e: any) {
       setContent(`Error: ${e.message}`);
@@ -58,6 +60,7 @@ export default function Brief() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
         <Card style={{ background: "rgba(0,0,0,0.2)" }}>
+          {modelUsed && <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>model: {modelUsed} (rule-based = chưa có BYOK key ở Settings)</div>}
           <pre style={{ fontFamily: "var(--font-mono)", fontSize: 12, overflow: "auto", maxHeight: 400, whiteSpace: "pre-wrap", margin: 0 }}>{content || "Brief tiếng Việt sẽ hiện ở đây (fallback rule-based nếu không BYOK)"}</pre>
         </Card>
         <Card>

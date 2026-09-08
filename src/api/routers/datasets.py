@@ -7,18 +7,10 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
 from src.api.deps import check_rate_limit, get_current_user
-from src.core.database import (
-    create_dataset as db_create_dataset,
-)
-from src.core.database import (
-    delete_dataset as db_delete_dataset,
-)
-from src.core.database import (
-    get_dataset as db_get_dataset,
-)
-from src.core.database import (
-    list_datasets as db_list_datasets,
-)
+from src.core.database import create_dataset as db_create_dataset
+from src.core.database import delete_dataset as db_delete_dataset
+from src.core.database import get_dataset as db_get_dataset
+from src.core.database import list_datasets as db_list_datasets
 
 logger = logging.getLogger(__name__)
 
@@ -112,17 +104,24 @@ async def ingest_dataset(
 
             from src.warehouse.registry import register_dataset
 
-            ds = register_dataset(
-                username,
-                file.filename,
-                result["table"],
-                file_path=file.filename,
-                profile_json=(
-                    _json.dumps(result["profile"], ensure_ascii=False)
-                    if isinstance(result["profile"], str)
-                    else _json.dumps({"profile": result["profile"]}, ensure_ascii=False)
-                ),
-            )
+            try:
+                ds = register_dataset(
+                    username,
+                    file.filename,
+                    result["table"],
+                    file_path=file.filename,
+                    profile_json=(
+                        _json.dumps(result["profile"], ensure_ascii=False)
+                        if isinstance(result["profile"], str)
+                        else _json.dumps({"profile": result["profile"]}, ensure_ascii=False)
+                    ),
+                )
+            except Exception as reg_exc:
+                if "UNIQUE constraint" in str(reg_exc):
+                    raise HTTPException(
+                        status_code=400, detail=f"Dataset '{file.filename}' already exists, doi ten file khac"
+                    )
+                raise
             # Update rows/cols (mục 8: rollback nếu fail)
             try:
                 with SessionLocal() as s:
@@ -189,4 +188,9 @@ async def get_dataset_profile(dataset_id: int, username: str = Depends(get_curre
             except Exception:
                 profile = {"raw": ds.profile_json}
         # No raw data, only profile (Plan 03/07)
-        return {"dataset_id": ds.id, "dataset_name": ds.dataset_name, "version": getattr(ds, "version", 1) or 1, "profile": profile}
+        return {
+            "dataset_id": ds.id,
+            "dataset_name": ds.dataset_name,
+            "version": getattr(ds, "version", 1) or 1,
+            "profile": profile,
+        }

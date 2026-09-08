@@ -19,6 +19,30 @@ def _validate_identifier(name: str) -> str:
     return f'"{schema}"."{table}"'
 
 
+def sanitize_for_json(obj):
+    """Chuyen NaN/Inf -> None de JSONResponse khong 500 (muc smoke-fix)."""
+    import math
+
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [sanitize_for_json(v) for v in obj]
+    # pandas/numpy scalar co NaN
+    try:
+        import math as _m
+
+        if obj is not None and not isinstance(obj, (str, bool, int)) and hasattr(obj, "item"):
+            v = obj.item()
+            if isinstance(v, float) and (_m.isnan(v) or _m.isinf(v)):
+                return None
+            return v
+    except Exception:
+        pass
+    return obj
+
+
 def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
     """Execute spec DAG; sample=True limits 100 rows, no overwrite mart."""
     spec.validate_dag()
@@ -107,7 +131,7 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
             "target": spec.target,
             "rows": len(current),
             "cols": len(current.columns),
-            "preview": current.head(5).to_dict(orient="records"),
+            "preview": sanitize_for_json(current.head(5).to_dict(orient="records")),
         }
     finally:
         conn.close()

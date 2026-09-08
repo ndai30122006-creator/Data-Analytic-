@@ -44,7 +44,12 @@ async def list_dashboards(username: str = Depends(get_current_user)):
         items = s.query(Dashboard).filter(Dashboard.owner == username).all()
         return {
             "dashboards": [
-                {"id": d.id, "name": d.name, "version": getattr(d, "version", 1) or 1, "created_at": d.created_at.isoformat() if d.created_at else None}
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "version": getattr(d, "version", 1) or 1,
+                    "created_at": d.created_at.isoformat() if d.created_at else None,
+                }
                 for d in items
             ]
         }
@@ -60,7 +65,12 @@ async def get_dashboard(dashboard_id: int, username: str = Depends(get_current_u
         d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
         if not d or d.owner != username:
             raise HTTPException(status_code=404, detail="Dashboard not found")
-        return {"id": d.id, "name": d.name, "version": getattr(d, "version", 1) or 1, "spec": json.loads(d.spec_json) if d.spec_json else {}}
+        return {
+            "id": d.id,
+            "name": d.name,
+            "version": getattr(d, "version", 1) or 1,
+            "spec": json.loads(d.spec_json) if d.spec_json else {},
+        }
 
 
 @router.put("/dashboards/{dashboard_id}", dependencies=[Depends(check_rate_limit)])
@@ -160,7 +170,9 @@ async def dashboard_data(dashboard_id: int, username: str = Depends(get_current_
                             }
                         )
                     except Exception:
-                        charts_out.append({"id": cs.id, "type": "hist", "title": cs.title, "categories": [], "series": []})
+                        charts_out.append(
+                            {"id": cs.id, "type": "hist", "title": cs.title, "categories": [], "series": []}
+                        )
                 elif t == "box" and cs.x and cs.y and cs.x in df.columns and cs.y in df.columns:
                     groups = []
                     try:
@@ -189,12 +201,20 @@ async def dashboard_data(dashboard_id: int, username: str = Depends(get_current_
                             }
                         )
                     else:
-                        pts = list(zip(sub[cs.x].astype(float, errors="ignore").tolist(), sub[cs.y].astype(float).tolist()))
-                        charts_out.append({"id": cs.id, "type": t, "title": cs.title, "series": [{"name": "points", "data": pts}]})
+                        pts = list(
+                            zip(sub[cs.x].astype(float, errors="ignore").tolist(), sub[cs.y].astype(float).tolist())
+                        )
+                        charts_out.append(
+                            {"id": cs.id, "type": t, "title": cs.title, "series": [{"name": "points", "data": pts}]}
+                        )
                 else:
-                    charts_out.append({"id": c.get("id", ""), "type": c.get("type", ""), "title": c.get("title", ""), "series": []})
+                    charts_out.append(
+                        {"id": c.get("id", ""), "type": c.get("type", ""), "title": c.get("title", ""), "series": []}
+                    )
             except Exception:
-                charts_out.append({"id": c.get("id", ""), "type": c.get("type", ""), "title": c.get("title", ""), "series": []})
+                charts_out.append(
+                    {"id": c.get("id", ""), "type": c.get("type", ""), "title": c.get("title", ""), "series": []}
+                )
         return {"dashboard_id": d.id, "spec": spec, "charts": charts_out}
 
 
@@ -216,5 +236,45 @@ async def generate_dashboard(dataset_id: int, username: str = Depends(get_curren
                 profile = {}
         from src.prompts.dashboard_author import fallback_spec
 
-        spec = fallback_spec(profile, ds.duckdb_table or f"mart.{ds.dataset_name}")
-        return {"spec": spec}
+        source = ds.duckdb_table or f"mart.{ds.dataset_name}"
+        spec = fallback_spec(profile, source)
+        model_used = "rule-based"
+        # AI (BYOK) neu user co key — chi gui profile + brief rong
+        try:
+            import logging as _logging
+            import os as _os
+
+            from src.core.database import get_api_key
+            from src.core.llm_client import complete_json
+            from src.dashboard.spec_schema import ChartSpec
+            from src.prompts.dashboard_author import build_prompt
+
+            _logger = _logging.getLogger(__name__)
+            user_key = get_api_key(username)
+            if user_key:
+                provider = _os.environ.get("AI_PROVIDER", "openai")
+                try:
+                    data, model = complete_json(user_key, provider, build_prompt(profile, "", source))
+                    charts = data.get("charts", []) if isinstance(data, dict) else []
+                    allowed = {"kpi", "bar", "hist", "box", "line", "scatter"}
+                    valid = []
+                    for c in charts[:6]:
+                        try:
+                            cs = ChartSpec(**c)
+                            if cs.type.lower() in allowed:
+                                valid.append(cs.model_dump())
+                        except Exception:
+                            continue
+                    if len(valid) >= 2:
+                        spec = {
+                            "id": data.get("id", "dash_ai"),
+                            "title": data.get("title", "Dashboard AI"),
+                            "source": source,
+                            "charts": valid,
+                        }
+                        model_used = f"{provider}:{model}"
+                except Exception as exc:
+                    _logger.warning("LLM dashboard failed, fallback rule-based: %s", exc)
+        except Exception:
+            pass
+        return {"spec": spec, "model_used": model_used}

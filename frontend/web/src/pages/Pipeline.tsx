@@ -48,6 +48,23 @@ export default function Pipeline() {
     }
   };
 
+  const handleGenerate = async () => {
+    setLoading(true);
+    try {
+      clearError();
+      const cur = parseSpec();
+      const source = cur?.source ?? "raw.demo";
+      const target = cur?.target ?? "mart.demo";
+      const res = await pipelines.generate(source, target, nl);
+      setSpecText(JSON.stringify(res.spec, null, 2));
+      setOutput(`AI Generate [${res.model_used}]:\n${(res.warnings ?? []).join("\n") || "spec OK"}`);
+    } catch (e: any) {
+      setOutput(`Generate error: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePreview = async () => {
     const spec = parseSpec();
     if (!spec) return;
@@ -115,9 +132,11 @@ export default function Pipeline() {
       )}
 
       <Card style={{ background: "rgba(139,92,246,0.08)", borderColor: "rgba(139,92,246,0.2)" }}>
-        <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, hiện manual edit):</label>
+        <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Mô tả tiếng Việt (NL → spec, cần BYOK key ở Settings để gọi LLM):</label>
         <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={2} style={{ marginTop: 6 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Gợi ý BYOK: sau này gọi LLM etl_author để sinh spec từ NL + profile.</div>
+        <div style={{ marginTop: 8 }}>
+          <Button onClick={handleGenerate} disabled={loading || !nl.trim()} style={{ background: "var(--accent)" }}>AI Generate Spec</Button>
+        </div>
       </Card>
 
       <Card>

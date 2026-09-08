@@ -32,7 +32,7 @@ export default function Dashboard() {
       const res = await dashboards.generate(datasetId);
       setSpecText(JSON.stringify(res.spec ?? res, null, 2));
       setRealCharts([]);
-      setOutput(`Generated from dataset ${datasetId} (fallback 4 charts, theme accent sync)`);
+      setOutput(`Generated from dataset ${datasetId} [${(res as any).model_used ?? "rule-based"}] — save dashboard rồi chọn để xem real-data`);
     } catch (e: any) {
       setOutput(`Generate error: ${e.message}`);
     }
