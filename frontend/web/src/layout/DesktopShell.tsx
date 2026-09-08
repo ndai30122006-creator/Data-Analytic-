@@ -18,8 +18,7 @@ export default function DesktopShell() {
           width: 240,
           borderRight: "1px solid var(--border)",
           padding: 16,
-          background: "rgba(255,255,255,0.02)",
-          backdropFilter: "blur(12px)",
+          background: "var(--bg-card)",
           position: "sticky",
           top: 0,
           height: "100vh",
@@ -33,7 +32,7 @@ export default function DesktopShell() {
               to={n.to}
               style={({ isActive }) => ({
                 color: isActive ? "var(--accent)" : "var(--text-muted)",
-                background: isActive ? "rgba(139,92,246,0.12)" : "transparent",
+                background: isActive ? "rgba(74,222,128,0.12)" : "transparent",
                 textDecoration: "none",
                 padding: "8px 12px",
                 borderRadius: "var(--radius-input)",

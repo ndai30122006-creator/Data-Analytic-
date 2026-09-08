@@ -1,35 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
+/* Terminal Dark — phosphor green on near-black (style: designprompts.dev Terminal) */
 :root {
-  --bg: #0A0A1A;
-  --bg-card: rgba(255,255,255,0.04);
-  --bg-card-hover: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.12);
-  --text: #EEF2FF;
-  --text-muted: #94A3B8;
-  --accent: #8B5CF6;
-  --accent-hover: #7C3AED;
-  --success: #10B981;
-  --warn: #F59E0B;
-  --danger: #EF4444;
-  --radius-card: 16px;
-  --radius-input: 10px;
-  --radius-pill: 999px;
-  --blur: 16px;
-  --font-sans: Inter, system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --bg: #070B07;
+  --bg-card: #0B120B;
+  --bg-card-hover: #0E170E;
+  --border: rgba(74,222,128,0.16);
+  --border-strong: rgba(74,222,128,0.35);
+  --text: #CFF5D8;
+  --text-muted: #6B8F71;
+  --accent: #4ADE80;
+  --accent-hover: #22C55E;
+  --success: #4ADE80;
+  --warn: #FACC15;
+  --danger: #F87171;
+  --radius-card: 4px;
+  --radius-input: 2px;
+  --radius-pill: 4px;
+  --blur: 0px;
+  --font-sans: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; }
+html { scrollbar-color: var(--border-strong) var(--bg); }
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   margin: 0;
-  -webkit-font-smoothing: antialiased;
+  caret-color: var(--accent);
 }
-h2 { font-size: 20px; font-weight: 600; margin: 0; }
-h4 { font-size: 13px; font-weight: 600; margin: 0; }
-pre, code, textarea.mono { font-family: var(--font-mono); }
+::selection { background: rgba(74,222,128,0.3); color: #04120A; }
+h2 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: 0; }
+h2::before { content: "> "; color: var(--accent); }
+h4 { font-size: 12px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+pre, code, textarea.mono, input, button { font-family: var(--font-mono); }
 a { color: var(--accent); }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }

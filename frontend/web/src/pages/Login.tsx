@@ -27,7 +27,7 @@ export default function Login() {
       <button onClick={submit} disabled={loading} style={{ width: "100%", padding: 10 }}>
         {loading ? "..." : mode === "login" ? "Login" : "Register"}
       </button>
-      <button onClick={() => setMode(mode === "login" ? "register" : "login")} style={{ marginTop: 8, background: "none", border: "none", color: "#8B5CF6" }}>
+      <button onClick={() => setMode(mode === "login" ? "register" : "login")} style={{ marginTop: 8, background: "none", border: "none", color: "var(--accent)" }}>
         {mode === "login" ? "Need account? Register" : "Have account? Login"}
       </button>
     </div>

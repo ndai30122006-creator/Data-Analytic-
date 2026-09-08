@@ -12,7 +12,7 @@ export default function Login() {
       <h2>Login — Mobile</h2>
       <input placeholder="username" value={u} onChange={(e) => setU(e.target.value)} style={{ width: "100%", padding: 12, marginBottom: 12, borderRadius: 12 }} />
       <input placeholder="password" type="password" value={p} onChange={(e) => setP(e.target.value)} style={{ width: "100%", padding: 12, marginBottom: 12, borderRadius: 12 }} />
-      <button onClick={async () => { await login(u, p); nav("/brief"); }} style={{ width: "100%", padding: 12, borderRadius: 999, background: "#8B5CF6", color: "white", border: "none" }}>
+      <button onClick={async () => { await login(u, p); nav("/brief"); }} style={{ width: "100%", padding: 12, borderRadius: 4, background: "var(--accent)", color: "white", border: "none" }}>
         Login
       </button>
     </div>

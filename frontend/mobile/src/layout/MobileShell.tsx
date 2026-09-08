@@ -23,9 +23,8 @@ export default function MobileShell() {
           display: "flex",
           justifyContent: "space-around",
           padding: "10px 0 calc(10px + env(safe-area-inset-bottom))",
-          background: "rgba(10,10,26,0.92)",
+          background: "rgba(7,11,7,0.95)",
           borderTop: "1px solid var(--border)",
-          backdropFilter: "blur(16px)",
         }}
       >
         {nav.map((n) => (
@@ -34,7 +33,7 @@ export default function MobileShell() {
             to={n.to}
             style={({ isActive }) => ({
               color: isActive ? "var(--accent)" : "var(--text-muted)",
-              background: isActive ? "rgba(139,92,246,0.12)" : "transparent",
+              background: isActive ? "rgba(74,222,128,0.12)" : "transparent",
               textDecoration: "none",
               fontSize: 11,
               fontWeight: isActive ? 600 : 400,

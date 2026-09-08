@@ -1,7 +1,7 @@
 export const apexDarkTheme = {
-  chart: { background: "transparent", foreColor: "#94A3B8", fontFamily: "Inter, sans-serif", toolbar: { show: false } },
-  colors: ["#8B5CF6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"],
-  grid: { borderColor: "rgba(255,255,255,0.06)", padding: { top: 12, right: 12, bottom: 0, left: 12 } },
+  chart: { background: "transparent", foreColor: "#6B8F71", fontFamily: "JetBrains Mono, monospace", toolbar: { show: false } },
+  colors: ["#4ADE80", "#86EFAC", "#22C55E", "#FACC15", "#F87171", "#38BDF8"],
+  grid: { borderColor: "rgba(74,222,128,0.12)", padding: { top: 12, right: 12, bottom: 0, left: 12 } },
   tooltip: { theme: "dark" as const },
   stroke: { width: 2, curve: "smooth" as const },
 };

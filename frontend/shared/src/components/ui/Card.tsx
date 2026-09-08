@@ -12,7 +12,6 @@ export function Card({ hover = false, style, children, ...rest }: Props) {
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-card)",
         padding: 16,
-        backdropFilter: "blur(12px)",
         ...(hover ? { cursor: "pointer" } : {}),
         ...style,
       }}
