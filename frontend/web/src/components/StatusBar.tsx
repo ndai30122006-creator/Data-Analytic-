@@ -4,17 +4,22 @@ import { getStoredUser } from "@app/shared/src/features/auth/store";
 
 export default function StatusBar() {
   const [api, setApi] = useState<"online" | "offline" | "...">("...");
+  const [latency, setLatency] = useState<number | null>(null);
   const [clock, setClock] = useState("");
   const loc = useLocation();
 
   useEffect(() => {
     let stop = false;
     const ping = async () => {
+      const t0 = performance.now();
       try {
         const res = await fetch("http://localhost:8000/health");
-        if (!stop) setApi(res.ok ? "online" : "offline");
+        if (!stop) {
+          setApi(res.ok ? "online" : "offline");
+          setLatency(res.ok ? Math.round(performance.now() - t0) : null);
+        }
       } catch {
-        if (!stop) setApi("offline");
+        if (!stop) { setApi("offline"); setLatency(null); }
       }
     };
     ping();
@@ -33,7 +38,7 @@ export default function StatusBar() {
       borderTop: "1px solid var(--border-strong)", background: "var(--bg-card)",
       fontSize: 11, color: "var(--text-muted)", position: "sticky", bottom: 0, zIndex: 5,
     }}>
-      <span><span className="dot-live" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: dot, marginRight: 6, boxShadow: `0 0 8px ${dot}` }} />api:{api}</span>
+      <span><span className="dot-live" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: dot, marginRight: 6, boxShadow: `0 0 8px ${dot}` }} />api:{api}{latency !== null && api === "online" ? ` ${latency}ms` : ""}</span>
       <span>user:{getStoredUser() ?? "?"}</span>
       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>~{loc.pathname}</span>
       <span>v1.3.0</span>

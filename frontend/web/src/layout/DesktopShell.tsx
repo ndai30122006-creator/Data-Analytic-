@@ -19,14 +19,16 @@ export default function DesktopShell() {
   const user = getStoredUser() ?? "?";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "transparent", position: "relative", zIndex: 1 }}>
+      <div className="orb orb-a" />
+      <div className="orb orb-b" />
       {/* title bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}>
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--danger)" }} />
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--warn)" }} />
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--accent)" }} />
-        <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 700 }}>
-          workbench<span style={{ color: "var(--accent)" }}>-ai</span>
+        <span className="grad-text" style={{ marginLeft: 8, fontSize: 13, fontWeight: 800, letterSpacing: "-0.01em", filter: "drop-shadow(0 0 8px rgba(45,212,191,0.35))" }}>
+          workbench-ai
         </span>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{user} · {loc.pathname}</span>
         <span style={{ flex: 1 }} />
