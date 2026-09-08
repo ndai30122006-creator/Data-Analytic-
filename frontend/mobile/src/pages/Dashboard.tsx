@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { dashboards } from "@app/shared/src/api/dashboards";
-import { datasets } from "@app/shared/src/api/datasets";
-import { Button } from "@app/shared/src/components/ui/Button";
-import { Card } from "@app/shared/src/components/ui/Card";
-import { Input, Textarea } from "@app/shared/src/components/ui/Input";
-import { Chart } from "@app/shared/src/components/Chart";
+import { dashboards } from "@app/shared/api/dashboards";
+import { datasets } from "@app/shared/api/datasets";
+import { Button } from "@app/shared/components/ui/Button";
+import { Card } from "@app/shared/components/ui/Card";
+import { Input, Textarea } from "@app/shared/components/ui/Input";
+import { Chart } from "@app/shared/components/Chart";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [specText, setSpecText] = useState("");
   const [output, setOutput] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [realCharts, setRealCharts] = useState<any[]>([]);
 
   const refresh = async () => {
     try {
@@ -30,6 +31,7 @@ export default function Dashboard() {
     try {
       const res = await dashboards.generate(datasetId);
       setSpecText(JSON.stringify(res.spec ?? res, null, 2));
+      setRealCharts([]);
       setOutput(`Generated from dataset ${datasetId} (fallback 4 charts, theme accent sync)`);
     } catch (e: any) {
       setOutput(`Generate error: ${e.message}`);
@@ -54,15 +56,25 @@ export default function Dashboard() {
       const res = await dashboards.get(id);
       setSpecText(JSON.stringify(res.spec ?? res, null, 2));
       const data = await dashboards.data(id).catch(() => null);
-      setOutput(`Loaded #${id} — data: ${JSON.stringify(data, null, 2).slice(0, 400)}`);
+      const charts = (data as any)?.charts ?? [];
+      setRealCharts(charts);
+      setOutput(`Loaded #${id} — ${charts.length} charts real-data (DuckDB 1 query/chart)`);
     } catch (e: any) {
       setOutput(`Load error: ${e.message}`);
     }
   };
 
+  const toOptions = (c: any) => {
+    if (c.type === "kpi" && typeof c.value === "number") return { series: [c.value] } as any;
+    const opt: any = {};
+    if (c.series) opt.series = c.series;
+    if (c.categories) opt.xaxis = { categories: c.categories };
+    return opt;
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Dashboard — AI Generate & ECharts</h2>
+      <h2>Dashboard — AI Generate & ApexCharts</h2>
 
       <Card style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }}>
         <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset ID / mart
@@ -92,12 +104,17 @@ export default function Dashboard() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12 }}>
-        {(["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
+        {realCharts.length > 0 ? realCharts.map((c: any, i: number) => (
+          <Card key={c.id ?? i} style={{ background: "rgba(255,255,255,0.02)", padding: 12 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{c.title ?? c.type}</div>
+            <Chart type={c.type} height={140} options={toOptions(c)} />
+          </Card>
+        )) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
           <Card key={t} style={{ background: "rgba(255,255,255,0.02)", padding: 12 }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{t}</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>{t} (mock — chọn dashboard để xem real-data)</div>
             <Chart type={t} height={140} />
           </Card>
-        ))}
+        )))}
       </div>
 
       <Card style={{ background: "rgba(0,0,0,0.2)" }}>

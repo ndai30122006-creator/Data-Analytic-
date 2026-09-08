@@ -12,10 +12,10 @@ export function Chart({ type, height = 180, options }: { type: string; height?: 
   return <ReactApexChart options={opts as ApexOptions} series={series as any} type={apexType(type)} height={height} />;
 }
 
-function apexType(t: string): "bar" | "area" | "line" | "scatter" | "radialBar" {
+function apexType(t: string): "bar" | "area" | "line" | "scatter" | "radialBar" | "boxPlot" {
   if (t === "kpi") return "radialBar";
   if (t === "hist" || t === "bar") return "bar";
-  if (t === "box") return "bar";
+  if (t === "box") return "boxPlot";
   if (t === "line") return "line";
   if (t === "scatter") return "scatter";
   return "bar";
