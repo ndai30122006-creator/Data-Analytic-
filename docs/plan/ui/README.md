@@ -15,7 +15,7 @@
 ## Trạng thái hiện tại (thực tế trên `main`)
 - ✅ 8 screens web + mobile (Login, Ingest, Pipeline, Brief, Dashboard, Lab, Lineage, Settings).
 - ✅ **Streamlit đã bị gỡ bỏ hoàn toàn** (`app.py`, `.streamlit`, `src/ui/` không còn) — Node UI là frontend duy nhất.
-- ✅ Repo đổi tên thành **workbench-ai**.
+- ✅ Tên project là **workbench-ai** (repo hiện tại: `Data-Analytic-`).
 - ✅ UI components dùng chung + design tokens (Modern Dark Aurora) + ApexCharts real charts.
 - ✅ Handle lỗi chuẩn (`useErrorHandler`, `ApiError`), E2E workflow test (`tests/test_e2e.py`).
 

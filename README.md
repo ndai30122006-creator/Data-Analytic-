@@ -44,9 +44,10 @@
 ## 🚀 Cài đặt
 
 ### 1. Clone
+> Repo hiện tại là `Data-Analytic-` (`workbench-ai` là tên project).
 ```bash
-git clone https://github.com/ndai30122006-creator/workbench-ai.git
-cd workbench-ai
+git clone https://github.com/ndai30122006-creator/Data-Analytic-.git
+cd Data-Analytic-
 git checkout main
 ```
 
@@ -111,7 +112,7 @@ docker compose --profile production up --build -d  # + nginx 80/443
 ## 🏗️ Cấu trúc dự án (mới)
 
 ```
-project1/
+Data-Analytic-/
 ├── api.py                 # FastAPI — execution layer + BYOK + rate-limit
 ├── src/
 │   ├── warehouse/         # DuckDB local-first (connection, ingest, registry, lineage)

@@ -20,8 +20,8 @@
 ## 1. Clone + chuẩn bị
 
 ```bash
-git clone https://github.com/ndai30122006-creator/workbench-ai.git
-cd workbench-ai
+git clone https://github.com/ndai30122006-creator/Data-Analytic-.git
+cd Data-Analytic-
 git checkout main          # nhánh main đã chứa UI mới + fix mới nhất
 ```
 
