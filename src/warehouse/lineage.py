@@ -1,4 +1,4 @@
-"""Lineage — dataset -> pipelines -> dashboards (Plan P5)."""
+"""Lineage — dataset -> pipelines -> dashboards (Plan P5 + muc 13: graph nodes/edges)."""
 
 from src.core.database import Brief, Dataset, SessionLocal
 
@@ -13,28 +13,81 @@ def get_lineage(dataset_id: int) -> dict:
         ds = s.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not ds:
             return {}
-        briefs = s.query(Brief).filter(Brief.dataset_id == dataset_id).count() if Brief else 0
-        dashboards = 0
-        pipelines_count = 0
-        if Dashboard:
-            dashboards = s.query(Dashboard).count()
+        table = ds.duckdb_table or ""
+        # Brief versions
+        brief_rows = []
+        if Brief:
+            brief_rows = [
+                {"version": b.version, "model": b.model_used}
+                for b in s.query(Brief).filter(Brief.dataset_id == dataset_id).order_by(Brief.version.asc()).all()
+            ]
+        # Pipelines whose source matches this dataset
+        pipe_rows = []
         try:
             from src.core.database import Pipeline
 
-            # Count pipelines whose source matches dataset's duckdb_table or name
-            if ds.duckdb_table:
-                pipelines_count = s.query(Pipeline).filter(Pipeline.source == ds.duckdb_table).count()
-                if pipelines_count == 0 and ds.dataset_name:
-                    pipelines_count = s.query(Pipeline).filter(Pipeline.source.contains(ds.dataset_name)).count()
+            q = s.query(Pipeline).filter(Pipeline.owner == ds.username)
+            if table:
+                pipe_rows = q.filter(Pipeline.source == table).all()
+                if not pipe_rows and ds.dataset_name:
+                    pipe_rows = q.filter(Pipeline.source.contains(ds.dataset_name)).all()
             elif ds.dataset_name:
-                pipelines_count = s.query(Pipeline).filter(Pipeline.source.contains(ds.dataset_name)).count()
+                pipe_rows = q.filter(Pipeline.source.contains(ds.dataset_name)).all()
         except Exception:
-            pipelines_count = 0
+            pipe_rows = []
+        targets = {p.target for p in pipe_rows if getattr(p, "target", None)}
+        # Dashboards whose spec.source matches dataset table HOAC pipeline target
+        dash_rows = []
+        if Dashboard:
+            import json as _json
+
+            for d in s.query(Dashboard).filter(Dashboard.owner == ds.username).all():
+                try:
+                    src = (_json.loads(d.spec_json) if d.spec_json else {}).get("source", "")
+                except Exception:
+                    src = ""
+                if src == table or src in targets:
+                    dash_rows.append(d)
+        # Graph truc quan cho UI (nodes/edges) — giu cac key cu de tuong thich
+        nodes = [{"id": f"dataset:{dataset_id}", "kind": "dataset", "label": ds.dataset_name, "meta": table}]
+        edges = []
+        for b in brief_rows:
+            nid = f"brief:v{b['version']}"
+            nodes.append({"id": nid, "kind": "brief", "label": f"Brief v{b['version']}", "meta": b["model"]})
+            edges.append({"from": f"dataset:{dataset_id}", "to": nid, "label": "generates"})
+        for p in pipe_rows:
+            nid = f"pipeline:{p.id}"
+            nodes.append({"id": nid, "kind": "pipeline", "label": p.name, "meta": f"{p.source} → {p.target}"})
+            edges.append({"from": f"dataset:{dataset_id}", "to": nid, "label": "feeds"})
+            if p.target:
+                tid = f"table:{p.target}"
+                if not any(n["id"] == tid for n in nodes):
+                    nodes.append({"id": tid, "kind": "mart", "label": p.target, "meta": "mart table"})
+                edges.append({"from": nid, "to": tid, "label": "writes"})
+        for d in dash_rows:
+            nid = f"dashboard:{d.id}"
+            nodes.append({"id": nid, "kind": "dashboard", "label": d.name, "meta": ""})
+            # Noi dashboard ve table nguon cua no (dataset hoac mart target)
+            try:
+                import json as _json
+
+                src = (_json.loads(d.spec_json) if d.spec_json else {}).get("source", "")
+            except Exception:
+                src = ""
+            parent = f"table:{src}" if src in targets else f"dataset:{dataset_id}"
+            edges.append({"from": parent, "to": nid, "label": "visualizes"})
         return {
             "dataset": ds.dataset_name,
-            "table": ds.duckdb_table,
-            "briefs": briefs,
-            "dashboards": dashboards,
-            "pipelines_count": pipelines_count,
-            "pipelines": pipelines_count,
+            "table": table,
+            "briefs": len(brief_rows),
+            "brief_versions": brief_rows,
+            "dashboards": len(dash_rows),
+            "dashboard_list": [{"id": d.id, "name": d.name} for d in dash_rows],
+            "pipelines_count": len(pipe_rows),
+            "pipelines": len(pipe_rows),
+            "pipeline_list": [
+                {"id": p.id, "name": p.name, "source": p.source, "target": p.target} for p in pipe_rows
+            ],
+            "nodes": nodes,
+            "edges": edges,
         }

@@ -10,6 +10,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 > **Pivot P0-P5 Done (`main` `eba1ed1`):** UI 7 screens `Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage` + `Statistics Lab` + BYOK `POST /auth/api-key`. Xem `docs/plan/README.md` & `docs/plan/implement_plan.md`.
+> **Kiến trúc tổng quan + sơ đồ dữ liệu:** xem [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## ✨ Tính năng chính (Workbench)
 

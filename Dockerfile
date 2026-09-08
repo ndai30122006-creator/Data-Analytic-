@@ -1,12 +1,13 @@
 # ═══════════════════════════════════════════════════════════════════
-# Learning Analytics Thống kê — Multi-stage Docker build
+# AI Data Engineering Workbench — Multi-stage Docker build
 #
-#   base     : Python 3.11 runtime + toàn bộ pip dependencies (dùng chung)
+#   base     : Python 3.11 runtime + pip dependencies (dùng chung)
 #   backend  : FastAPI application  → port 8000
-#   frontend : Streamlit application → port 8501
+#   web-build: Node build React web+mobile (Vite)
+#   frontend : nginx serve web+mobile → port 80
 #
-# Build từng image:  docker build -t la-backend . --target backend
-#                     docker build -t la-frontend . --target frontend
+# Build từng image:  docker build -t workbench-ai-backend . --target backend
+#                     docker build -t workbench-ai-frontend . --target frontend
 # Build cả hệ thống: docker compose up --build
 # ═══════════════════════════════════════════════════════════════════
 
@@ -44,7 +45,12 @@ COPY src/ ./src/
 
 # Thư mục dữ liệu bền vững (users.db + warehouse.duckdb) — mount Docker volume tại đây
 RUN mkdir -p /app/data
+
+# Chạy dưới non-root user (mục 16: production hardening).
+# Named volume app_data kế thừa ownership này khi tạo lần đầu.
+RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 VOLUME ["/app/data"]
+USER appuser
 
 # Healthcheck dùng curl (đã cài ở base; image slim KHÔNG có curl mặc định)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
@@ -52,7 +58,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 EXPOSE 8000
 
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+# workers=1: in-memory rate-limit + pipeline run registry + BackgroundTasks
+# theo tiến trình; multi-worker cần Redis + hàng đợi ngoài (ghi chú portfolio).
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
 
 # ── Stage 2: web frontend (Node.js, Vite) ──────────────────────────
 # Build React web+mobile via Node, serve via nginx (production)

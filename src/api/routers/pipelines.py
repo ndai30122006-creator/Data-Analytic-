@@ -90,7 +90,7 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
     spec_json = json.dumps(req.model_dump(), ensure_ascii=False)
     try:
         with SessionLocal() as s:
-            p = Pipeline(id=pid, owner=username, name=req.name, source=req.source, target=req.target, spec_json=spec_json)
+            p = Pipeline(id=pid, owner=username, name=req.name, source=req.source, target=req.target, spec_json=spec_json, version=1)
             s.add(p)
             s.commit()
     except Exception as exc:
@@ -119,6 +119,7 @@ async def list_pipelines(username: str = Depends(get_current_user)):
                 "name": r.name,
                 "source": r.source,
                 "target": r.target,
+                "version": getattr(r, "version", 1) or 1,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in rows
@@ -143,6 +144,7 @@ async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_use
                 "id": p.id,
                 "owner": p.owner,
                 **spec,
+                "version": getattr(p, "version", 1) or 1,
                 "created_at": p.created_at.isoformat() if p.created_at else None,
             }
     # Fallback in-memory
@@ -150,6 +152,44 @@ async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_use
     if not p or p["owner"] != username:
         raise HTTPException(status_code=404, detail="Pipeline not found")
     return p
+
+
+@router.put("/pipelines/{pipeline_id}", dependencies=[Depends(check_rate_limit)])
+async def update_pipeline(pipeline_id: str, req: PipelineCreateRequest, username: str = Depends(get_current_user)):
+    """Cap nhat spec pipeline — validate DAG + ownership, tang version (muc 15)."""
+    import json
+
+    from src.core.database import Pipeline, SessionLocal
+
+    try:
+        from src.pipeline.executor import _validate_identifier
+        from src.pipeline.spec_schema import PipelineSpec
+
+        spec = PipelineSpec(**req.model_dump())
+        spec.validate_dag()
+        _validate_identifier(spec.source)
+        _validate_identifier(spec.target)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid PipelineSpec: {e}")
+    if not _user_owns_table(username, req.source):
+        raise HTTPException(status_code=403, detail="Source table does not belong to user")
+    try:
+        with SessionLocal() as s:
+            p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
+            if not p or p.owner != username:
+                raise HTTPException(status_code=404, detail="Pipeline not found")
+            p.name = req.name
+            p.source = req.source
+            p.target = req.target
+            p.spec_json = json.dumps(req.model_dump(), ensure_ascii=False)
+            p.version = (p.version or 1) + 1
+            s.commit()
+            return {"pipeline_id": p.id, "version": p.version}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("update_pipeline failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to update pipeline")
 
 
 @router.post("/pipelines/preview", dependencies=[Depends(check_rate_limit)])

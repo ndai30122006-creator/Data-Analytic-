@@ -15,6 +15,17 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+# Muc 14: retry + timeout cho LLM (env-overridable)
+LLM_TIMEOUT_S = float(os.environ.get("LLM_TIMEOUT_S", "30"))
+LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "3"))
+LLM_BACKOFF_S = float(os.environ.get("LLM_BACKOFF_S", "1.0"))
+_LLM_RETRYABLE = ("timeout", "timed out", "rate limit", "429", "503", "502", "500", "connection", "temporarily")
+
+
+def _retryable_llm_error(exc: Exception) -> bool:
+    msg = f"{type(exc).__name__}: {exc}".lower()
+    return any(s in msg for s in _LLM_RETRYABLE)
+
 
 @dataclass
 class AIInsight:
@@ -68,6 +79,8 @@ class AIService:
                     model="gpt-4o-mini",
                     temperature=0.3,
                     api_key=self.api_key,
+                    request_timeout=LLM_TIMEOUT_S,
+                    max_retries=0,  # tu retry o _call_with_retry de fallback nhat quan
                 )
                 logger.info("OpenAI LLM initialized (gpt-4o-mini)")
             elif self.provider == "gemini":
@@ -174,6 +187,30 @@ Format your response as JSON with these keys:
                 "insights": [{"type": "info", "icon": "🤖", "title": "AI Analysis", "message": response_content[:200]}],
                 "recommendations": ["Review the AI analysis above for detailed insights"],
             }
+
+    def _call_with_retry(self, prompt: str):
+        """Invoke LLM toi da LLM_MAX_RETRIES lan, backoff mu, log tung lan (muc 14)."""
+        import time
+
+        last_exc: Optional[Exception] = None
+        for attempt in range(1, LLM_MAX_RETRIES + 1):
+            try:
+                return self._llm.invoke(prompt)
+            except Exception as exc:
+                last_exc = exc
+                if attempt >= LLM_MAX_RETRIES or not _retryable_llm_error(exc):
+                    raise
+                wait = LLM_BACKOFF_S * (2 ** (attempt - 1))
+                logger.warning(
+                    "LLM invoke failed (attempt %d/%d, provider=%s): %s — retry sau %.1fs",
+                    attempt,
+                    LLM_MAX_RETRIES,
+                    self.provider,
+                    exc,
+                    wait,
+                )
+                time.sleep(wait)
+        raise last_exc  # khong toi duoc (phong thu)
 
     def _generate_rule_based_insights(
         self, df: pd.DataFrame, analysis_type: str, score_col: Optional[str] = None, group_col: Optional[str] = None
@@ -299,7 +336,7 @@ Format your response as JSON with these keys:
 
         try:
             prompt = self._build_prompt(df, analysis_type, score_col, group_col)
-            response = self._llm.invoke(prompt)
+            response = self._call_with_retry(prompt)
             parsed = self._parse_llm_response(response.content)
 
             insights_list = []
@@ -326,42 +363,35 @@ Format your response as JSON with these keys:
             return self._generate_rule_based_insights(df, analysis_type, score_col, group_col)
 
 
-# Singleton instance
-_ai_service: Optional[AIService] = None
+# Cache theo (provider, key) — tranh cross-user leak khi nhieu user BYOK key khac nhau.
+# (Truoc day dung streamlit session_state; streamlit da go khoi du an.)
+_ai_services: Dict[tuple, AIService] = {}
+_ai_service: Optional[AIService] = None  # giu de tuong thich nguoc (most-recent)
+
+
+def _cache_key(api_key: Optional[str], provider: str) -> tuple:
+    import hashlib
+
+    fingerprint = hashlib.sha256((api_key or "").encode()).hexdigest()[:12]
+    return (provider.lower(), fingerprint)
 
 
 def get_ai_service(api_key: Optional[str] = None, provider: str = "openai") -> AIService:
-    """Get singleton — per Streamlit session if available to avoid cross-user leak (P0)."""
+    """Get cached service per (provider, api_key) — gioi han 50 entries."""
     global _ai_service
-    # Prefer per-session storage when Streamlit context exists
-    try:
-        import streamlit as st
-
-        # Use session_state dict to isolate per browser session
-        if hasattr(st, "session_state") and st.session_state is not None:
-            key = f"_ai_service_{provider.lower()}"
-            # Also need api_key in key to separate users
-            api_part = (api_key or "")[:8]
-            skey = f"{key}_{api_part}"
-            if skey in st.session_state:
-                svc = st.session_state[skey]
-                if svc.api_key == (api_key or svc.api_key) and svc.provider == provider.lower():
-                    return svc
-            svc = AIService(api_key, provider)
-            st.session_state[skey] = svc
-            return svc
-    except Exception:
-        pass
-    # Fallback global (for tests / non-streamlit)
-    if _ai_service is None:
-        _ai_service = AIService(api_key, provider)
-    elif api_key is not None and (api_key != _ai_service.api_key or provider.lower() != _ai_service.provider):
-        logger.info("AI service params changed (provider=%s); recreating singleton", provider)
-        _ai_service = AIService(api_key, provider)
-    return _ai_service
+    key = _cache_key(api_key, provider)
+    svc = _ai_services.get(key)
+    if svc is None:
+        if len(_ai_services) >= 50:
+            _ai_services.pop(next(iter(_ai_services)))
+        svc = AIService(api_key, provider)
+        _ai_services[key] = svc
+    _ai_service = svc
+    return svc
 
 
 def reset_ai_service() -> None:
-    """For tests: clear singleton."""
+    """For tests: clear cache."""
     global _ai_service
+    _ai_services.clear()
     _ai_service = None

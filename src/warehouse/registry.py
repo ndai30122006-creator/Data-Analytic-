@@ -17,7 +17,7 @@ def register_dataset(user: str, name: str, table: str, file_path: str = "", prof
     from src.core.database import Dataset, SessionLocal
 
     with SessionLocal() as s:
-        ds = Dataset(username=user, dataset_name=name, rows=0, cols=0)
+        ds = Dataset(username=user, dataset_name=name, rows=0, cols=0, version=1)
         # If 003 cols exist, set them dynamically
         if hasattr(ds, "duckdb_table"):
             ds.duckdb_table = table

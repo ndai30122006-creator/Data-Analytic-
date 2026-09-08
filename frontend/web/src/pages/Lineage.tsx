@@ -1,35 +1,87 @@
 import { useEffect, useState } from "react";
 import { datasets } from "@app/shared/api/datasets";
+import { lineage, type LineageResponse } from "@app/shared/api/lineage";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
+import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
+
+const KIND_STYLE: Record<string, { bg: string; border: string }> = {
+  dataset: { bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.5)" },
+  pipeline: { bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.5)" },
+  mart: { bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.5)" },
+  dashboard: { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.5)" },
+  brief: { bg: "rgba(244,114,182,0.12)", border: "rgba(244,114,182,0.5)" },
+};
 
 export default function Lineage() {
   const [list, setList] = useState<any[]>([]);
-  const [detail, setDetail] = useState("");
+  const [detail, setDetail] = useState<LineageResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     datasets.list().then((r) => setList(r.datasets ?? [])).catch(() => {});
   }, []);
 
-  const view = async (name: string) => {
-    setDetail(`Dataset ${name} → pipelines → dashboards\n(warehouse/lineage.py get_lineage — GET /lineage/{id})`);
+  const view = async (id: number) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await lineage.get(id);
+      setDetail(res);
+    } catch (e: any) {
+      setError(e.message ?? "Load lineage failed");
+      setDetail(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const byKind = (kind: string) => (detail?.nodes ?? []).filter((n) => n.kind === kind);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <h2>Lineage — Dataset → Pipeline → Dashboard</h2>
-      <Card>
-        {list.length === 0 ? <div style={{ opacity: 0.5, fontSize: 13, color: "var(--text-muted)" }}>Chưa có dataset</div> : list.map((d: any) => (
-          <div key={d.dataset_name} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
-            <span>{d.dataset_name} <span style={{ color: "var(--text-muted)" }}>{d.rows}×{d.cols}</span></span>
-            <Button variant="ghost" size="sm" onClick={() => view(d.dataset_name)}>View</Button>
-          </div>
-        ))}
-      </Card>
-      <Card style={{ background: "rgba(0,0,0,0.2)" }}>
-        <pre style={{ fontFamily: "var(--font-mono)", fontSize: 11, minHeight: 100, margin: 0 }}>{detail || "Chọn dataset để xem lineage (table/briefs/dashboards count)"}</pre>
-      </Card>
-      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Demo data: scripts/generate_demo_data.py 300 SV missing/dup/outlier → lineage hiển thị.</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16 }}>
+        <Card>
+          <h4>Datasets ({list.length})</h4>
+          {list.length === 0 ? <EmptyState title="Chưa có dataset" hint="Upload ở Ingest trước" /> : list.map((d: any) => (
+            <div key={d.dataset_name} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
+              <span>{d.dataset_name} <span style={{ color: "var(--text-muted)" }}>{d.rows}×{d.cols}</span></span>
+              <Button variant="ghost" size="sm" onClick={() => d.id && view(d.id)}>View</Button>
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <h4>Graph trực quan {detail && <span style={{ color: "var(--text-muted)" }}>— {detail.dataset}</span>}</h4>
+          {loading ? <><Skeleton height={40} style={{ marginBottom: 8 }} /><Skeleton height={40} /></>
+            : error ? <div style={{ color: "#EF4444", fontSize: 12 }}>{error}</div>
+            : !detail ? <EmptyState title="Chọn dataset để xem lineage" hint="Nodes: dataset → pipeline → mart → dashboard + brief" />
+            : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {(["dataset", "pipeline", "mart", "dashboard", "brief"] as const).map((k) => byKind(k).length > 0 && (
+                  <div key={k}>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{k} ({byKind(k).length})</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {byKind(k).map((n) => (
+                        <div key={n.id} title={(detail.edges ?? []).filter((e) => e.from === n.id || e.to === n.id).map((e) => `${e.from} —${e.label ?? ""}→ ${e.to}`).join("\n")}
+                          style={{ background: KIND_STYLE[k]?.bg, border: `1px solid ${KIND_STYLE[k]?.border}`, borderRadius: "var(--radius-input)", padding: "6px 10px", fontSize: 12 }}>
+                          <div style={{ fontWeight: 600 }}>{n.label}</div>
+                          {n.meta && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{n.meta}</div>}
+                        </div>
+                      ))}
+                    </div>
+                    {k !== "brief" && <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>↓</div>}
+                  </div>
+                ))}
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  {detail.edges.length} edges · pipelines: {detail.pipelines_count} · dashboards: {detail.dashboards} · briefs: {detail.briefs} (hover node để xem quan hệ)
+                </div>
+              </div>
+            )}
+        </Card>
+      </div>
+      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Nguồn: warehouse/lineage.py get_lineage — GET /lineage/{"{id}"} trả nodes/edges.</div>
     </div>
   );
 }

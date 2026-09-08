@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Muc 17: huy run cu khi push moi len cung branch (tiet kiem minutes)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
@@ -77,7 +82,9 @@ jobs:
         with:
           version: 9
       - run: pnpm --prefix frontend install
-      - run: pnpm --prefix frontend --filter @app/shared typecheck || true
+      # Muc 17: typecheck bat buoc (dang xanh); test/build giu lenient ke ca flaky env
+      - run: pnpm --prefix frontend --filter @app/shared typecheck
+      - run: pnpm --prefix frontend --filter @app/web typecheck
       - run: pnpm --prefix frontend --filter @app/shared test || true
       - run: pnpm --prefix frontend -r build || true
 
@@ -92,6 +99,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Muc 17: validate compose truoc khi build de bat loi config som
+      - name: Validate compose config
+        run: docker compose config --quiet
+
       - name: Build backend image
         uses: docker/build-push-action@v6
         with:
@@ -99,7 +110,7 @@ jobs:
           target: backend
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: learning-analytics-backend:latest
+          tags: workbench-ai-backend:latest
 
       - name: Build frontend image
         uses: docker/build-push-action@v6
@@ -108,4 +119,4 @@ jobs:
           target: frontend
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: learning-analytics-frontend:latest
+          tags: workbench-ai-frontend:latest

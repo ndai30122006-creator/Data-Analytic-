@@ -48,6 +48,7 @@ async def list_datasets(username: str = Depends(get_current_user)):
                 "dataset_name": d.dataset_name,
                 "rows": d.rows,
                 "cols": d.cols,
+                "version": getattr(d, "version", 1) or 1,
                 "created_at": d.created_at.isoformat() if d.created_at else None,
             }
             for d in datasets
@@ -71,7 +72,7 @@ async def create_dataset_endpoint(
     ds = db_create_dataset(username, request.dataset_name.strip(), request.rows, request.cols)
     return {
         "message": f"Dataset {ds.dataset_name} created",
-        "dataset": {"dataset_name": ds.dataset_name, "rows": ds.rows, "cols": ds.cols},
+        "dataset": {"dataset_name": ds.dataset_name, "rows": ds.rows, "cols": ds.cols, "version": 1},
     }
 
 
@@ -136,6 +137,7 @@ async def ingest_dataset(
             return {
                 "message": f"Ingested {file.filename} -> {result['table']}",
                 "dataset_id": ds.id,
+                "version": getattr(ds, "version", 1) or 1,
                 "profile": result["profile"],
                 "quality": result.get("quality"),
             }
@@ -187,4 +189,4 @@ async def get_dataset_profile(dataset_id: int, username: str = Depends(get_curre
             except Exception:
                 profile = {"raw": ds.profile_json}
         # No raw data, only profile (Plan 03/07)
-        return {"dataset_id": ds.id, "dataset_name": ds.dataset_name, "profile": profile}
+        return {"dataset_id": ds.id, "dataset_name": ds.dataset_name, "version": getattr(ds, "version", 1) or 1, "profile": profile}

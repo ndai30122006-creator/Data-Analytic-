@@ -186,6 +186,48 @@ def test_concurrent_same_pipeline_conflict():
         lock.release()
 
 
+def test_versioning_pipeline_dashboard_dataset():
+    """Muc 15: version=1 khi tao, tang khi PUT."""
+    u = _user("ver")
+    r = _upload(u)
+    assert r.status_code == 200, r.text
+    assert r.json().get("version") == 1
+    dsid = r.json()["dataset_id"]
+    table = _table_of(dsid)
+    assert client.get(f"/datasets/{dsid}/profile", headers=u["headers"]).json().get("version") == 1
+    spec = {"name": "vpipe", "source": table, "target": f"mart.stab_{uuid.uuid4().hex[:6]}", "steps": []}
+    pid = client.post("/pipelines", json=spec, headers=u["headers"]).json()["pipeline_id"]
+    assert client.get(f"/pipelines/{pid}", headers=u["headers"]).json().get("version") == 1
+    r = client.put(f"/pipelines/{pid}", json={**spec, "name": "vpipe2"}, headers=u["headers"])
+    assert r.status_code == 200 and r.json()["version"] == 2, r.text
+    did = client.post("/dashboards", json={"name": "vd", "spec": {"id": "d", "title": "t", "source": table, "charts": []}}, headers=u["headers"]).json()["dashboard_id"]
+    assert client.get(f"/dashboards/{did}", headers=u["headers"]).json().get("version") == 1
+    dash = client.get(f"/dashboards/{did}", headers=u["headers"]).json()
+    r = client.put(f"/dashboards/{did}", json={"name": "vd2", "spec": dash["spec"]}, headers=u["headers"])
+    assert r.status_code == 200 and r.json()["version"] == 2, r.text
+
+
+def test_lineage_graph_shape():
+    """Muc 13: /lineage tra nodes/edges truc quan."""
+    u = _user("ling")
+    r = _upload(u)
+    assert r.status_code == 200, r.text
+    dsid = r.json()["dataset_id"]
+    r = client.get(f"/lineage/{dsid}", headers=u["headers"])
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert isinstance(body.get("nodes"), list) and len(body["nodes"]) >= 1
+    assert isinstance(body.get("edges"), list)
+    assert body["nodes"][0]["kind"] == "dataset"
+    # Tao brief + pipeline -> nodes tang
+    client.post(f"/brief/{dsid}", headers=u["headers"])
+    table = _table_of(dsid)
+    client.post("/pipelines", json={"name": "lp", "source": table, "target": f"mart.stab_{uuid.uuid4().hex[:6]}", "steps": []}, headers=u["headers"])
+    body = client.get(f"/lineage/{dsid}", headers=u["headers"]).json()
+    kinds = {n["kind"] for n in body["nodes"]}
+    assert {"dataset", "brief", "pipeline"} <= kinds, kinds
+
+
 def test_dashboard_cross_user_forbidden():
     """Mục 6: user B không đọc dashboard của user A."""
     a = _user("dashA")

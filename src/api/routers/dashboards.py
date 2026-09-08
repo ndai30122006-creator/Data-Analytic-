@@ -26,11 +26,11 @@ async def create_dashboard(req: DashboardCreateRequest, username: str = Depends(
 
     try:
         with SessionLocal() as s:
-            d = Dashboard(name=req.name, spec_json=json.dumps(req.spec, ensure_ascii=False), owner=username)
+            d = Dashboard(name=req.name, spec_json=json.dumps(req.spec, ensure_ascii=False), owner=username, version=1)
             s.add(d)
             s.commit()
             s.refresh(d)
-            return {"dashboard_id": d.id, "name": d.name}
+            return {"dashboard_id": d.id, "name": d.name, "version": 1}
     except Exception as exc:
         logger.error("create_dashboard failed: %s", exc, exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create dashboard")
@@ -44,7 +44,7 @@ async def list_dashboards(username: str = Depends(get_current_user)):
         items = s.query(Dashboard).filter(Dashboard.owner == username).all()
         return {
             "dashboards": [
-                {"id": d.id, "name": d.name, "created_at": d.created_at.isoformat() if d.created_at else None}
+                {"id": d.id, "name": d.name, "version": getattr(d, "version", 1) or 1, "created_at": d.created_at.isoformat() if d.created_at else None}
                 for d in items
             ]
         }
@@ -60,7 +60,7 @@ async def get_dashboard(dashboard_id: int, username: str = Depends(get_current_u
         d = s.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
         if not d or d.owner != username:
             raise HTTPException(status_code=404, detail="Dashboard not found")
-        return {"id": d.id, "name": d.name, "spec": json.loads(d.spec_json) if d.spec_json else {}}
+        return {"id": d.id, "name": d.name, "version": getattr(d, "version", 1) or 1, "spec": json.loads(d.spec_json) if d.spec_json else {}}
 
 
 @router.put("/dashboards/{dashboard_id}", dependencies=[Depends(check_rate_limit)])
@@ -76,8 +76,9 @@ async def update_dashboard(dashboard_id: int, req: DashboardCreateRequest, usern
                 raise HTTPException(status_code=404, detail="Dashboard not found")
             d.spec_json = json.dumps(req.spec, ensure_ascii=False)
             d.name = req.name
+            d.version = (d.version or 1) + 1
             s.commit()
-            return {"message": "Updated", "id": d.id}
+            return {"message": "Updated", "id": d.id, "version": d.version}
     except HTTPException:
         raise
     except Exception as exc:

@@ -54,6 +54,8 @@ class Dataset(Base):
     duckdb_table = Column(String(128), nullable=True)
     file_path = Column(String(256), nullable=True)
     profile_json = Column(Text, nullable=True)
+    # Versioning (muc 15): dataset content immutable per name, bat dau tu 1
+    version = Column(Integer, nullable=True, default=1)
 
 
 class Brief(Base):
@@ -78,6 +80,7 @@ class Dashboard(Base):
     name = Column(String(128), nullable=False)
     spec_json = Column(Text, nullable=False)
     owner = Column(String(50), nullable=True)
+    version = Column(Integer, nullable=True, default=1)  # muc 15: tang moi lan PUT
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -92,6 +95,7 @@ class Pipeline(Base):
     source = Column(String(128), nullable=False)
     target = Column(String(128), nullable=False)
     spec_json = Column(Text, nullable=False)
+    version = Column(Integer, nullable=True, default=1)  # muc 15: tang moi lan PUT
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -120,9 +124,30 @@ class PipelineStep(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+def _ensure_version_columns():
+    """Muc 15: tu them cot version cho DB cu (SQLite) neu thieu — phong khi chua chay alembic."""
+    try:
+        from sqlalchemy import inspect, text
+
+        insp = inspect(engine)
+        for table in ("datasets", "pipelines", "dashboards"):
+            try:
+                cols = {c["name"] for c in insp.get_columns(table)}
+            except Exception:
+                continue
+            if "version" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN version INTEGER"))
+                    conn.execute(text(f"UPDATE {table} SET version = 1 WHERE version IS NULL"))
+                logger.info("Added %s.version column (muc 15)", table)
+    except Exception as exc:
+        logger.warning("ensure version columns failed: %s", exc)
+
+
 def init_db():
     """Create all tables and optionally seed demo users."""
     Base.metadata.create_all(bind=engine)
+    _ensure_version_columns()
     logger.info("Database initialized: %s", DATABASE_URL)
     _ensure_demo_users()
 
@@ -275,7 +300,7 @@ def create_dataset(username: str, dataset_name: str, rows: int = 0, cols: int = 
     if rows < 0 or cols < 0:
         raise ValueError("rows/cols must be >= 0")
     with SessionLocal() as session:
-        ds = Dataset(username=username, dataset_name=dataset_name.strip(), rows=rows, cols=cols)
+        ds = Dataset(username=username, dataset_name=dataset_name.strip(), rows=rows, cols=cols, version=1)
         session.add(ds)
         session.commit()
         session.refresh(ds)
