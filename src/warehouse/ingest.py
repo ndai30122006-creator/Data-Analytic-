@@ -17,27 +17,39 @@ def _sanitize_table(name: str) -> str:
     return name[:64]
 
 
+MAX_FILE_MB = 50
+
 def ingest_file(user: str, file, table: str = None) -> dict:
     """Ingest file-like (CSV/Excel) into DuckDB raw schema. Returns profile."""
     fname = getattr(file, "name", None) or getattr(file, "filename", "") or "upload"
+    if not fname.lower().endswith((".csv", ".xlsx", ".xls")):
+        raise ValueError(f"Unsupported format: {fname} (chỉ .csv/.xlsx/.xls)")
     # FastAPI UploadFile (starlette) has .file SpooledTemporaryFile sync - avoid async helper
     if hasattr(file, "filename") and hasattr(file, "file"):
         try:
+            file.file.seek(0, 2)
+            size = file.file.tell()
             file.file.seek(0)
+            if size <= 0:
+                raise ValueError("File rỗng (0 bytes)")
+            if size > MAX_FILE_MB * 1024 * 1024:
+                raise ValueError(f"File quá lớn ({size/1024/1024:.1f}MB > {MAX_FILE_MB}MB)")
             if fname.lower().endswith(".csv"):
                 df = pd.read_csv(file.file)
-            elif fname.lower().endswith((".xlsx", ".xls")):
-                df = pd.read_excel(file.file, engine="openpyxl")
             else:
-                raise ValueError(f"Unsupported format: {fname}")
+                df = pd.read_excel(file.file, engine="openpyxl")
+        except ValueError:
+            raise
         except Exception as e:
             raise ValueError(f"File rỗng hoặc không đọc được: {e}")
+        if df is None or df.empty or len(df.columns) == 0:
+            raise ValueError("File rỗng hoặc không có cột dữ liệu")
     else:
         from src.utils.helpers import load_and_process_data
 
         df = load_and_process_data(file)
-        if df is None or df.empty:
-            raise ValueError("File rỗng hoặc không đọc được")
+        if df is None or df.empty or len(df.columns) == 0:
+            raise ValueError("File rỗng hoặc không có cột dữ liệu")
     tname = _sanitize_table(table or Path(fname).stem)
     full = f"raw.{tname}"
 

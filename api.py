@@ -335,12 +335,18 @@ async def update_ai_api_key(
     username: str = Depends(get_current_user),
 ):
     """Update user's AI API key (for OpenAI/Gemini)."""
-    if not request.api_key or not request.api_key.strip():
+    key = (request.api_key or "").strip()
+    if not key:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="API key cannot be empty",
         )
-    ok = update_api_key(username, request.api_key)
+    if len(key) < 8 or len(key) > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="API key length must be 8-1000 characters",
+        )
+    ok = update_api_key(username, key)
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return {"message": "API key updated"}
@@ -506,6 +512,35 @@ class PipelineCreateRequest(BaseModel):
     steps: list = []
 
 
+def _user_owns_table(username: str, table: str) -> bool:
+    """Check whether raw./mart. table belongs to user (via datasets registry)."""
+    import re as _re
+
+    if not table or not isinstance(table, str):
+        return False
+    if not _re.match(r"^(raw|mart)\.[a-zA-Z_][a-zA-Z0-9_]{0,63}$", table):
+        return False
+    try:
+        from src.core.database import Dataset, SessionLocal
+
+        suffix = table.split(".", 1)[1].lower()
+        with SessionLocal() as s:
+            rows = s.query(Dataset).filter(Dataset.username == username).all()
+            allowed: set = set()
+            for d in rows:
+                if getattr(d, "duckdb_table", None):
+                    allowed.add(d.duckdb_table.lower())
+                base = _re.sub(r"[^a-z0-9_]", "_", (d.dataset_name or "").lower())
+                if base:
+                    if base[0].isdigit():
+                        base = f"t_{base}"
+                    allowed.add(f"raw.{base[:64]}")
+                    allowed.add(f"mart.{base[:64]}")
+            return suffix and (table.lower() in allowed or f"raw.{suffix}" in allowed or f"mart.{suffix}" in allowed)
+    except Exception:
+        return False
+
+
 @app.post("/pipelines", dependencies=[Depends(check_rate_limit)])
 async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(get_current_user)):
     import json
@@ -513,6 +548,19 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
 
     from src.core.database import Pipeline, SessionLocal
 
+    # Validate PipelineSpec (schema + DAG + identifiers) before persisting
+    try:
+        from src.pipeline.executor import _validate_identifier
+        from src.pipeline.spec_schema import PipelineSpec
+
+        spec = PipelineSpec(**req.model_dump())
+        spec.validate_dag()
+        _validate_identifier(spec.source)
+        _validate_identifier(spec.target)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid PipelineSpec: {e}")
+    if not _user_owns_table(username, req.source):
+        raise HTTPException(status_code=403, detail="Source table does not belong to user")
     pid = str(uuid.uuid4())[:8]
     spec_json = json.dumps(req.model_dump(), ensure_ascii=False)
     with SessionLocal() as s:
@@ -578,6 +626,8 @@ async def get_pipeline(pipeline_id: str, username: str = Depends(get_current_use
 @app.post("/pipelines/preview", dependencies=[Depends(check_rate_limit)])
 async def preview_pipeline(req: PipelineCreateRequest, username: str = Depends(get_current_user)):
     """Dry-run on sample 100 rows (Plan 07)."""
+    if not _user_owns_table(username, req.source):
+        raise HTTPException(status_code=403, detail="Source table does not belong to user")
     try:
         from src.pipeline.executor import execute
         from src.pipeline.spec_schema import PipelineSpec
@@ -887,6 +937,9 @@ async def dashboard_data(dashboard_id: int, username: str = Depends(get_current_
         if not d or d.owner != username:
             raise HTTPException(status_code=404, detail="Dashboard not found")
         spec = json.loads(d.spec_json) if d.spec_json else {}
+        source = spec.get("source", "") if isinstance(spec, dict) else ""
+        if source and not _user_owns_table(username, source):
+            raise HTTPException(status_code=403, detail="Dashboard source does not belong to user")
         # Each chart 1 query -> ApexCharts-ready JSON (keeps spec for compat)
         try:
             from src.dashboard.renderer import fetch_data

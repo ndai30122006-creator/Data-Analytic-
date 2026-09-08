@@ -29,7 +29,7 @@
 
 ### 📊 Dashboard (AI)
 - AI đề xuất 4-6 charts `DashboardSpec` (6 types: `kpi/bar/hist/box/line/scatter`)
-- Renderer Plotly 1 query/chart DuckDB, chỉnh tay, lưu `dashboards` + export JSON
+- Renderer ApexCharts real-data 1 query/chart DuckDB, chỉnh tay, lưu `dashboards` + export JSON
 
 ### 🧪 Lab — Statistics Lab
 - Gộp `Statistics` + `Deep Analysis` cũ, giữ engine `src/core/statistical_tests.py` + `src/analytics` (8 tabs: Advanced Stats, Bootstrap... Data Quality)
@@ -99,13 +99,13 @@ docker compose --profile production up --build -d  # + nginx 80/443
 1. **Ingest:** `📥 Ingest` → Upload CSV/Excel → Preview 20 → Confirm → `raw` + profile
 2. **Pipeline:** `⚙️ Pipeline` → Gõ “điền missing diem bằng median, xóa trùng ma_sv” → Generate Spec → Dry-run → Run → `mart`
 3. **Brief:** `📋 Brief` → Chọn dataset → Generate Brief → history version → Export MD
-4. **Dashboard:** `📊 Dashboard` → Chọn `mart` → Generate 4-6 charts → Render Plotly → Edit JSON → Save → Export
+4. **Dashboard:** `📊 Dashboard` → Chọn `mart` → Generate 4-6 charts → Render ApexCharts real-data → Edit JSON → Save → Export
 5. **Lab:** `🧪 Lab` → Advanced Stats/Bootstrap/... (t-test, ANOVA, bootstrap via `core`)
 6. **Settings:** `⚙️ Settings` → Chọn provider + key → Save (session + DB encrypt) → Test Connection `GET /health`
 7. **Lineage:** `🔗 Lineage` → Chọn dataset → xem `table/briefs/dashboards` count
 
 **Frontend 2 bản (GĐ3/GĐ4):**
-- `frontend/web` — React+Vite desktop (sidebar 220px, 7 routes, ECharts, proxy `/api` → 8000) — `pnpm --filter @app/web dev` (5173)
+- `frontend/web` — React+Vite desktop (sidebar 240px, 7 routes, ApexCharts, proxy `/api` → 8000) — `pnpm --filter @app/web dev` (5173)
 - `frontend/mobile` — React+Vite mobile web (BottomNav 44px touch, 6 routes read-first) — `pnpm --filter @app/mobile dev` (5174)
 - `frontend/shared` — logic dùng chung `@app/shared` (`api` + `features` + `hooks`), `vitest` test `client.ts`
 
@@ -160,7 +160,7 @@ MIT
 
 ## 🙏 Credits
 
-Built with FastAPI, **DuckDB**, React+Vite, ECharts, scikit-learn, scipy, statsmodels, pandas, Docker.
+Built with FastAPI, **DuckDB**, React+Vite, ApexCharts, scikit-learn, scipy, statsmodels, pandas, Docker.
 
 ---
 **🧠 AI Data Engineering Workbench** — local-first · DuckDB + BYOK · P0-P5 Done (docs/plan)
