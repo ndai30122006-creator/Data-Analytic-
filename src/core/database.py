@@ -127,6 +127,27 @@ def init_db():
     _ensure_demo_users()
 
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def session_scope():
+    """Transactional scope (mục 8): commit khi xong, rollback khi lỗi, luôn close.
+
+    Dùng cho các write nhiều bước (pipeline create/run, dashboard create, ingest
+    register) để không để lại bản ghi nửa vời.
+    """
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
 def get_user(username: str) -> Optional[User]:
     """Look up user by username."""
     with SessionLocal() as session:

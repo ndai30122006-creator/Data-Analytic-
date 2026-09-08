@@ -89,19 +89,17 @@ class RateLimitError(AppHTTPException):
         super().__init__(status.HTTP_429_TOO_MANY_REQUESTS, message, detail, code="E429")
 
 
-def handle_error(error: Exception, context: str = "", user_message: str = "") -> None:
+def handle_error(error: Exception, context: str = "", user_message: str = "") -> dict:
     """
-    Centralized error handler — logs and displays user-friendly message.
+    Centralized error handler — logs structured error, returns user-friendly payload.
+
+    (Streamlit đã gỡ khỏi dự án nên không còn st.error — caller hiển thị theo UI riêng.)
 
     Args:
         error: The exception that occurred
         context: Description of where/why the error happened
         user_message: Optional custom message for the user
     """
-    import streamlit as st
-
     error_name = type(error).__name__
     logger.error("[%s] %s | Context: %s", error_name, str(error), context, exc_info=True)
-    msg = user_message or f"**{error_name}:** {str(error)}"
-    st.error(f"❌ {msg}")
-    st.caption(f"📍 {context}")
+    return {"error": error_name, "message": user_message or str(error), "context": context}
