@@ -64,7 +64,7 @@ export default function DesktopShell() {
           </nav>
           <div style={{ padding: "12px 14px", fontSize: 10, color: "var(--text-muted)" }}>tip: ctrl+k palette</div>
         </aside>
-        <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
+        <main key={loc.pathname} className="page-enter" style={{ flex: 1, padding: 24, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
           <Outlet />
         </main>
       </div>

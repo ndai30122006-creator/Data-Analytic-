@@ -113,7 +113,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: 20 }}>
+      <div className="rise" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: 20 }}>
         {realCharts.length > 0 ? realCharts.map((c: any, i: number) => (
           <Card key={c.id ?? i} style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>

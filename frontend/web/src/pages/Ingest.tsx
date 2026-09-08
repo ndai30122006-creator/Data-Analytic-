@@ -72,7 +72,7 @@ export default function Ingest() {
         {msg && <div style={{ marginTop: 12 }}><Toast message={msg} type={msg.startsWith("Error") || msg.startsWith("List error") ? "error" : msg.startsWith("Ingested") ? "success" : "info"} onClose={() => setMsg("")} /></div>}
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(300px, 5fr) minmax(320px, 7fr)", gap: 20 }}>
+      <div className="rise" style={{ display: "grid", gridTemplateColumns: "minmax(300px, 5fr) minmax(320px, 7fr)", gap: 20 }}>
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <h4>Datasets</h4>

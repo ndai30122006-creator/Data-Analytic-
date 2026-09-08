@@ -33,7 +33,7 @@ export default function StatusBar() {
       borderTop: "1px solid var(--border-strong)", background: "var(--bg-card)",
       fontSize: 11, color: "var(--text-muted)", position: "sticky", bottom: 0, zIndex: 5,
     }}>
-      <span><span style={{ display: "inline-block", width: 8, height: 8, background: dot, marginRight: 6 }} />api:{api}</span>
+      <span><span className="dot-live" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: dot, marginRight: 6, boxShadow: `0 0 8px ${dot}` }} />api:{api}</span>
       <span>user:{getStoredUser() ?? "?"}</span>
       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>~{loc.pathname}</span>
       <span>v1.3.0</span>

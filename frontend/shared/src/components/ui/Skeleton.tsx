@@ -1,7 +1,7 @@
 import React from "react";
 
 export function Skeleton({ height = 12, width = "100%", style }: { height?: number | string; width?: number | string; style?: React.CSSProperties }) {
-  return <div style={{ height, width, background: "rgba(0,255,136,0.1)", borderRadius: 2, animation: "pulse 1.5s infinite", ...style }} />;
+  return <div className="shimmer" style={{ height, width, borderRadius: 2, ...style }} />;
 }
 
 export function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: React.ReactNode }) {
