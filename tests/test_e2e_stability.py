@@ -254,6 +254,36 @@ def test_lineage_graph_shape():
     assert {"dataset", "brief", "pipeline"} <= kinds, kinds
 
 
+def test_table_rows_paging_sort_search():
+    """Muc Data Table Pro: paging/sort/search + ownership."""
+    u = _user("rows")
+    df = pd.DataFrame({"id": [3, 1, 2], "score": [9.0, 5.0, 7.0], "grp": ["B", "A", "A"]})
+    buf = io.StringIO()
+    df.to_csv(buf, index=False)
+    files = {"file": (f"rows_{uuid.uuid4().hex[:6]}.csv", io.BytesIO(buf.getvalue().encode()), "text/csv")}
+    dsid = client.post("/datasets/ingest", files=files, headers=u["headers"]).json()["dataset_id"]
+    base = f"/datasets/{dsid}/rows"
+    r = client.get(f"{base}?limit=2&offset=0", headers=u["headers"]).json()
+    assert r["total"] == 3 and len(r["rows"]) == 2 and set(r["columns"]) == {"id", "score", "grp"}
+    r = client.get(f"{base}?limit=2&offset=2", headers=u["headers"]).json()
+    assert len(r["rows"]) == 1
+    r = client.get(f"{base}?order_by=score&order_dir=desc", headers=u["headers"]).json()
+    assert [x[1] for x in r["rows"]] == [9.0, 7.0, 5.0]
+    bad = client.get(f"{base}?order_by=nope", headers=u["headers"])
+    assert bad.status_code == 400
+    r = client.get(f"{base}?q=B", headers=u["headers"]).json()
+    assert r["total"] == 1
+    # cross-user
+    v = _user("rowsV")
+    assert client.get(base, headers=v["headers"]).status_code == 404
+    # table path + sql-ish order_by rejected
+    table = _table_of(dsid)
+    r = client.get(f"/tables/rows?table={table}&limit=5", headers=u["headers"]).json()
+    assert r["total"] == 3
+    assert client.get(f"/tables/rows?table={table}", headers=v["headers"]).status_code == 403
+    assert client.get(f"/tables/rows?table={table}&order_by=id;DROP", headers=u["headers"]).status_code in (400, 403)
+
+
 def test_dashboard_cross_user_forbidden():
     """Mục 6: user B không đọc dashboard của user A."""
     a = _user("dashA")

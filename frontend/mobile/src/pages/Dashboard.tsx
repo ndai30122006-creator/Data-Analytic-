@@ -6,6 +6,8 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { Input, Textarea } from "@app/shared/components/ui/Input";
 import { Chart } from "@app/shared/components/Chart";
+import { DataTable } from "@app/shared/src/components/DataTable";
+import { EmptyState } from "@app/shared/src/components/ui/Skeleton";
 import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Dashboard() {
@@ -201,6 +203,21 @@ export default function Dashboard() {
           </Card>
         )))}
       </div>
+
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h4>Source data — kiểm chứng mart.*</h4>
+          {(() => { try { const s = JSON.parse(specText || "{}").source; return s ? <Badge variant="neutral">{s}</Badge> : null; } catch { return null; } })()}
+        </div>
+        {(() => {
+          try {
+            const s = JSON.parse(specText || "{}").source;
+            return s ? <DataTable key={s} table={s} /> : <EmptyState title="Chưa có source" hint="Generate hoặc load dashboard để xem rows" />;
+          } catch {
+            return <EmptyState title="Spec lỗi" hint="Spec JSON parse không được" />;
+          }
+        })()}
+      </Card>
 
       <Card style={{ background: "#000" }}>
         <h4 style={{ marginBottom: 8 }}>Output</h4>

@@ -4,6 +4,7 @@ import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { EmptyState, Skeleton, Toast } from "@app/shared/components/ui/Skeleton";
+import { DataTable } from "@app/shared/src/components/DataTable";
 import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Ingest() {
@@ -13,6 +14,7 @@ export default function Ingest() {
   const [profile, setProfile] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -44,6 +46,7 @@ export default function Ingest() {
   const viewProfile = async (id: number, name: string) => {
     try {
       setSelected(name);
+      setSelectedId(id);
       const res = await datasets.getProfile(id);
       setProfile(JSON.stringify(res, null, 2));
     } catch (e: any) {
@@ -100,6 +103,14 @@ export default function Ingest() {
           <pre style={{ fontFamily: "var(--font-mono)", fontSize: 11, overflow: "auto", maxHeight: 420, margin: 0, whiteSpace: "pre-wrap" }}>{profile || "Click 1 dataset bên trái để xem profile (KHÔNG raw)."}</pre>
         </Card>
       </div>
+
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h4>Data rows — kiểm chứng dữ liệu thật</h4>
+          {selected && <Badge variant="neutral">{selected}</Badge>}
+        </div>
+        {selectedId ? <DataTable key={selectedId} datasetId={selectedId} /> : <EmptyState title="Chưa chọn dataset" hint="Click 1 dataset ở trên để xem rows (sort/search/phân trang)" />}
+      </Card>
     </div>
   );
 }
