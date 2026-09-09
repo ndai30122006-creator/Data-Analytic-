@@ -4,6 +4,7 @@ import { lineage, type LineageResponse } from "@app/shared/api/lineage";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 const KIND_STYLE: Record<string, { bg: string; border: string }> = {
   dataset: { bg: "rgba(45,212,191,0.15)", border: "rgba(45,212,191,0.5)" },
@@ -40,8 +41,8 @@ export default function Lineage() {
   const byKind = (kind: string) => (detail?.nodes ?? []).filter((n) => n.kind === kind);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Lineage — Dataset → Pipeline → Dashboard</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead path="lineage" title="Lineage" desc="dataset → pipeline → dashboard." />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16 }}>
         <Card>
           <h4>Datasets ({list.length})</h4>

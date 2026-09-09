@@ -3,6 +3,7 @@ import { analysis } from "@app/shared/src/api/analysis";
 import { Button } from "@app/shared/src/components/ui/Button";
 import { Card } from "@app/shared/src/components/ui/Card";
 import { Input, Textarea } from "@app/shared/src/components/ui/Input";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 const types = ["ttest_independent", "ttest_onesample", "ttest_paired", "anova", "mannwhitney", "kruskal", "bootstrap", "ab_test"] as const;
 
@@ -23,8 +24,8 @@ export default function Lab() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Lab — Statistics (via core/statistical_tests)</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead path="lab" title="Lab" desc="t-test, ANOVA, bootstrap..." />
       <Card style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "end" }}>
         <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset
           <Input value={datasetName} onChange={(e) => setDatasetName(e.target.value)} style={{ marginTop: 4, width: 140 }} />

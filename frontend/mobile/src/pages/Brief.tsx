@@ -3,6 +3,7 @@ import { brief } from "@app/shared/api/brief";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Input } from "@app/shared/components/ui/Input";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Brief() {
   const [datasetId, setDatasetId] = useState(1);
@@ -47,8 +48,8 @@ export default function Brief() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Brief — AI Narrative (profile-only)</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead path="brief" title="Brief" desc="Narrative tiếng Việt từ profile." />
       <Card style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }}>
         <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset ID
           <Input type="number" value={datasetId} onChange={(e) => setDatasetId(Number(e.target.value))} style={{ marginTop: 4, width: 100 }} />
