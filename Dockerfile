@@ -71,7 +71,7 @@ COPY frontend/package.json frontend/pnpm-workspace.yaml frontend/pnpm-lock.yaml 
 COPY frontend/shared ./shared
 COPY frontend/web ./web
 COPY frontend/mobile ./mobile
-RUN corepack enable && pnpm install --frozen-lockfile && pnpm -r build
+RUN corepack enable && pnpm install --frozen-lockfile && pnpm -r --if-present build
 
 FROM nginx:alpine AS frontend
 COPY --from=web-build /app/frontend/web/dist /usr/share/nginx/html/web
