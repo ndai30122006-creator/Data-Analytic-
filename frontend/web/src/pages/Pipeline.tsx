@@ -7,6 +7,7 @@ import { Textarea } from "@app/shared/components/ui/Input";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
 import { PageHead } from "@app/shared/src/components/PageHead";
+import { DagEditor } from "@app/shared/src/components/DagEditor";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -46,6 +47,23 @@ export default function Pipeline() {
     } catch (e: any) {
       setOutput(`JSON parse error: ${e.message}`);
       return null;
+    }
+  };
+
+  const [mode, setMode] = useState<"visual" | "json">("visual");
+
+  const getSteps = (): import("@app/shared/src/components/DagEditor").DagStep[] => {
+    try {
+      const s = JSON.parse(specText || "{}");
+      return Array.isArray(s.steps) ? s.steps : [];
+    } catch { return []; }
+  };
+  const setSteps = (steps: import("@app/shared/src/components/DagEditor").DagStep[]) => {
+    try {
+      const s = JSON.parse(specText || "{}");
+      setSpecText(JSON.stringify({ name: s.name ?? "demo-pipeline", source: s.source ?? "raw.demo", target: s.target ?? "mart.demo", steps }, null, 2));
+    } catch {
+      setSpecText(JSON.stringify({ name: "demo-pipeline", source: "raw.demo", target: "mart.demo", steps }, null, 2));
     }
   };
 
@@ -148,8 +166,20 @@ export default function Pipeline() {
         </Card>
 
         <Card>
-          <h4>STEP 2 · Spec → dry-run → create</h4>
-          <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} rows={8} className="mono" style={{ marginTop: 8, fontSize: 12 }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h4>STEP 2 · Spec → dry-run → create</h4>
+            <div style={{ display: "flex", gap: 4 }}>
+              <Button variant={mode === "visual" ? "primary" : "ghost"} size="sm" onClick={() => setMode("visual")}>Visual</Button>
+              <Button variant={mode === "json" ? "primary" : "ghost"} size="sm" onClick={() => setMode("json")}>JSON</Button>
+            </div>
+          </div>
+          {mode === "visual" ? (
+            <div style={{ marginTop: 8 }}>
+              <DagEditor steps={getSteps()} onChange={setSteps} />
+            </div>
+          ) : (
+            <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} rows={8} className="mono" style={{ marginTop: 8, fontSize: 12 }} />
+          )}
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <Button onClick={handlePreview} disabled={loading}>Dry-run Preview</Button>
             <Button onClick={handleCreate} disabled={loading}>Create Pipeline</Button>
