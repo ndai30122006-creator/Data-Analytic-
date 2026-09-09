@@ -87,6 +87,12 @@ a, nav a { transition: color 0.2s var(--ease), background 0.2s var(--ease), bord
   animation: shimmer 1.8s linear infinite !important;
 }
 .dot-live { animation: soft-pulse 2s ease-in-out infinite; }
+@keyframes travel { from { left: 40px; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } to { left: calc(100% - 40px); opacity: 0; } }
+.traveler {
+  position: absolute; top: 19px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  animation: travel 3.2s linear infinite; z-index: 1;
+}
 .toast-in { animation: float-in 0.28s var(--ease); }
 
 /* ——— high-tech layer: grid + drifting orbs + HUD ——— */
