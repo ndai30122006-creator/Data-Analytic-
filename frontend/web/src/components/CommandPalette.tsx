@@ -4,6 +4,7 @@ import { logout } from "@app/shared/src/features/auth/store";
 
 type Nav = (p: string) => void;
 const COMMANDS: { name: string; hint: string; run: (nav: Nav) => void }[] = [
+  { name: "overview — home", run: (nav) => nav("/"), hint: "home" },
   { name: "ingest — upload csv/excel", run: (nav) => nav("/ingest"), hint: "upload" },
   { name: "pipeline — etl spec + run", run: (nav) => nav("/pipeline"), hint: "etl run" },
   { name: "brief — ai narrative", run: (nav) => nav("/brief"), hint: "report" },

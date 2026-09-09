@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@app/shared/src/components/ErrorBoundary";
 import { RequireAuth } from "@app/shared/src/features/auth/RequireAuth";
 import DesktopShell from "./layout/DesktopShell";
+import Overview from "./pages/Overview";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import Ingest from "./pages/Ingest";
@@ -18,7 +19,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<RequireAuth><DesktopShell /></RequireAuth>}>
-            <Route path="/" element={<Navigate to="/ingest" replace />} />
+            <Route path="/" element={<Overview />} />
             <Route path="/ingest" element={<Ingest />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/brief" element={<Brief />} />

@@ -21,7 +21,7 @@ export default function Login() {
         print(`$ ssh ${username}@workbench ...`);
         await login(username, password);
         print("$ auth OK — entering shell");
-        setTimeout(() => nav("/ingest"), 400);
+        setTimeout(() => nav("/"), 400);
       } else {
         await register(username, password);
         print("$ account created — now login");

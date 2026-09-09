@@ -4,6 +4,7 @@ import StatusBar from "../components/StatusBar";
 import { getStoredUser, logout } from "@app/shared/src/features/auth/store";
 
 const nav = [
+  { to: "/", label: "Overview" },
   { to: "/ingest", label: "Ingest" },
   { to: "/pipeline", label: "Pipeline" },
   { to: "/brief", label: "Brief" },
