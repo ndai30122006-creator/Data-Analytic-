@@ -3,9 +3,9 @@ import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { apexDarkTheme } from "../utils/chartTheme";
 
-export function Chart({ type, height = 180, options }: { type: string; height?: number; options?: ApexOptions }) {
+export function Chart({ type, height = 180, options, toolbar = false }: { type: string; height?: number; options?: ApexOptions; toolbar?: boolean }) {
   const base = getMockApexOptions(type);
-  const merged = { ...base, ...(options || {}) } as ApexOptions;
+  const merged = { ...base, ...(options || {}), chart: { ...(base.chart as object), ...((options as any)?.chart || {}), toolbar: { show: toolbar } } } as ApexOptions;
   const series = (merged.series as any) || base.series;
   // ApexCharts expects options without series
   const { series: _, ...opts } = merged as any;

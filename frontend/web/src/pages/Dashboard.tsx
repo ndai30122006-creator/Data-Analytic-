@@ -15,7 +15,10 @@ export default function Dashboard() {
   const [specText, setSpecText] = useState("");
   const [output, setOutput] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedName, setSelectedName] = useState("");
   const [realCharts, setRealCharts] = useState<any[]>([]);
+  const [hidden, setHidden] = useState<Record<string, boolean>>({});
+  const [refreshSec, setRefreshSec] = useState(0);
 
   const refresh = async () => {
     try {
@@ -52,17 +55,55 @@ export default function Dashboard() {
     }
   };
 
+  const loadData = async (id: number, silent = false) => {
+    const data = await dashboards.data(id).catch(() => null);
+    const charts = (data as any)?.charts ?? [];
+    setRealCharts(charts);
+    if (!silent) setOutput(`Loaded #${id} — ${charts.length} charts real-data (DuckDB 1 query/chart)`);
+  };
+
   const handleLoad = async (id: number) => {
     try {
       setSelectedId(id);
+      setHidden({});
       const res = await dashboards.get(id);
+      setSelectedName(res.name ?? "");
       setSpecText(JSON.stringify(res.spec ?? res, null, 2));
-      const data = await dashboards.data(id).catch(() => null);
-      const charts = (data as any)?.charts ?? [];
-      setRealCharts(charts);
-      setOutput(`Loaded #${id} — ${charts.length} charts real-data (DuckDB 1 query/chart)`);
+      await loadData(id);
     } catch (e: any) {
       setOutput(`Load error: ${e.message}`);
+    }
+  };
+
+  // Auto-refresh theo lich
+  useEffect(() => {
+    if (!refreshSec || !selectedId) return;
+    const t = setInterval(() => { loadData(selectedId, true); }, refreshSec * 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshSec, selectedId]);
+
+  const move = (i: number, dir: -1 | 1) => {
+    setRealCharts((cs) => {
+      const j = i + dir;
+      if (j < 0 || j >= cs.length) return cs;
+      const next = [...cs];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+
+  const saveLayout = async () => {
+    if (!selectedId) { setOutput("Chua chon dashboard de luu layout."); return; }
+    try {
+      const spec = JSON.parse(specText || "{}");
+      const order = realCharts.map((c: any) => c.id);
+      const charts = (spec.charts ?? []).filter((c: any) => !hidden[c.id]).sort((a: any, b: any) => order.indexOf(a.id) - order.indexOf(b.id));
+      const res = await dashboards.update(selectedId, { ...(spec as object), name: selectedName || (spec as any).name, charts } as any);
+      setOutput(`Saved layout order+hidden -> version ${(res as any).version ?? "?"}`);
+      refresh();
+    } catch (e: any) {
+      setOutput(`Save layout error: ${e.message}`);
     }
   };
 
@@ -113,15 +154,39 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {selectedId !== null && realCharts.length > 0 && (
+        <Card>
+          <h4>Layout Pro</h4>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+            <Button variant="ghost" size="sm" onClick={saveLayout}>Save layout (thứ tự + ẩn/hiện)</Button>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>Auto-refresh
+              <select value={refreshSec} onChange={(e) => setRefreshSec(Number(e.target.value))}
+                style={{ padding: 6, background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: "var(--radius-input)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+                <option value={0}>off</option>
+                <option value={30}>30s</option>
+                <option value={60}>1m</option>
+                <option value={300}>5m</option>
+              </select>
+            </label>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Export từng chart: nút ⬇ trên góc chart (PNG/SVG/CSV).</span>
+          </div>
+        </Card>
+      )}
+
       <div className="rise" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: 20 }}>
         {realCharts.length > 0 ? realCharts.map((c: any, i: number) => (
-          <Card key={c.id ?? i} style={{ padding: 0, overflow: "hidden" }}>
+          <Card key={c.id ?? i} style={{ padding: 0, overflow: "hidden", opacity: hidden[c.id] ? 0.45 : 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 12, fontWeight: 600 }}>{c.title ?? c.type}</span>
-              <Badge variant="success">{c.type}</Badge>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <Badge variant="success">{c.type}</Badge>
+                <Button variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
+                <Button variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === realCharts.length - 1}>↓</Button>
+                <Button variant="ghost" size="sm" onClick={() => setHidden((h) => ({ ...h, [c.id]: !h[c.id] }))}>{hidden[c.id] ? "show" : "hide"}</Button>
+              </div>
             </div>
             <div style={{ padding: 12 }}>
-              <Chart type={c.type} height={150} options={toOptions(c)} />
+              <Chart type={c.type} height={150} options={toOptions(c)} toolbar />
             </div>
           </Card>
         )) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
+  { to: "/", label: "Home" },
   { to: "/brief", label: "Brief" },
   { to: "/dashboard", label: "Dash" },
   { to: "/lineage", label: "Lineage" },
