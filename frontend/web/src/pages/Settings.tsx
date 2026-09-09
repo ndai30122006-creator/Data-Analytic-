@@ -4,7 +4,7 @@ import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Input } from "@app/shared/components/ui/Input";
 import { Toast } from "@app/shared/components/ui/Skeleton";
-import PageHead from "../components/PageHead";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Settings() {
   const { provider, saving, saveApiKey, PROVIDERS } = useSettings();

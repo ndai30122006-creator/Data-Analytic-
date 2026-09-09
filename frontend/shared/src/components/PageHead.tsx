@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** Chuẩn đầu trang: path + title + desc + actions phải. */
-export default function PageHead({ path, title, desc, actions }: { path: string; title: string; desc?: string; actions?: ReactNode }) {
+export function PageHead({ path, title, desc, actions }: { path: string; title: string; desc?: string; actions?: ReactNode }) {
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", paddingBottom: 14, borderBottom: "1px solid var(--border)" }}>
       <div>
@@ -14,3 +14,5 @@ export default function PageHead({ path, title, desc, actions }: { path: string;
     </div>
   );
 }
+
+export default PageHead;

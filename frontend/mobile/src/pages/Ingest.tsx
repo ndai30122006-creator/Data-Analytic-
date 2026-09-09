@@ -3,6 +3,7 @@ import { datasets } from "@app/shared/src/api/datasets";
 import { Button } from "@app/shared/src/components/ui/Button";
 import { Card } from "@app/shared/src/components/ui/Card";
 import { EmptyState, Skeleton, Toast } from "@app/shared/src/components/ui/Skeleton";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Ingest() {
   const [file, setFile] = useState<File | null>(null);
@@ -47,8 +48,8 @@ export default function Ingest() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Ingest — Datasets (raw → DuckDB)</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead path="ingest" title="Ingest" desc="Upload CSV/Excel → raw.* + profile JSON." />
       <Card style={{ borderStyle: "dashed" }}>
         <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <Button onClick={upload} disabled={!file} style={{ marginLeft: 12, background: file ? "var(--accent)" : "rgba(45,212,191,0.12)" }}>Upload & Ingest</Button>

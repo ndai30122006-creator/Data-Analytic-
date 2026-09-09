@@ -3,7 +3,7 @@ import { analysis } from "@app/shared/api/analysis";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Input, Textarea } from "@app/shared/components/ui/Input";
-import PageHead from "../components/PageHead";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 const types = ["ttest_independent", "ttest_onesample", "ttest_paired", "anova", "mannwhitney", "kruskal", "bootstrap", "ab_test"] as const;
 

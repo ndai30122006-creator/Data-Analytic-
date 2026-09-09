@@ -6,6 +6,7 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Textarea } from "@app/shared/components/ui/Input";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -120,8 +121,8 @@ export default function Pipeline() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Pipeline — ETL/ELT (AI author → DAG)</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead path="pipeline" title="Pipeline" desc="AI sinh spec → dry-run → run ra mart.*." />
       {apiError && (
         <Card style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "var(--danger)" }}>

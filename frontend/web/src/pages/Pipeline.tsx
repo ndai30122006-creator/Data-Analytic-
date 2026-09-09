@@ -6,7 +6,7 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Textarea } from "@app/shared/components/ui/Input";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
-import PageHead from "../components/PageHead";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",

@@ -4,7 +4,7 @@ import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { Input } from "@app/shared/components/ui/Input";
-import PageHead from "../components/PageHead";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Brief() {
   const [datasetId, setDatasetId] = useState(1);

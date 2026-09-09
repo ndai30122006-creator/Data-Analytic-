@@ -6,7 +6,7 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { Input, Textarea } from "@app/shared/components/ui/Input";
 import { Chart } from "@app/shared/components/Chart";
-import PageHead from "../components/PageHead";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);

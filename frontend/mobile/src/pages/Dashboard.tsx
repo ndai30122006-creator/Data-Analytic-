@@ -5,6 +5,7 @@ import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Input, Textarea } from "@app/shared/components/ui/Input";
 import { Chart } from "@app/shared/components/Chart";
+import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Dashboard() {
   const [datasetId, setDatasetId] = useState(1);
@@ -73,8 +74,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2>Dashboard — AI Generate & ApexCharts</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHead path="dashboard" title="Dashboard" desc="AI đề xuất charts → save → xem real-data." />
 
       <Card style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }}>
         <label style={{ display: "flex", flexDirection: "column", fontSize: 12, color: "var(--text-muted)" }}>Dataset ID / mart
