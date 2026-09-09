@@ -9,10 +9,10 @@ import { Badge } from "@app/shared/components/ui/Badge";
 import { Skeleton } from "@app/shared/components/ui/Skeleton";
 
 const FLOW = [
-  { label: "Ingest", desc: "csv → raw.*", to: "/ingest" },
-  { label: "Pipeline", desc: "spec → mart.*", to: "/pipeline" },
-  { label: "Brief", desc: "narrative", to: "/brief" },
-  { label: "Dashboard", desc: "charts", to: "/dashboard" },
+  { n: "01", label: "Ingest", desc: "upload csv/excel → raw.* + profile", to: "/ingest" },
+  { n: "02", label: "Pipeline", desc: "AI spec → dry-run → mart.*", to: "/pipeline" },
+  { n: "03", label: "Brief", desc: "narrative tiếng Việt, version", to: "/brief" },
+  { n: "04", label: "Dashboard", desc: "4-6 charts real-data", to: "/dashboard" },
 ];
 
 export default function Overview() {
@@ -82,18 +82,24 @@ export default function Overview() {
 
       {/* flow */}
       <Card>
-        <h4>Luồng làm việc</h4>
-        <div style={{ display: "flex", alignItems: "stretch", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-          {FLOW.map((f, i) => (
-            <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 140 }}>
-              <div onClick={() => nav(f.to)} style={{ flex: 1, cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-input)", padding: "12px", background: "var(--bg)", transition: "border-color 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}>
-                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>STEP {i + 1}</div>
-                <div style={{ fontWeight: 700, fontSize: 13 }}>{f.label}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{f.desc}</div>
-              </div>
-              {i < FLOW.length - 1 && <span style={{ color: "var(--accent)", fontWeight: 700 }}>→</span>}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h4>Luồng làm việc — bấm từng bước để đi tới</h4>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>01 → 04</span>
+        </div>
+        <div style={{ position: "relative", display: "flex", alignItems: "stretch", gap: 0, marginTop: 16 }}>
+          <div style={{ position: "absolute", top: 23, left: 32, right: 32, height: 2, background: "linear-gradient(90deg, var(--accent), var(--accent-2))", opacity: 0.35 }} />
+          {FLOW.map((f) => (
+            <div key={f.label} onClick={() => nav(f.to)}
+              style={{ position: "relative", flex: 1, minWidth: 0, cursor: "pointer", textAlign: "center", padding: "0 8px" }}>
+              <div style={{
+                width: 48, height: 48, margin: "0 auto", borderRadius: "50%",
+                border: "2px solid var(--accent)", background: "var(--bg)",
+                boxShadow: "0 0 16px rgba(45,212,191,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontWeight: 800, fontSize: 14, color: "var(--accent)", fontFamily: "var(--font-mono)",
+              }}>{f.n}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, marginTop: 8 }}>{f.label}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{f.desc}</div>
             </div>
           ))}
         </div>
