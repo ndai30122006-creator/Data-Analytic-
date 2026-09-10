@@ -16,6 +16,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Intelligence",
     items: [
+      { to: "/ai-studio", label: "AI Studio" },
       { to: "/brief", label: "Brief" },
       { to: "/lab", label: "Statistics Lab" },
     ],

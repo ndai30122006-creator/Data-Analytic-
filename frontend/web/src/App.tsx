@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Lab from "./pages/Lab";
 import Lineage from "./pages/Lineage";
 import Runs from "./pages/Runs";
+import AIStudio from "./pages/AIStudio";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/lineage" element={<Lineage />} />
             <Route path="/runs" element={<Runs />} />
+            <Route path="/ai-studio" element={<AIStudio />} />
           </Route>
           <Route path="*" element={<div style={{ maxWidth: 480, margin: "12vh auto", textAlign: "center", fontFamily: "var(--font-mono)" }}><div style={{ fontSize: 44, fontWeight: 800, color: "var(--accent)" }}>404</div><div style={{ color: "var(--text-muted)", fontSize: 13 }}>$ command not found — <a href="/">về Overview</a></div></div>} />
         </Routes>

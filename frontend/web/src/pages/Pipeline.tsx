@@ -8,17 +8,7 @@ import { Badge } from "@app/shared/components/ui/Badge";
 import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
 import { PageHead } from "@app/shared/src/components/PageHead";
 import { DagEditor } from "@app/shared/src/components/DagEditor";
-
-function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: string[] }) {
-  return (
-    <div style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 12, marginTop: 6 }}>
-      <span style={{ minWidth: 70, color: ok ? "var(--success)" : "var(--danger)", fontWeight: 700 }}>
-        {ok ? "✓" : "✗"} {title}
-      </span>
-      <span style={{ color: "var(--text-muted)" }}>{(errs ?? []).join(" | ") || "ok"}</span>
-    </div>
-  );
-}
+import { ProposalPanel } from "@app/shared/src/components/ProposalPanel";
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -233,29 +223,7 @@ export default function Pipeline() {
         </Card>
       )}
 
-      {proposal && (
-        <Card style={{ borderColor: "var(--accent)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-            <h4>Proposal {proposal.proposal_id} · {proposal.model_used} · {proposal.status}</h4>
-            <div style={{ display: "flex", gap: 8 }}>
-              {proposal.status === "proposed" && (
-                <><Button size="sm" onClick={handleApprove}>Approve → cho execute</Button>
-                <Button variant="ghost" size="sm" onClick={handleReject}>Reject</Button></>
-              )}
-            </div>
-          </div>
-          <LayerRow title="schema" ok={proposal.validations?.schema_ok} errs={proposal.validations?.schema_errors} />
-          <LayerRow title="semantic" ok={proposal.validations?.semantic_ok} errs={proposal.validations?.semantic_errors} />
-          <LayerRow title="safety" ok={proposal.validations?.safety_ok} errs={proposal.validations?.safety_errors} />
-          <LayerRow title="dry-run" ok={proposal.validations?.dry_run_ok} errs={proposal.validations?.dry_run_error ? [proposal.validations.dry_run_error] : []} />
-          <div style={{ fontSize: 12, marginTop: 8, color: "var(--text-muted)" }}>
-            cost: {proposal.cost?.source_rows ?? "?"} rows · {proposal.cost?.steps} steps → engine {proposal.cost?.recommended_engine} ({proposal.cost?.reason})
-            {proposal.dry_run?.rows !== undefined && <span> · dry-run {proposal.dry_run.rows} rows</span>}
-          </div>
-          {(proposal.notes ?? []).length > 0 && <div style={{ fontSize: 11, color: "var(--warn)", marginTop: 4 }}>{proposal.notes.join(" ")}</div>}
-          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>LLM proposes. Engine validates. Human approves. Executor executes.</div>
-        </Card>
-      )}
+      {proposal && <ProposalPanel proposal={proposal} onApprove={handleApprove} onReject={handleReject} />}
 
       <div style={{ display: "grid", gridTemplateColumns: selectedStepId ? "minmax(240px, 3fr) minmax(320px, 6fr) minmax(260px, 3fr)" : "minmax(280px, 4fr) minmax(320px, 8fr)", gap: 20 }}>
         <Card style={{ background: "rgba(45,212,191,0.04)", borderColor: "rgba(45,212,191,0.25)" }}>
