@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.analytics.data_quality import *  # reuse data_quality logic
 from src.core.insights import generate_data_summary
 from src.warehouse.connection import get_conn, warehouse_write_lock
 
