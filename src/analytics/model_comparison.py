@@ -2,9 +2,8 @@
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
-import streamlit as st
 
+from src.utils.optional_deps import go, st
 from src.utils.performance import safe_n_jobs
 
 from .base import apply_theme, insight_card, validate_df

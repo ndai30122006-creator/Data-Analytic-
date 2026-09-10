@@ -2,11 +2,9 @@
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import streamlit as st
 
 from src.utils.config import CHART_THEME, get_chart_theme  # CHART_THEME kept for back-compat
+from src.utils.optional_deps import go, px, st
 
 
 def apply_theme(fig):

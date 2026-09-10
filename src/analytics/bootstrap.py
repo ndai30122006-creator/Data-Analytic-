@@ -1,8 +1,8 @@
 """Bootstrap & Confidence Intervals (Book Ch.2)"""
 
 import numpy as np
-import plotly.graph_objects as go
-import streamlit as st
+
+from src.utils.optional_deps import go, st
 
 from .base import apply_theme, insight_card
 

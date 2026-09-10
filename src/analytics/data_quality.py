@@ -2,7 +2,8 @@
 
 import numpy as np
 import pandas as pd
-import streamlit as st
+
+from src.utils.optional_deps import st
 
 from .base import insight_card
 

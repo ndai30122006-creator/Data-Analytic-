@@ -7,7 +7,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 import pandas as pd
-import streamlit as st
+
+from src.utils.optional_deps import st
 
 logger = logging.getLogger(__name__)
 

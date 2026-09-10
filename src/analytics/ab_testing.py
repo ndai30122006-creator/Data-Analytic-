@@ -1,9 +1,8 @@
 """A/B Testing & Power Analysis (Book Ch.3)"""
 
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-import streamlit as st
+
+from src.utils.optional_deps import go, px, st
 
 from .base import apply_theme, insight_card
 

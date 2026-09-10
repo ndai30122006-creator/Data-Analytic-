@@ -2,8 +2,8 @@
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import streamlit as st
+
+from src.utils.optional_deps import px, st
 
 from .base import apply_theme, insight_card, validate_df
 

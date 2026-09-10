@@ -2,10 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import streamlit as st
-from plotly.subplots import make_subplots
 
 from src.core.statistical_tests import (
     run_anova,
@@ -16,6 +12,7 @@ from src.core.statistical_tests import (
     run_ttest_onesample,
     run_ttest_paired,
 )
+from src.utils.optional_deps import go, make_subplots, px, st
 
 from .base import apply_theme, insight_card, validate_df
 

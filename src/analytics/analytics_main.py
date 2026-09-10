@@ -1,6 +1,6 @@
 """Main orchestrator for Deep Analysis tab — dispatches to 11 sub-modules"""
 
-import streamlit as st
+from src.utils.optional_deps import st
 
 from .ab_testing import render_ab_testing_tab
 from .advanced_stats import render_advanced_stats_tab

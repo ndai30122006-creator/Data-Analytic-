@@ -5,9 +5,9 @@ from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-import streamlit as st
 
 from src.utils.exceptions import DataValidationError, handle_error
+from src.utils.optional_deps import cache_data
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +79,11 @@ def safe_execute(func: Callable, error_msg: str = "Lỗi thực thi", default: A
         logger.error(
             "safe_execute failed [%s] | Context: %s | Detail: %s", type(e).__name__, error_msg, str(e), exc_info=True
         )
-        st.error(f"❌ {error_msg}: {str(e)}")
+        logger.error("safe_execute UI notice [%s]: %s", error_msg, str(e))
         return default
 
 
-@st.cache_data
+@cache_data
 def get_column_stats(df: pd.DataFrame, col: str) -> Dict[str, Any]:
     """
     Cache thống kê chi tiết cho từng cột.
@@ -129,7 +129,7 @@ def get_column_stats(df: pd.DataFrame, col: str) -> Dict[str, Any]:
     return stats
 
 
-@st.cache_data
+@cache_data
 def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Tính Data Quality Score dựa trên 4 tiêu chí.
@@ -179,7 +179,7 @@ def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
-@st.cache_data
+@cache_data
 def generate_data_dictionary(df: pd.DataFrame) -> pd.DataFrame:
     """
     Tạo Data Dictionary (metadata) cho dataset.

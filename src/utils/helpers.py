@@ -1,5 +1,7 @@
 """Helper functions extracted from app.py"""
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from io import BytesIO
@@ -7,9 +9,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import streamlit as st
 
 from src.utils.config import (
     MAX_COLS_UPLOAD,
@@ -19,6 +18,7 @@ from src.utils.config import (
     get_chart_theme,
 )
 from src.utils.exceptions import DataValidationError, handle_error
+from src.utils.optional_deps import cache_data, go, px, st
 from src.utils.performance import check_file_size, warn_if_large_dataset
 
 logger = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ def guess_learning_column(columns: List[str], keywords: List[str]) -> Optional[s
     return None
 
 
-@st.cache_data(
+@cache_data(
     hash_funcs={
         "streamlit.runtime.uploaded_file_manager.UploadedFile": lambda f: (
             getattr(f, "name", getattr(f, "filename", "")),

@@ -4,11 +4,10 @@ import re
 from typing import List
 
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 
 from src.dashboard.spec_schema import ChartSpec, DashboardSpec
 from src.utils.helpers import apply_theme
+from src.utils.optional_deps import go, px
 from src.warehouse.connection import get_conn
 
 _VALID_SRC = re.compile(r"^(raw|mart)\.[a-zA-Z_][a-zA-Z0-9_]{0,63}$")
@@ -33,7 +32,9 @@ def fetch_data(chart: ChartSpec, source: str) -> pd.DataFrame:
         conn.close()
 
 
-def render_chart(chart: ChartSpec, df: pd.DataFrame) -> go.Figure:
+def render_chart(chart: ChartSpec, df: pd.DataFrame):
+    if px is None or go is None:
+        raise ImportError("plotly is not installed (legacy renderer)")
     t = chart.type.lower()
     if t == "kpi" and chart.metric:
         col = chart.metric.get("column")
@@ -71,7 +72,7 @@ def render_chart(chart: ChartSpec, df: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def render(spec: DashboardSpec) -> List[go.Figure]:
+def render(spec: DashboardSpec) -> List:
     """Render DashboardSpec -> list of figures."""
     figs = []
     for chart in spec.charts:
