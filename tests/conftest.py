@@ -1,4 +1,4 @@
-"""Pytest fixtures and configuration for Data Analyst Pro tests."""
+"""Pytest fixtures and configuration for tests."""
 
 import os
 import sys

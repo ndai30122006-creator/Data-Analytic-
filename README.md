@@ -1,6 +1,6 @@
-# 🧠 AI Data Engineering Workbench — local-first
+# 🧠 Dataworkbench — local-first AI Data Engineering Workbench
 
-**Workbench AI cho Data Engineering** — `Ingest → Pipeline (ETL/ELT) → Brief → Dashboard`, local-first với **DuckDB** + **BYOK** (Bring Your Own Key). Giữ **Statistics Lab** từ “Learning Analytics”.
+**Dataworkbench** — `Ingest → Pipeline (ETL/ELT) → Brief → Dashboard`, local-first với **DuckDB** + **BYOK** (Bring Your Own Key), kèm **Statistics Lab**.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-green)
@@ -48,10 +48,9 @@
 ## 🚀 Cài đặt
 
 ### 1. Clone
-> Repo hiện tại là `Data-Analytic-` (`workbench-ai` là tên project).
 ```bash
-git clone https://github.com/ndai30122006-creator/Data-Analytic-.git
-cd Data-Analytic-
+git clone https://github.com/ndai30122006-creator/dataworkbench.git
+cd dataworkbench
 git checkout main
 ```
 
@@ -116,7 +115,7 @@ docker compose --profile production up --build -d  # + nginx 80/443
 ## 🏗️ Cấu trúc dự án (mới)
 
 ```
-Data-Analytic-/
+dataworkbench/
 ├── api.py                 # FastAPI — execution layer + BYOK + rate-limit
 ├── src/
 │   ├── warehouse/         # DuckDB local-first (connection, ingest, registry, lineage)
@@ -167,4 +166,4 @@ MIT
 Built with FastAPI, **DuckDB**, React+Vite, ApexCharts, scikit-learn, scipy, statsmodels, pandas, Docker.
 
 ---
-**🧠 AI Data Engineering Workbench** — local-first · DuckDB + BYOK · P0-P5 Done (docs/plan)
+**🧠 Dataworkbench** — local-first · DuckDB + BYOK · P0-P5 Done (docs/plan)

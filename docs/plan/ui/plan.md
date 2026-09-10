@@ -2,7 +2,7 @@
 
 > **Nhánh:** `refactor` · **Trạng thái:** build đã **hoàn tất** (merge `main`) + Giai đoạn D UI Polish.
 > Nguyên tắc đã làm: commit nhỏ + push từng phần lên `refactor`.
-> Ghi chú mới: **ECharts → ApexCharts** (GĐ-D), **Streamlit đã xoá**, tên project **workbench-ai** (repo: `Data-Analytic-`).
+> Ghi chú mới: **ECharts → ApexCharts** (GĐ-D), **Streamlit đã xoá**, tên project/repo **dataworkbench**.
 > Đọc kèm: [`brainstorm.md`](./brainstorm.md) (quyết định đã chốt), `../07-api-design.md` (API), `../implement_plan.md`.
 
 ## 🎯 Tổng quan target (đã chốt)

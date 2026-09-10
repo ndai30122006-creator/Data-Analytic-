@@ -1,4 +1,4 @@
-"""Alembic migrations environment configuration for Learning Analytics."""
+"""Alembic migrations environment configuration for Data Workbench."""
 
 import os
 import sys

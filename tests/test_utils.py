@@ -1,4 +1,4 @@
-"""Unit tests for utility modules — Data Analyst Pro v3.0"""
+"""Unit tests for utility modules."""
 
 import os
 import sys

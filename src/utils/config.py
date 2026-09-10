@@ -1,4 +1,4 @@
-"""Configuration constants for Data Analyst Pro v3.0 — Practical Statistics Edition"""
+"""Configuration constants for Data Workbench v3.0 — Practical Statistics Edition"""
 
 from typing import Any, Dict, List
 

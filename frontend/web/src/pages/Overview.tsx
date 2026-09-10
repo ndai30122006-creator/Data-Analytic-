@@ -70,7 +70,7 @@ export default function Overview() {
     <div className="rise" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* hero */}
       <Card className="hud" style={{ padding: 28, overflow: "hidden", position: "relative" }}>
-        <div style={{ fontSize: 11, color: "var(--accent)" }}>$ workbench-ai --overview</div>
+        <div style={{ fontSize: 11, color: "var(--accent)" }}>$ dataworkbench --overview</div>
         <h2 style={{ fontSize: 30, marginTop: 8 }}>
           Dữ liệu thô <span className="grad-text">→ quyết định</span>
         </h2>

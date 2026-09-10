@@ -10,7 +10,7 @@ from typing import Optional
 
 
 def setup_logging(
-    app_name: str = "data-analyst-pro",
+    app_name: str = "dataworkbench",
     log_level: str = "INFO",
     log_dir: Optional[str] = None,
     max_bytes: int = 10 * 1024 * 1024,  # 10 MB

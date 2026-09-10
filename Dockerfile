@@ -6,8 +6,8 @@
 #   web-build: Node build React web+mobile (Vite)
 #   frontend : nginx serve web+mobile → port 80
 #
-# Build từng image:  docker build -t workbench-ai-backend . --target backend
-#                     docker build -t workbench-ai-frontend . --target frontend
+# Build từng image:  docker build -t dataworkbench-backend . --target backend
+#                     docker build -t dataworkbench-frontend . --target frontend
 # Build cả hệ thống: docker compose up --build
 # ═══════════════════════════════════════════════════════════════════
 

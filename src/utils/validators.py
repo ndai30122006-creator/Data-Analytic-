@@ -1,4 +1,4 @@
-"""Validation utilities for Data Analyst Pro"""
+"""Validation utilities for Data Workbench"""
 
 import logging
 from typing import Any, Callable, Dict, List, Tuple

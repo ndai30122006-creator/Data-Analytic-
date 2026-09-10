@@ -1,6 +1,6 @@
 # Architecture — AI Data Engineering Workbench
 
-Repo: `Data-Analytic-` (project name: `workbench-ai`). Local-first workbench:
+Repo/project: `dataworkbench`. Local-first workbench:
 `Ingest → Pipeline (ETL/ELT) → Brief → Dashboard`, plus Statistics Lab and visual lineage.
 Detail history: `docs/plan/02-architecture.md`, `docs/plan/implement_plan.md`.
 

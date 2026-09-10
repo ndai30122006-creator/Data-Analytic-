@@ -1,4 +1,4 @@
-"""FastAPI Backend for Learning Analytics SaaS — JWT + bcrypt + SQLAlchemy + rate limiting.
+"""FastAPI Backend for Data Workbench — JWT + bcrypt + SQLAlchemy + rate limiting.
 
 Mục 7: composition root mỏng — routes nằm ở src/api/routers/*, deps dùng chung ở src/api/deps.py.
 Giữ `from api import app` tương thích (tests/E2E/uvicorn api:app).
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Learning Analytics API",
+    title="Data Workbench API",
     version="1.3.0",
     lifespan=lifespan,
     swagger_css_url="/static/terminal-swagger.css",

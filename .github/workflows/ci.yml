@@ -110,7 +110,7 @@ jobs:
           target: backend
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: workbench-ai-backend:latest
+          tags: dataworkbench-backend:latest
 
       - name: Build frontend image
         uses: docker/build-push-action@v6
@@ -119,4 +119,4 @@ jobs:
           target: frontend
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: workbench-ai-frontend:latest
+          tags: dataworkbench-frontend:latest

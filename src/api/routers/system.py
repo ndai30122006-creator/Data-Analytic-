@@ -11,7 +11,7 @@ router = APIRouter(tags=["system"])
 
 @router.get("/")
 async def root():
-    return {"message": "Learning Analytics API", "version": "1.3.0"}
+    return {"message": "Data Workbench API", "version": "1.3.0"}
 
 
 @router.get("/health")

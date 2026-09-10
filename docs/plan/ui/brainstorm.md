@@ -1,7 +1,7 @@
 # 💡 UI/Brainstorm — Node.js UI Layer (2 nền tảng: Mobile + Web/Desktop)
 
 > **Trạng thái:** **ĐÃ HOÀN TẤT** — UI Node.js (web + mobile) đã build xong, merge `main`,
-> Streamlit đã xoá. Repo đổi tên **workbench-ai**.
+> Streamlit đã xoá. Tên project/repo **dataworkbench**.
 > **Nhánh:** `refactor` (= `main`). 
 > **Target (đã đạt):** thay thế Streamlit bằng một bộ UI riêng trên Node.js,
 > chia **2 client riêng biệt**: web/desktop (Desktop web) + mobile (điện thoại).

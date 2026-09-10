@@ -29,7 +29,7 @@ export default function DesktopShell() {
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--warn)" }} />
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--accent)" }} />
         <span className="grad-text" style={{ marginLeft: 8, fontSize: 13, fontWeight: 800, letterSpacing: "-0.01em", filter: "drop-shadow(0 0 8px rgba(45,212,191,0.35))" }}>
-          workbench-ai
+          dataworkbench
         </span>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{user} · {loc.pathname}</span>
         <span style={{ flex: 1 }} />

@@ -1,4 +1,4 @@
-"""Custom exception classes for Data Analyst Pro — standardized API errors."""
+"""Custom exception classes for Data Workbench — standardized API errors."""
 
 import logging
 import uuid
@@ -27,7 +27,7 @@ def make_error_response(status_code: int, message: str, detail: Optional[str] = 
 
 
 class DataAnalystError(Exception):
-    """Base exception for all Data Analyst Pro errors."""
+    """Base exception for all Data Workbench errors."""
 
     pass
 

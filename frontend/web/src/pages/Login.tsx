@@ -9,7 +9,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [out, setOut] = useState<string[]>(["workbench-ai v1.3.0 — local-first data workbench", "type credentials to continue"]);
+  const [out, setOut] = useState<string[]>(["dataworkbench v1.3.0 — local-first data workbench", "type credentials to continue"]);
   const nav = useNavigate();
 
   const print = (s: string) => setOut((o) => [...o.slice(-8), s]);

@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════
-# Learning Analytics Thống kê — Docker Compose
+# Data Workbench — Docker Compose
 #
 #   Dev  : docker compose up --build
 #   Prod : docker compose --profile production up --build -d
@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: backend
-    image: workbench-ai-backend:latest
+    image: dataworkbench-backend:latest
     container_name: wb-backend
     ports:
       - "8000:8000"
@@ -49,7 +49,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: frontend
-    image: workbench-ai-frontend:latest
+    image: dataworkbench-frontend:latest
     container_name: wb-frontend
     ports:
       - "80:80"
