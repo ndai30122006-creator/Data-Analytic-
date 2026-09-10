@@ -5,6 +5,7 @@ import { logout } from "@app/shared/src/features/auth/store";
 type Nav = (p: string) => void;
 const COMMANDS: { name: string; hint: string; run: (nav: Nav) => void }[] = [
   { name: "overview — home", run: (nav) => nav("/"), hint: "home" },
+  { name: "runs — history", run: (nav) => nav("/runs"), hint: "history log" },
   { name: "ingest — upload csv/excel", run: (nav) => nav("/ingest"), hint: "upload" },
   { name: "pipeline — etl spec + run", run: (nav) => nav("/pipeline"), hint: "etl run" },
   { name: "brief — ai narrative", run: (nav) => nav("/brief"), hint: "report" },
@@ -22,17 +23,25 @@ export default function CommandPalette() {
   const nav = useNavigate();
 
   useEffect(() => {
+    const toggle = () => {
+      setQ("");
+      setIdx(0);
+      setOpen((o) => !o);
+    };
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setQ("");
-        setIdx(0);
-        setOpen((o) => !o);
+        toggle();
       }
       if (e.key === "Escape") setOpen(false);
     };
+    const onExternal = () => toggle();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("open-palette", onExternal);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("open-palette", onExternal);
+    };
   }, []);
 
   const list = useMemo(() => {
