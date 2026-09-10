@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useSettings } from "@app/shared/features/settings/useSettings";
+import { auth } from "@app/shared/src/api/auth";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Input } from "@app/shared/components/ui/Input";
 import { Toast } from "@app/shared/components/ui/Skeleton";
+import { parseApiError } from "@app/shared/src/hooks/useErrorHandler";
 import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Settings() {
@@ -11,14 +13,29 @@ export default function Settings() {
   const [key, setKey] = useState("");
   const [prov, setProv] = useState(provider);
   const [msg, setMsg] = useState("");
+  const [testing, setTesting] = useState(false);
 
   const save = async () => {
     try {
-      await saveApiKey(key, prov as any);
-      setMsg("Key saved — Brief/Dashboard/Pipeline-generate sẽ dùng LLM, fail thì fallback rule-based.");
+      const res = await saveApiKey(key, prov as any);
+      setMsg(`Key saved (provider: ${res.provider ?? prov}) — Brief/Dashboard/Pipeline-generate sẽ dùng LLM, fail thì fallback rule-based.`);
       setKey("");
     } catch (e: any) {
-      setMsg(`Error: ${e.message}`);
+      const info = parseApiError(e);
+      setMsg(info.message);
+    }
+  };
+
+  const test = async () => {
+    setTesting(true);
+    try {
+      const res = await auth.testApiKey();
+      setMsg(`Key OK — ${res.provider}:${res.model} (${res.latency_ms}ms).`);
+    } catch (e: any) {
+      const info = parseApiError(e);
+      setMsg(info.message);
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -35,6 +52,7 @@ export default function Settings() {
         <Input placeholder="sk-... / gemini key" type="password" value={key} onChange={(e) => setKey(e.target.value)} style={{ marginTop: 8 }} />
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
           <Button onClick={save} disabled={saving || !key.trim()}>{saving ? "Saving..." : "Save Key"}</Button>
+          <Button variant="ghost" onClick={test} disabled={testing}>{testing ? "Testing..." : "Test connection"}</Button>
         </div>
         {msg && <div style={{ marginTop: 12 }}><Toast message={msg} type={msg.startsWith("Error") ? "error" : "success"} onClose={() => setMsg("")} /></div>}
       </Card>

@@ -7,6 +7,7 @@ import { Badge } from "@app/shared/components/ui/Badge";
 import { Input, Textarea } from "@app/shared/components/ui/Input";
 import { Chart } from "@app/shared/components/Chart";
 import { DataTable } from "@app/shared/src/components/DataTable";
+import { parseApiError } from "@app/shared/src/hooks/useErrorHandler";
 import { EmptyState } from "@app/shared/src/components/ui/Skeleton";
 import { PageHead } from "@app/shared/src/components/PageHead";
 
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [specText, setSpecText] = useState("");
   const [output, setOutput] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [realCharts, setRealCharts] = useState<any[]>([]);
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
@@ -35,13 +37,17 @@ export default function Dashboard() {
   useEffect(() => { refresh(); }, []);
 
   const handleGenerate = async () => {
+    setGenerating(true);
     try {
       const res = await dashboards.generate(datasetId);
       setSpecText(JSON.stringify(res.spec ?? res, null, 2));
       setRealCharts([]);
       setOutput(`Generated from dataset ${datasetId} [${(res as any).model_used ?? "rule-based"}] — save dashboard rồi chọn để xem real-data`);
     } catch (e: any) {
-      setOutput(`Generate error: ${e.message}`);
+      const info = parseApiError(e);
+      setOutput(`${info.message}${info.traceId ? ` (trace ${info.traceId})` : ""}`);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -123,7 +129,7 @@ export default function Dashboard() {
         path="dashboard"
         title="Dashboard"
         desc="AI đề xuất 4-6 charts từ profile → lưu → xem real-data (mỗi chart 1 query DuckDB)."
-        actions={<><Button onClick={handleGenerate}>Generate</Button><Button variant="ghost" onClick={refresh}>Refresh</Button></>}
+        actions={<><Button onClick={handleGenerate} disabled={generating}>{generating ? "Đang sinh..." : "Generate"}</Button><Button variant="ghost" onClick={refresh}>Refresh</Button></>}
       />
 
       <Card>

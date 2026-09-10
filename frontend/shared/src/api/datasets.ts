@@ -24,4 +24,5 @@ export const datasets = {
   tableRows: (table: string, p: RowsParams = {}) =>
     api.get<RowsResponse>(`/tables/rows?${buildRowsQs(p, { table })}`),
   remove: (dataset_name: string) => api.del<{ message: string }>(`/datasets/${dataset_name}`),
+  demo: () => api.post<IngestResponse>(`/datasets/demo`),
 };

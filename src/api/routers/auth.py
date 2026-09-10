@@ -131,6 +131,28 @@ async def update_ai_api_key(
     return {"message": "API key updated", "provider": provider or get_api_provider(username)}
 
 
+@router.post("/auth/api-key/test")
+async def test_ai_api_key(username: str = Depends(get_current_user)):
+    """Test connection: goi LLM sieu nhe bang key da luu, tra ok/model/latency (ton vai tram tokens)."""
+    import time as _time
+
+    from src.core.database import get_api_key, get_api_provider
+
+    key = get_api_key(username)
+    if not key:
+        raise HTTPException(status_code=400, detail="Chua luu key — Save Key truoc")
+    provider = get_api_provider(username)
+    try:
+        from src.core.llm_client import complete_text
+
+        t0 = _time.perf_counter()
+        text, model = complete_text(key, provider, [{"role": "user", "content": "Reply with exactly: ok"}])
+        ms = round((_time.perf_counter() - t0) * 1000)
+        return {"ok": True, "provider": provider, "model": model, "latency_ms": ms, "reply": text[:50]}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Key khong dung duoc ({type(e).__name__}): {e}")
+
+
 @router.delete("/auth/user")
 async def delete_user_endpoint(username: str = Depends(get_current_user)):
     """Delete the authenticated user's own account."""

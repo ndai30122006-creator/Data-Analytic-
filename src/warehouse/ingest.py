@@ -51,7 +51,16 @@ def ingest_file(user: str, file, table: str = None) -> dict:
         df = load_and_process_data(file)
         if df is None or df.empty or len(df.columns) == 0:
             raise ValueError("File rỗng hoặc không có cột dữ liệu")
-    tname = _sanitize_table(table or Path(fname).stem)
+    return ingest_df(user, df, table or Path(fname).stem)
+
+
+def ingest_df(user: str, df: "pd.DataFrame", table: str) -> dict:
+    """Ingest DataFrame san co (demo 1-click, tests) — chung duong voi ingest_file."""
+    import pandas as _pd
+
+    if df is None or not isinstance(df, _pd.DataFrame) or df.empty or len(df.columns) == 0:
+        raise ValueError("File rỗng hoặc không có cột dữ liệu")
+    tname = _sanitize_table(table)
     full = f"raw.{tname}"
 
     conn = get_conn()
@@ -84,3 +93,21 @@ def ingest_file(user: str, file, table: str = None) -> dict:
         "profile": profile,
         "quality": quality,
     }
+
+
+def demo_dataframe(n: int = 120) -> "pd.DataFrame":
+    """Sinh demo data (onboarding 1-click) — giong scripts/generate_demo_data.py."""
+    import numpy as _np
+
+    _np.random.seed(42)
+    df = pd.DataFrame(
+        {
+            "ma_sv": [f"SV{i:04d}" for i in range(1, n + 1)],
+            "diem": _np.random.normal(6.5, 1.8, n).clip(0, 10).round(1),
+            "lop": _np.random.choice(["L01", "L02", "L03"], n),
+            "gio_hoc": _np.random.exponential(5, n).clip(0, 20).round(1),
+        }
+    )
+    idx = _np.random.choice(n, max(1, n // 15), replace=False)
+    df.loc[idx, "diem"] = float("nan")
+    return df

@@ -4,7 +4,13 @@ import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { Input } from "@app/shared/components/ui/Input";
+import { parseApiError } from "@app/shared/src/hooks/useErrorHandler";
 import { PageHead } from "@app/shared/src/components/PageHead";
+
+const friendly = (e: any) => {
+  const info = parseApiError(e);
+  return `${info.message}${info.traceId ? ` (trace ${info.traceId})` : ""}`;
+};
 
 export default function Brief() {
   const [datasetId, setDatasetId] = useState(1);
@@ -12,15 +18,19 @@ export default function Brief() {
   const [modelUsed, setModelUsed] = useState("");
   const [history, setHistory] = useState<any[]>([]);
   const [version, setVersion] = useState<number | "">("");
+  const [creating, setCreating] = useState(false);
 
   const create = async () => {
+    setCreating(true);
     try {
       const res = await brief.create(datasetId);
       setContent(res.content ?? JSON.stringify(res, null, 2));
       setModelUsed(res.model_used ?? "");
       list();
     } catch (e: any) {
-      setContent(`Error: ${e.message}`);
+      setContent(friendly(e));
+    } finally {
+      setCreating(false);
     }
   };
   const list = async () => {
@@ -28,7 +38,7 @@ export default function Brief() {
       const res = await brief.list(datasetId);
       setHistory(res.briefs ?? res ?? []);
     } catch (e: any) {
-      setContent(`List error: ${e.message}`);
+      setContent(friendly(e));
     }
   };
   const getVersion = async () => {
@@ -37,7 +47,7 @@ export default function Brief() {
       const res = await brief.get(datasetId, Number(version));
       setContent(res.content ?? JSON.stringify(res, null, 2));
     } catch (e: any) {
-      setContent(`Get error: ${e.message}`);
+      setContent(friendly(e));
     }
   };
   const exportMd = () => {
@@ -54,7 +64,7 @@ export default function Brief() {
         path="brief"
         title="Brief"
         desc="1-click narrative tiếng Việt từ profile. Có BYOK key thì dùng LLM, không thì rule-based."
-        actions={<><Button onClick={create}>Generate Brief</Button><Button variant="ghost" onClick={exportMd} disabled={!content}>Export MD</Button></>}
+        actions={<><Button onClick={create} disabled={creating}>{creating ? "Đang sinh..." : "Generate Brief"}</Button><Button variant="ghost" onClick={exportMd} disabled={!content}>Export MD</Button></>}
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 1fr) 300px", gap: 20 }}>

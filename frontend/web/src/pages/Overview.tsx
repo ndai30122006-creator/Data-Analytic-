@@ -33,6 +33,7 @@ export default function Overview() {
   const [stats, setStats] = useState({ ds: 0, pipe: 0, runs: 0, dash: 0 });
   const [recentRuns, setRecentRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [outputErr, setOutputErr] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -82,6 +83,37 @@ export default function Overview() {
           <Button variant="ghost" onClick={() => nav("/dashboard")}>Xem Dashboard</Button>
         </div>
       </Card>
+
+      {/* onboarding */}
+      {!loading && stats.ds === 0 && (
+        <Card style={{ borderColor: "var(--accent)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Mới bắt đầu? Thử demo 1-click</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+              Sinh 120 sinh viên mẫu (có missing/dup) → chạy đủ luồng Ingest → Pipeline → Brief → Dashboard.
+            </div>
+          </div>
+          <Button onClick={async () => {
+            setLoading(true);
+            try {
+              await datasets.demo();
+              const [d, p, r, b] = await Promise.all([
+                datasets.list().catch(() => ({ datasets: [] }) as any),
+                pipelines.list().catch(() => ({ pipelines: [] }) as any),
+                pipelines.listRuns().catch(() => ({ runs: [] }) as any),
+                dashboards.list().catch(() => ({ dashboards: [] }) as any),
+              ]);
+              setStats({ ds: (d.datasets ?? []).length, pipe: (p.pipelines ?? []).length, runs: (r.runs ?? []).length, dash: (b.dashboards ?? []).length });
+            } catch (e: any) {
+              setRecentRuns([]);
+              setOutputErr(e.message ?? "Demo failed");
+            } finally {
+              setLoading(false);
+            }
+          }}>Tải demo 1-click</Button>
+        </Card>
+      )}
+      {outputErr && <div style={{ fontSize: 12, color: "var(--danger)" }}>{outputErr}</div>}
 
       {/* stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 20 }}>

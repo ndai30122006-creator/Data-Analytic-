@@ -5,6 +5,7 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { EmptyState, Skeleton, Toast } from "@app/shared/components/ui/Skeleton";
 import { DataTable } from "@app/shared/src/components/DataTable";
+import { parseApiError } from "@app/shared/src/hooks/useErrorHandler";
 import { PageHead } from "@app/shared/src/components/PageHead";
 
 export default function Ingest() {
@@ -29,8 +30,11 @@ export default function Ingest() {
   };
   useEffect(() => { refresh(); }, []);
 
+  const [uploading, setUploading] = useState(false);
+
   const upload = async () => {
     if (!file) return;
+    setUploading(true);
     setMsg("Uploading...");
     try {
       const res = await datasets.ingestFile(file);
@@ -39,7 +43,10 @@ export default function Ingest() {
       setFile(null);
       refresh();
     } catch (e: any) {
-      setMsg(`Error: ${e.message}`);
+      const info = parseApiError(e);
+      setMsg(info.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -70,7 +77,7 @@ export default function Ingest() {
             {file ? `▣ ${file.name} (${(file.size / 1024).toFixed(1)} KB)` : "▢ Click để chọn .csv / .xlsx (tối đa 50MB)"}
             <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} style={{ display: "none" }} />
           </label>
-          <Button onClick={upload} disabled={!file}>Upload & Ingest</Button>
+          <Button onClick={upload} disabled={!file || uploading}>{uploading ? "Đang upload..." : "Upload & Ingest"}</Button>
         </div>
         {msg && <div style={{ marginTop: 12 }}><Toast message={msg} type={msg.startsWith("Error") || msg.startsWith("List error") ? "error" : msg.startsWith("Ingested") ? "success" : "info"} onClose={() => setMsg("")} /></div>}
       </Card>

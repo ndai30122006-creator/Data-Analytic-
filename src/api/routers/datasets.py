@@ -178,6 +178,47 @@ async def ingest_dataset(
     return {"message": f"Ingested {ds.dataset_name}", "dataset_id": ds.id, "profile": req.profile}
 
 
+@router.post("/datasets/demo", dependencies=[Depends(check_rate_limit)])
+async def ingest_demo(username: str = Depends(get_current_user)):
+    """Onboarding 1-click: sinh demo data (120 SV) + ingest, khong can file."""
+    import json as _json
+
+    from src.core.database import Dataset, session_scope
+    from src.warehouse import ingest as _ing
+    from src.warehouse.registry import register_dataset
+
+    name = "demo_sinhvien"
+    if db_get_dataset(username, name):
+        raise HTTPException(status_code=400, detail="Demo da ton tai — xoa 'demo_sinhvien' roi thu lai")
+    try:
+        result = _ing.ingest_df(username, _ing.demo_dataframe(), name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Ingest failed: {e}")
+    with session_scope() as s:
+        ds = Dataset(
+            username=username,
+            dataset_name=name,
+            rows=0,
+            cols=0,
+            version=1,
+            duckdb_table=result["table"],
+            file_path="demo::generated",
+            profile_json=_json.dumps({"profile": result["profile"]}, ensure_ascii=False),
+        )
+        s.add(ds)
+        s.flush()
+        ds.rows = result["rows"]
+        ds.cols = result["cols"]
+        ds_id = ds.id
+    return {
+        "message": f"Ingested demo -> {result['table']}",
+        "dataset_id": ds_id,
+        "version": 1,
+        "profile": result["profile"],
+        "quality": result.get("quality"),
+    }
+
+
 @router.get("/tables/rows", dependencies=[Depends(check_rate_limit)])
 async def get_table_rows(
     table: str,

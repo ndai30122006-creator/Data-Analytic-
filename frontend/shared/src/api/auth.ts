@@ -5,6 +5,7 @@ export const auth = {
   register: (username: string, password: string) => api.post<{ message: string }>("/auth/register", { username, password }),
   login: (username: string, password: string) => api.post<LoginResponse>("/auth/login", { username, password }),
   verify: () => api.get<{ username: string; valid: boolean }>("/auth/verify"),
-  saveApiKey: (api_key: string) => api.post<{ message: string }>("/auth/api-key", { api_key }),
+  saveApiKey: (api_key: string, provider?: string) => api.post<{ message: string; provider?: string }>("/auth/api-key", { api_key, provider }),
+  testApiKey: () => api.post<{ ok: boolean; provider: string; model: string; latency_ms: number; reply: string }>("/auth/api-key/test"),
   deleteUser: () => api.del<{ message: string }>("/auth/user"),
 };
