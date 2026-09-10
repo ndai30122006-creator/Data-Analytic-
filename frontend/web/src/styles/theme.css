@@ -87,6 +87,10 @@ a, nav a { transition: color 0.2s var(--ease), background 0.2s var(--ease), bord
   animation: shimmer 1.8s linear infinite !important;
 }
 .dot-live { animation: soft-pulse 2s ease-in-out infinite; }
+@keyframes flow-y { 0% { top: -4px; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { top: calc(100% - 6px); opacity: 0; } }
+@keyframes flow-x-r { 0% { left: -4px; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 6px); opacity: 0; } }
+@keyframes flow-x-l { 0% { left: calc(100% - 6px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: -4px; opacity: 0; } }
+.flow-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); z-index: 1; }
 @keyframes travel { from { left: 40px; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } to { left: calc(100% - 40px); opacity: 0; } }
 .traveler {
   position: absolute; top: 19px; width: 10px; height: 10px; border-radius: 50%;

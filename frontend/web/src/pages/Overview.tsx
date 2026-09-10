@@ -8,8 +8,12 @@ import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { Skeleton } from "@app/shared/components/ui/Skeleton";
 
-function Trunk() {
-  return <div style={{ width: 2, height: 22, background: "linear-gradient(180deg, var(--accent), var(--accent-2))", opacity: 0.6 }} />;
+function Trunk({ delay = 0 }: { delay?: number }) {
+  return (
+    <div style={{ position: "relative", width: 2, height: 26, background: "linear-gradient(180deg, var(--accent), var(--accent-2))", opacity: 0.7 }}>
+      <span className="flow-dot" style={{ left: -3, animation: "flow-y 1.6s linear infinite", animationDelay: `${delay}s` }} />
+    </div>
+  );
 }
 
 function TreeNode({ label, desc, to, go }: { label: string; desc: string; to: string; go: (t: string) => void }) {
@@ -96,11 +100,16 @@ export default function Overview() {
         <h4>Cây luồng dữ liệu — bấm ô để đi tới</h4>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16 }}>
           <TreeNode label="Ingest" desc="upload csv/excel → raw.* + profile" to="/ingest" go={go} />
-          <Trunk />
+          <Trunk delay={0} />
           <TreeNode label="Pipeline" desc="AI spec → dry-run → mart.*" to="/pipeline" go={go} />
+          <Trunk delay={0.8} />
           <div style={{ display: "flex", width: "100%", maxWidth: 560 }}>
-            <div style={{ flex: 1, borderTop: "2px solid var(--border-strong)", borderRight: "1px solid var(--border-strong)", height: 22, marginRight: -1 }} />
-            <div style={{ flex: 1, borderTop: "2px solid var(--border-strong)", borderLeft: "1px solid var(--border-strong)", height: 22, marginLeft: -1 }} />
+            <div style={{ position: "relative", flex: 1, borderTop: "2px solid var(--border-strong)", borderRight: "1px solid var(--border-strong)", height: 22, marginRight: -1 }}>
+              <span className="flow-dot" style={{ top: -5, animation: "flow-x-l 1.8s linear infinite" }} />
+            </div>
+            <div style={{ position: "relative", flex: 1, borderTop: "2px solid var(--border-strong)", borderLeft: "1px solid var(--border-strong)", height: 22, marginLeft: -1 }}>
+              <span className="flow-dot" style={{ top: -5, animation: "flow-x-r 1.8s linear infinite" }} />
+            </div>
           </div>
           <div style={{ display: "flex", gap: 32, flexWrap: "wrap", justifyContent: "center" }}>
             <TreeNode label="Brief" desc="narrative tiếng Việt" to="/brief" go={go} />
