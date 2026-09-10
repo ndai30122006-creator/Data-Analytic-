@@ -11,6 +11,7 @@
 
 > **Hiện tại (`main`):** UI 8 screens `Overview/Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage` + `Statistics Lab` + BYOK `POST /auth/api-key` + AI proposals (approve gate) + DAG engine 2 chế độ (pandas/duckdb). Xem `docs/ARCHITECTURE.md` (tổng quan) & `docs/plan/README.md`.
 > **Kiến trúc tổng quan + sơ đồ dữ liệu:** xem [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> **Chạy local dev đúng cách (port, tài khoản, sự cố):** xem [`GUIDE.md`](GUIDE.md).
 
 ## ✨ Tính năng chính (Workbench)
 
