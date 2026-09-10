@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.api.deps import check_rate_limit, get_current_user
 from src.core.database import create_dataset as db_create_dataset
@@ -19,14 +19,14 @@ router = APIRouter(tags=["datasets"])
 
 class CreateDatasetRequest(BaseModel):
     dataset_name: str
-    rows: int = 0
-    cols: int = 0
+    rows: int = Field(default=0, ge=0)
+    cols: int = Field(default=0, ge=0)
 
 
 class IngestRequest(BaseModel):
     dataset_name: str
-    rows: int = 0
-    cols: int = 0
+    rows: int = Field(default=0, ge=0)
+    cols: int = Field(default=0, ge=0)
     profile: Dict[str, Any] = {}
 
 
@@ -37,6 +37,7 @@ async def list_datasets(username: str = Depends(get_current_user)):
         datasets = db_list_datasets(username)
         items = [
             {
+                "id": d.id,
                 "dataset_name": d.dataset_name,
                 "rows": d.rows,
                 "cols": d.cols,
@@ -61,7 +62,14 @@ async def create_dataset_endpoint(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="dataset_name is required")
     if db_get_dataset(username, request.dataset_name):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Dataset already exists")
-    ds = db_create_dataset(username, request.dataset_name.strip(), request.rows, request.cols)
+    try:
+        ds = db_create_dataset(username, request.dataset_name.strip(), request.rows, request.cols)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        if "UNIQUE constraint" in str(e):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Dataset already exists")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create dataset")
     return {
         "message": f"Dataset {ds.dataset_name} created",
         "dataset": {"dataset_name": ds.dataset_name, "rows": ds.rows, "cols": ds.cols, "version": 1},
@@ -122,17 +130,13 @@ async def ingest_dataset(
                         status_code=400, detail=f"Dataset '{file.filename}' already exists, doi ten file khac"
                     )
                 raise
-            # Update rows/cols (mục 8: rollback nếu fail)
-            try:
-                with SessionLocal() as s:
-                    obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
-                    obj.rows = result["rows"]
-                    obj.cols = result["cols"]
-                    s.commit()
-            except Exception:
-                with SessionLocal() as s:
-                    s.rollback()
-                raise
+            # Update rows/cols cung transaction (session_scope tu rollback)
+            from src.core.database import session_scope
+
+            with session_scope() as s:
+                obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
+                obj.rows = result["rows"]
+                obj.cols = result["cols"]
             return {
                 "message": f"Ingested {file.filename} -> {result['table']}",
                 "dataset_id": ds.id,
@@ -157,17 +161,20 @@ async def ingest_dataset(
     ds = db_get_dataset(username, req.dataset_name)
     if ds:
         raise HTTPException(status_code=400, detail="Dataset already exists")
-    ds = db_create_dataset(username, req.dataset_name, req.rows, req.cols)
+    try:
+        ds = db_create_dataset(username, req.dataset_name, req.rows, req.cols)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        if "UNIQUE constraint" in str(e):
+            raise HTTPException(status_code=400, detail="Dataset already exists")
+        raise HTTPException(status_code=500, detail="Failed to ingest dataset")
     if req.profile:
-        try:
-            with SessionLocal() as s:
-                obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
-                obj.profile_json = json.dumps(req.profile, ensure_ascii=False)
-                s.commit()
-        except Exception:
-            with SessionLocal() as s:
-                s.rollback()
-            raise
+        from src.core.database import session_scope
+
+        with session_scope() as s:
+            obj = s.query(Dataset).filter(Dataset.id == ds.id).first()
+            obj.profile_json = json.dumps(req.profile, ensure_ascii=False)
     return {"message": f"Ingested {ds.dataset_name}", "dataset_id": ds.id, "profile": req.profile}
 
 

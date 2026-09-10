@@ -1,8 +1,21 @@
 """PipelineSpec DSL (Plan 02/04)."""
 
-from typing import Any, List, Optional
+import re
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
+
+_STEP_ID = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,64}$")
+
+
+def _build_graph(steps: List["PipelineStep"]) -> Tuple[Dict[str, int], Dict[str, List[str]]]:
+    """Dung chung cho validate_dag + topo_order (Kahn)."""
+    indeg = {s.id: len(s.depends_on) for s in steps}
+    adj: Dict[str, List[str]] = {s.id: [] for s in steps}
+    for s in steps:
+        for dep in s.depends_on:
+            adj[dep].append(s.id)
+    return indeg, adj
 
 
 class PipelineStep(BaseModel):
@@ -21,9 +34,16 @@ class PipelineSpec(BaseModel):
     contract: Optional[dict] = None  # plan 1: DataContract gate truoc execute
 
     def validate_dag(self) -> None:
-        """Validate DAG: engine, no cycle, depends_on exists, op in catalog."""
+        """Validate DAG: engine, step ids, no cycle, depends_on exists, op in catalog."""
         if self.engine not in ("pandas", "duckdb"):
             raise ValueError(f"Unknown engine {self.engine!r} (allowed: pandas, duckdb)")
+        seen: set = set()
+        for s in self.steps:
+            if not s.id or not _STEP_ID.match(s.id):
+                raise ValueError(f"Invalid step id {s.id!r} (phai [A-Za-z_][A-Za-z0-9_]{{0,64}})")
+            if s.id in seen:
+                raise ValueError(f"Duplicate step id {s.id!r}")
+            seen.add(s.id)
         ids = {s.id for s in self.steps}
         # Check depends_on exists
         for s in self.steps:
@@ -44,11 +64,7 @@ class PipelineSpec(BaseModel):
                 if s.op not in catalog and s.op != "sql":
                     raise ValueError(f"Unknown op {s.op} (allowed: {catalog})")
         # Cycle detection via Kahn
-        indeg = {s.id: len(s.depends_on) for s in self.steps}
-        adj = {s.id: [] for s in self.steps}
-        for s in self.steps:
-            for dep in s.depends_on:
-                adj[dep].append(s.id)
+        indeg, adj = _build_graph(self.steps)
         q = [k for k, v in indeg.items() if v == 0]
         visited = 0
         while q:
@@ -65,11 +81,7 @@ class PipelineSpec(BaseModel):
         self.validate_dag()
         # Kahn order
         ids = {s.id: s for s in self.steps}
-        indeg = {s.id: len(s.depends_on) for s in self.steps}
-        adj = {s.id: [] for s in self.steps}
-        for s in self.steps:
-            for dep in s.depends_on:
-                adj[dep].append(s.id)
+        indeg, adj = _build_graph(self.steps)
         q = [k for k, v in indeg.items() if v == 0]
         order = []
         while q:

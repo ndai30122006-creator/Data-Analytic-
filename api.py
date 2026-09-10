@@ -89,11 +89,15 @@ async def http_exception_handler(request: Request, exc: _HTTPException):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    # Log full detail server-side; client chi nhan trace_id (chong info disclosure)
     logger.error(
         "Unhandled exception: %s | Path: %s | Detail: %s", type(exc).__name__, request.url.path, str(exc), exc_info=True
     )
     content = make_error_response(
-        _status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error. Please try again later.", str(exc), code="E500"
+        _status.HTTP_500_INTERNAL_SERVER_ERROR,
+        "Internal server error. Please try again later.",
+        "Ghi log server, dung trace_id de doi chieu.",
+        code="E500",
     )
     return JSONResponse(status_code=_status.HTTP_500_INTERNAL_SERVER_ERROR, content=content)
 

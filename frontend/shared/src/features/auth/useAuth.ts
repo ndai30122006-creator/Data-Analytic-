@@ -16,15 +16,14 @@ export function useAuth() {
       });
     }
     const onUnauth = () => {
+      // logout() gio chi clear token (khong dispatch) -> khong loop
       logout();
       setUser(null);
       setTok(null);
     };
     window.addEventListener("app:unauthorized", onUnauth);
-    window.addEventListener("app:logout", onUnauth);
     return () => {
       window.removeEventListener("app:unauthorized", onUnauth);
-      window.removeEventListener("app:logout", onUnauth);
     };
   }, [token]);
 

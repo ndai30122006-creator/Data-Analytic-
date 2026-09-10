@@ -11,7 +11,7 @@ from src.api.deps import (
     create_access_token,
     get_current_user,
 )
-from src.core.database import create_user, delete_user, update_api_key, verify_user_password
+from src.core.database import create_user, delete_user, get_api_provider, update_api_key, verify_user_password
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ class RegisterRequest(BaseModel):
 
 class ApiKeyUpdateRequest(BaseModel):
     api_key: str
+    provider: str | None = None  # openai|gemini (luu that, het fake UI)
 
 
 @router.post("/auth/login", response_model=LoginResponse, dependencies=[Depends(check_rate_limit)])
@@ -118,10 +119,16 @@ async def update_ai_api_key(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="API key length must be 8-1000 characters",
         )
-    ok = update_api_key(username, key)
+    provider = (request.provider or "").strip().lower() or None
+    if provider is not None and provider not in ("openai", "gemini"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="provider must be openai|gemini",
+        )
+    ok = update_api_key(username, key, provider)
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return {"message": "API key updated"}
+    return {"message": "API key updated", "provider": provider or get_api_provider(username)}
 
 
 @router.delete("/auth/user")

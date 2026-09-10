@@ -36,6 +36,7 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     is_active = Column(Boolean, default=True)
     api_key_ai = Column(String(128), nullable=True)  # Optional AI API key
+    api_provider = Column(String(16), nullable=True)  # openai|gemini (BYOK that, khong phai env)
 
 
 class Dataset(Base):
@@ -156,6 +157,7 @@ def _ensure_version_columns():
     """Tu them cot con thieu cho DB cu (SQLite) neu chua chay alembic (muc 15 + plan 2/3)."""
     wanted = {
         "datasets": {"version": "INTEGER"},
+        "users": {"api_provider": "VARCHAR(16)"},
         "pipelines": {"version": "INTEGER", "proposal_id": "VARCHAR(16)"},
         "dashboards": {"version": "INTEGER"},
         "pipeline_runs": {
@@ -304,14 +306,16 @@ def verify_user_password(username: str, password: str) -> Optional[User]:
     return user
 
 
-def update_api_key(username: str, api_key: str) -> bool:
-    """Update user's AI API key (encrypted at rest, P0)."""
+def update_api_key(username: str, api_key: str, provider: Optional[str] = None) -> bool:
+    """Update user's AI API key (encrypted at rest, P0) + provider that."""
     enc = _encrypt_api_key(api_key)
     with SessionLocal() as session:
         user = session.query(User).filter(User.username == username).first()
         if not user:
             return False
         user.api_key_ai = enc
+        if provider in ("openai", "gemini"):
+            user.api_provider = provider
         session.commit()
         return True
 
@@ -323,6 +327,20 @@ def get_api_key(username: str) -> Optional[str]:
         if not user or not user.api_key_ai:
             return None
         return _decrypt_api_key(user.api_key_ai)
+
+
+def get_api_provider(username: str) -> str:
+    """Provider BYOK that cua user, fallback AI_PROVIDER env."""
+    import os as _os
+
+    try:
+        with SessionLocal() as session:
+            user = session.query(User).filter(User.username == username).first()
+            if user and getattr(user, "api_provider", None) in ("openai", "gemini"):
+                return user.api_provider
+    except Exception:
+        pass
+    return _os.environ.get("AI_PROVIDER", "openai")
 
 
 def delete_user(username: str) -> bool:

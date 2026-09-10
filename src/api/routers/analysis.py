@@ -93,10 +93,13 @@ def _dispatch_analysis(analysis_type: str, params: Dict[str, Any]) -> Dict[str, 
         return result
 
     if at in ("ab_test", "two_proportion", "two_proportion_ztest", "abtest"):
-        sa = int(params["successes_a"])
-        ta = int(params["total_a"])
-        sb = int(params["successes_b"])
-        tb = int(params["total_b"])
+        try:
+            sa = int(params["successes_a"])
+            ta = int(params["total_a"])
+            sb = int(params["successes_b"])
+            tb = int(params["total_b"])
+        except (KeyError, TypeError, ValueError):
+            raise ValueError("ab_test can successes_a/total_a/successes_b/total_b (integers)")
         return run_two_proportion_ztest(sa, ta, sb, tb)
 
     if at in ("overview", "summary", "descriptive"):

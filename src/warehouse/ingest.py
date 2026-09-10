@@ -7,7 +7,7 @@ import pandas as pd
 
 from src.analytics.data_quality import *  # reuse data_quality logic
 from src.core.insights import generate_data_summary
-from src.warehouse.connection import get_conn
+from src.warehouse.connection import get_conn, warehouse_write_lock
 
 
 def _sanitize_table(name: str) -> str:
@@ -57,11 +57,16 @@ def ingest_file(user: str, file, table: str = None) -> dict:
     conn = get_conn()
     try:
         conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
-        conn.execute(f"DROP TABLE IF EXISTS {full}")
-        # Register df as temp view then create table
-        conn.register("df_tmp", df)
-        conn.execute(f"CREATE TABLE {full} AS SELECT * FROM df_tmp")
-        conn.unregister("df_tmp")
+        # Atomic + serialized nhu executor (khong DROP+CREATE ho nhau)
+        with warehouse_write_lock(timeout=30.0):
+            conn.register("df_tmp", df)
+            try:
+                conn.execute(f"CREATE OR REPLACE TABLE {full} AS SELECT * FROM df_tmp")
+            finally:
+                try:
+                    conn.unregister("df_tmp")
+                except Exception:
+                    pass
     finally:
         conn.close()
 

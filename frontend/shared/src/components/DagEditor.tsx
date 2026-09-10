@@ -15,7 +15,7 @@ const OP_HINT: Record<string, string> = {
   standardize_columns: '{}',
   derive_column: '{"name":"pass","expr":"diem>=5"}',
   filter: '{"query":"diem>=0"}',
-  aggregate: '{"group_by":"lop","agg":{"diem":"mean"}}',
+  aggregate: '{"by":"lop","agg":"mean"}',
   merge: '{"how":"concat"}',
   sql: '{"query":"SELECT * FROM {{prev}}"}',
 };

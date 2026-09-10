@@ -23,6 +23,6 @@ export function getStoredUser() {
 }
 
 export function logout() {
+  // Chi xoa token — KHONG dispatch event (tranh loop de quy voi listener).
   setToken(null);
-  window.dispatchEvent(new Event("app:logout"));
 }

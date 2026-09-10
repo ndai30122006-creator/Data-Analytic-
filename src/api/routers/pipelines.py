@@ -99,6 +99,8 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
         spec.validate_dag()
         _validate_identifier(spec.source)
         _validate_identifier(spec.target)
+        if not spec.target.startswith("mart."):
+            raise ValueError(f"target '{spec.target}' phai thuoc schema mart.* (khong ghi de raw)")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid PipelineSpec: {e}")
     if not _user_owns_table(username, req.source):
@@ -196,6 +198,8 @@ async def update_pipeline(pipeline_id: str, req: PipelineCreateRequest, username
         spec.validate_dag()
         _validate_identifier(spec.source)
         _validate_identifier(spec.target)
+        if not spec.target.startswith("mart."):
+            raise ValueError(f"target '{spec.target}' phai thuoc schema mart.* (khong ghi de raw)")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid PipelineSpec: {e}")
     if not _user_owns_table(username, req.source):
@@ -359,14 +363,14 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
         "steps": [{"id": "s1", "op": "drop_duplicates", "params": {}, "depends_on": []}],
     }
     try:
-        from src.core.database import get_api_key
+        from src.core.database import get_api_key, get_api_provider
         from src.core.llm_client import complete_model
         from src.prompts.etl_author import build_prompt
         from src.prompts.schemas import PipelineLLMBody
 
         user_key = get_api_key(username)
         if user_key:
-            provider = _os.environ.get("AI_PROVIDER", "openai")
+            provider = get_api_provider(username)
             try:
                 body, model = complete_model(
                     user_key, provider, build_prompt(req.description, cols, req.source, req.target), PipelineLLMBody
@@ -385,6 +389,8 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
             notes = ["Chua co BYOK key (Settings) — dung spec mac dinh, hay sua tay."]
     except Exception as exc:
         _logger.warning("Pipeline generate AI path error: %s", exc)
+    # Chuan hoa full PipelineSpec (engine/contract defaults) de hash khop voi pipeline tao ra
+    spec = {"engine": "pandas", "contract": None, **spec}
     # Engine validations + cost + auto dry-run
     validations = _validate_proposal_layers(spec, cols)
     cost = _estimate_cost(req.source, spec["steps"])
@@ -679,14 +685,20 @@ async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, user
             exists = True
     if not exists and (pipeline_id not in _pipelines or _pipelines[pipeline_id]["owner"] != username):
         raise HTTPException(status_code=404, detail="Pipeline not found")
-    # Mục 10: cùng pipeline đang chạy → 409 (tránh 2 run ghi cùng mart.target)
+    # Cung pipeline dang chay → 409 that (acquire non-blocking ngay tai endpoint,
+    # task release khi xong — tranh race 2 request cung thay unlocked)
     lock = _lock_for(pipeline_id)
-    if lock.locked():
+    if not lock.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="Pipeline is already running, thử lại sau")
 
-    def _guarded_task(pid: str, rid: str):
-        with lock:
+    def _guarded_task(pid: str, rid: str, lk: threading.Lock):
+        try:
             _run_pipeline_task(pid, rid)
+        finally:
+            try:
+                lk.release()
+            except Exception:
+                pass
 
     run_id = str(uuid.uuid4())[:8]
     # Persist run in DB (rollback-safe)
@@ -696,6 +708,10 @@ async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, user
             s.add(r)
             s.commit()
     except Exception as exc:
+        try:
+            lock.release()
+        except Exception:
+            pass
         logger.error("run_pipeline persist failed: %s", exc, exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create run")
     _runs[run_id] = {
@@ -705,7 +721,7 @@ async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, user
         "status": "queued",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    background_tasks.add_task(_guarded_task, pipeline_id, run_id)
+    background_tasks.add_task(_guarded_task, pipeline_id, run_id, lock)
     _runs[run_id]["status"] = "running"
     # Update DB to running + started_at (plan 3)
     try:
