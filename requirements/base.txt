@@ -1,7 +1,7 @@
 # ── Core Dependencies ──
 pandas>=2.0.0
 numpy>=1.24.0
-plotly>=5.15.0
+# (plotly da go — backend/frontend khong con phu thuoc; gap thi cai lai)
 
 # ── Statistics ──
 scipy>=1.11.0
