@@ -65,6 +65,7 @@ class PipelineCreateRequest(BaseModel):
     target: str
     steps: list = []
     engine: str = "pandas"
+    proposal_id: str | None = None  # AI spec: bat buoc approved moi duoc tao
 
 
 @router.post("/pipelines", dependencies=[Depends(check_rate_limit)])
@@ -74,12 +75,26 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
 
     from src.core.database import Pipeline, SessionLocal
 
+    # Approval gate: spec tu AI (proposal) bat buoc da approved; spec tay thi khong can
+    if req.proposal_id:
+        from src.core.database import AIProposal, SessionLocal
+
+        with SessionLocal() as _s:
+            _p = _s.query(AIProposal).filter(AIProposal.id == req.proposal_id).first()
+            if not _p or _p.owner != username:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            if _p.status != "approved":
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"AI spec chua duoc approve (status={_p.status}); human phai approve truoc khi execute",
+                )
     # Validate PipelineSpec (schema + DAG + identifiers) before persisting
     try:
         from src.pipeline.executor import _validate_identifier
         from src.pipeline.spec_schema import PipelineSpec
 
-        spec = PipelineSpec(**req.model_dump())
+        payload = req.model_dump(exclude={"proposal_id"})
+        spec = PipelineSpec(**payload)
         spec.validate_dag()
         _validate_identifier(spec.source)
         _validate_identifier(spec.target)
@@ -207,11 +222,105 @@ class PipelineGenerateRequest(BaseModel):
     description: str
 
 
+def _validate_proposal_layers(spec: dict, cols: list, engine: str = "pandas") -> dict:
+    """4 lop validation: schema -> semantic -> safety (+cost/dry-run o ngoai).
+
+    Tra ve ProposalValidations dict. Khong raise — de UI hien thi tung lop.
+    """
+    from src.pipeline.spec_schema import PipelineSpec
+    from src.prompts.etl_author import validate_spec
+
+    schema_errors: list = []
+    try:
+        PipelineSpec(**spec).validate_dag()
+    except Exception as e:
+        schema_errors = [str(e)]
+    semantic_errors = validate_spec(spec, cols) if not schema_errors else []
+    # Safety: target phai mart.*, source da check ownership o ngoai; ops non-destructive by design
+    safety_errors: list = []
+    target = spec.get("target", "")
+    if not target.startswith("mart."):
+        safety_errors.append(f"target '{target}' phai thuoc schema mart.* (khong ghi de raw)")
+    for st in spec.get("steps", []):
+        if st.get("op") == "sql":
+            q = (st.get("params") or {}).get("query", "")
+            # sql op da chan DDL/DML trong sql_ops, day la lop safety thu 2
+            import re as _re
+
+            if _re.search(r"\b(drop|delete|insert|update|alter|create|attach|copy)\b", q, _re.IGNORECASE):
+                safety_errors.append(f"step {st.get('id')}: sql chua lenh nguy hiem")
+    # Engine compat: op chua co ban dich SQL -> duckdb se fallback (warning, khong chan)
+    try:
+        from src.pipeline.duckdb_engine import _build_step_sql  # noqa
+
+        pushable = {
+            "fill_missing",
+            "drop_duplicates",
+            "type_cast",
+            "standardize_columns",
+            "derive_column",
+            "filter",
+            "aggregate",
+            "merge",
+            "sql",
+        }
+    except Exception:
+        pushable = set()
+    if engine == "duckdb":
+        for st in spec.get("steps", []):
+            if st.get("op") not in pushable:
+                semantic_errors.append(f"step {st.get('id')}: op {st.get('op')} se fallback pandas tren engine duckdb")
+    return {
+        "schema_ok": not schema_errors,
+        "schema_errors": schema_errors,
+        "semantic_ok": not semantic_errors,
+        "semantic_errors": semantic_errors,
+        "safety_ok": not safety_errors,
+        "safety_errors": safety_errors,
+        "dry_run_ok": False,
+        "dry_run_error": None,
+    }
+
+
+def _estimate_cost(source: str, steps: list) -> dict:
+    """Cost estimation: dem rows source + goi y engine."""
+    source_rows = None
+    try:
+        from src.warehouse.connection import get_conn
+
+        schema, table = source.split(".", 1)
+        conn = get_conn()
+        try:
+            source_rows = int(conn.execute(f'SELECT COUNT(*) FROM "{schema}"."{table}"').fetchone()[0])
+        finally:
+            conn.close()
+    except Exception:
+        pass
+    recommended = "duckdb" if (source_rows or 0) > 200_000 else "pandas"
+    return {
+        "source_rows": source_rows,
+        "steps": len(steps),
+        "recommended_engine": recommended,
+        "reason": (
+            f"{source_rows} rows -> {'SQL push-down, khong load RAM' if recommended == 'duckdb' else 'pandas du suc (<200k rows)'}"
+            if source_rows is not None
+            else "khong dem duoc rows — mac dinh pandas"
+        ),
+    }
+
+
 @router.post("/pipelines/generate", dependencies=[Depends(check_rate_limit)])
 async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depends(get_current_user)):
-    """AI sinh PipelineSpec tu mo ta tieng Viet (BYOK) — validate DAG + schema, khong persist (muc AI)."""
+    """LLM proposes -> engine validates (4 lop) + cost + auto dry-run -> proposal cho human approve.
+
+    AI KHONG duoc execute truc tiep: muon chay phai approve proposal roi create pipeline.
+    """
+    import json
     import logging as _logging
     import os as _os
+    import uuid
+
+    from src.core.database import AIProposal, SessionLocal
 
     _logger = _logging.getLogger(__name__)
     if not req.description or not req.description.strip():
@@ -220,7 +329,6 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
         raise HTTPException(status_code=403, detail="Source table does not belong to user")
     try:
         from src.pipeline.executor import _validate_identifier
-        from src.pipeline.spec_schema import PipelineSpec
 
         _validate_identifier(req.source)
         _validate_identifier(req.target)
@@ -239,8 +347,8 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Cannot read source schema: {e}")
     model_used = "rule-based"
-    warnings: list = []
-    # Spec mac dinh an toan (fallback khi khong co key / LLM fail)
+    notes: list = []
+    # Structured output: LLM chi duoc sinh name+steps (source/target do engine dien)
     spec = {
         "name": "ai-pipeline",
         "source": req.source,
@@ -249,33 +357,162 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
     }
     try:
         from src.core.database import get_api_key
-        from src.core.llm_client import complete_json
-        from src.prompts.etl_author import build_prompt, validate_spec
+        from src.core.llm_client import complete_model
+        from src.prompts.etl_author import build_prompt
+        from src.prompts.schemas import PipelineLLMBody
 
         user_key = get_api_key(username)
         if user_key:
             provider = _os.environ.get("AI_PROVIDER", "openai")
             try:
-                data, model = complete_json(
-                    user_key, provider, build_prompt(req.description, cols, req.source, req.target)
+                body, model = complete_model(
+                    user_key, provider, build_prompt(req.description, cols, req.source, req.target), PipelineLLMBody
                 )
-                candidate = {
-                    "name": data.get("name", "ai-pipeline"),
+                spec = {
+                    "name": body.name,
                     "source": req.source,
                     "target": req.target,
-                    "steps": data.get("steps", []),
+                    "steps": [s.model_dump() for s in body.steps],
                 }
-                PipelineSpec(**candidate).validate_dag()
-                warnings = validate_spec(candidate, cols)
-                spec, model_used = candidate, f"{provider}:{model}"
+                model_used = f"{provider}:{model}"
             except Exception as exc:
-                _logger.warning("LLM pipeline generate failed, fallback default: %s", exc)
-                warnings = [f"LLM unavailable, dung spec mac dinh: {exc}"]
+                _logger.warning("LLM pipeline generate failed (%s), fallback default", type(exc).__name__)
+                notes = [f"LLM unavailable ({type(exc).__name__}), dung spec mac dinh"]
         else:
-            warnings = ["Chua co BYOK key (Settings) — dung spec mac dinh, hay sua tay."]
+            notes = ["Chua co BYOK key (Settings) — dung spec mac dinh, hay sua tay."]
     except Exception as exc:
         _logger.warning("Pipeline generate AI path error: %s", exc)
-    return {"spec": spec, "warnings": warnings, "model_used": model_used, "columns": cols}
+    # Engine validations + cost + auto dry-run
+    validations = _validate_proposal_layers(spec, cols)
+    cost = _estimate_cost(req.source, spec["steps"])
+    dry_run = {"status": "skipped", "reason": "spec chua dat validation"}
+    if validations["schema_ok"] and validations["safety_ok"]:
+        try:
+            from src.pipeline.executor import execute
+            from src.pipeline.spec_schema import PipelineSpec
+
+            dr = execute(PipelineSpec(**spec), sample=True)
+            validations["dry_run_ok"] = dr.get("status") == "done"
+            validations["dry_run_error"] = None if dr.get("status") == "done" else str(dr.get("error"))
+            dry_run = {"status": dr.get("status"), "rows": dr.get("rows"), "preview": dr.get("preview")}
+        except Exception as e:
+            validations["dry_run_error"] = str(e)
+            dry_run = {"status": "failed", "error": str(e)}
+    pid = str(uuid.uuid4())[:8]
+    try:
+        with SessionLocal() as s:
+            s.add(
+                AIProposal(
+                    id=pid,
+                    owner=username,
+                    kind="pipeline",
+                    name=spec["name"],
+                    source=req.source,
+                    target=req.target,
+                    description=req.description,
+                    spec_json=json.dumps(spec, ensure_ascii=False),
+                    validations_json=json.dumps(validations, ensure_ascii=False),
+                    cost_json=json.dumps(cost, ensure_ascii=False),
+                    dry_run_json=json.dumps(dry_run, ensure_ascii=False),
+                    model_used=model_used,
+                    status="proposed",
+                )
+            )
+            s.commit()
+    except Exception as exc:
+        logger.error("persist proposal failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to save proposal")
+    return {
+        "proposal_id": pid,
+        "status": "proposed",
+        "spec": spec,
+        "validations": validations,
+        "cost": cost,
+        "dry_run": dry_run,
+        "model_used": model_used,
+        "notes": notes,
+        "columns": cols,
+    }
+
+
+@router.get("/pipelines/proposals", dependencies=[Depends(check_rate_limit)])
+async def list_proposals(username: str = Depends(get_current_user)):
+    import json
+
+    from src.core.database import AIProposal, SessionLocal
+
+    with SessionLocal() as s:
+        rows = s.query(AIProposal).filter(AIProposal.owner == username).order_by(AIProposal.created_at.desc()).all()
+        return {
+            "proposals": [
+                {
+                    "proposal_id": r.id,
+                    "name": r.name,
+                    "source": r.source,
+                    "target": r.target,
+                    "model_used": r.model_used,
+                    "status": r.status,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+        }
+
+
+@router.get("/pipelines/proposals/{proposal_id}", dependencies=[Depends(check_rate_limit)])
+async def get_proposal(proposal_id: str, username: str = Depends(get_current_user)):
+    import json
+
+    from src.core.database import AIProposal, SessionLocal
+
+    with SessionLocal() as s:
+        r = s.query(AIProposal).filter(AIProposal.id == proposal_id).first()
+        if not r or r.owner != username:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        return {
+            "proposal_id": r.id,
+            "name": r.name,
+            "source": r.source,
+            "target": r.target,
+            "description": r.description,
+            "spec": json.loads(r.spec_json) if r.spec_json else {},
+            "validations": json.loads(r.validations_json) if r.validations_json else {},
+            "cost": json.loads(r.cost_json) if r.cost_json else {},
+            "dry_run": json.loads(r.dry_run_json) if r.dry_run_json else {},
+            "model_used": r.model_used,
+            "status": r.status,
+        }
+
+
+@router.post("/pipelines/proposals/{proposal_id}/approve", dependencies=[Depends(check_rate_limit)])
+async def approve_proposal(proposal_id: str, username: str = Depends(get_current_user)):
+    """Human approves — buoc bat buoc truoc khi AI spec duoc execute."""
+    from src.core.database import AIProposal, SessionLocal
+
+    with SessionLocal() as s:
+        r = s.query(AIProposal).filter(AIProposal.id == proposal_id).first()
+        if not r or r.owner != username:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        if r.status != "proposed":
+            raise HTTPException(status_code=400, detail=f"Proposal already {r.status}")
+        r.status = "approved"
+        s.commit()
+        return {"proposal_id": r.id, "status": "approved"}
+
+
+@router.post("/pipelines/proposals/{proposal_id}/reject", dependencies=[Depends(check_rate_limit)])
+async def reject_proposal(proposal_id: str, username: str = Depends(get_current_user)):
+    from src.core.database import AIProposal, SessionLocal
+
+    with SessionLocal() as s:
+        r = s.query(AIProposal).filter(AIProposal.id == proposal_id).first()
+        if not r or r.owner != username:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        if r.status != "proposed":
+            raise HTTPException(status_code=400, detail=f"Proposal already {r.status}")
+        r.status = "rejected"
+        s.commit()
+        return {"proposal_id": r.id, "status": "rejected"}
 
 
 @router.post("/pipelines/preview", dependencies=[Depends(check_rate_limit)])

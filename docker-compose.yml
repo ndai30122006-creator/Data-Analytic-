@@ -26,6 +26,11 @@ services:
       ENVIRONMENT: production
       # Lưu DB vào Docker volume → dữ liệu không mất khi recreate container
       DATABASE_URL: sqlite:////app/data/users.db
+      # Redis share rate-limit giua workers (production multi-worker du dieu kien)
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_started
     volumes:
       - app_data:/app/data
     restart: unless-stopped
@@ -73,8 +78,25 @@ services:
     networks:
       - app-network
 
+  # ── Redis (rate limit share giua workers — production multi-worker) ──
+  redis:
+    image: redis:7-alpine
+    container_name: wb-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
 volumes:
   app_data:
+  redis_data:
 
 networks:
   app-network:

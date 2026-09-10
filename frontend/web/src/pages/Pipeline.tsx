@@ -23,6 +23,18 @@ export default function Pipeline() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [nl, setNl] = useState("xóa dòng trùng, điền missing cột diem bằng median");
+  const [proposal, setProposal] = useState<any | null>(null);
+
+function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: string[] }) {
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 12, marginTop: 6 }}>
+      <span style={{ minWidth: 70, color: ok ? "var(--success)" : "var(--danger)", fontWeight: 700 }}>
+        {ok ? "✓" : "✗"} {title}
+      </span>
+      <span style={{ color: "var(--text-muted)" }}>{(errs ?? []).join(" | ") || "ok"}</span>
+    </div>
+  );
+}
   const { error: apiError, handleError, clearError } = useErrorHandler();
 
   const refresh = async () => {
@@ -76,7 +88,10 @@ export default function Pipeline() {
       const target = cur?.target ?? "mart.demo";
       const res = await pipelines.generate(source, target, nl);
       setSpecText(JSON.stringify(res.spec, null, 2));
-      setOutput(`AI Generate [${res.model_used}]:\n${(res.warnings ?? []).join("\n") || "spec OK"}`);
+      setProposal(res);
+      const v = res.validations ?? {};
+      const ok = v.schema_ok && v.semantic_ok && v.safety_ok && v.dry_run_ok;
+      setOutput(`Proposal ${res.proposal_id} [${res.model_used}] — validation ${ok ? "PASS" : "FAIL"} — xem panel, Approve roi moi Create.`);
     } catch (e: any) {
       setOutput(`Generate error: ${e.message}`);
     } finally {
@@ -103,13 +118,39 @@ export default function Pipeline() {
     if (!spec) return;
     setLoading(true);
     try {
-      const res = await pipelines.create(spec);
+      // Approval gate: neu spec den tu proposal chua approved -> backend 403
+      const body: any = { ...spec };
+      if (proposal && proposal.status === "approved" && proposal.proposal_id) body.proposal_id = proposal.proposal_id;
+      const res = await pipelines.create(body);
       setOutput(`Created pipeline: ${JSON.stringify(res, null, 2)}`);
+      setProposal(null);
       refresh();
     } catch (e: any) {
       setOutput(`Create error: ${e.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!proposal?.proposal_id) return;
+    try {
+      const res = await pipelines.approveProposal(proposal.proposal_id);
+      setProposal({ ...proposal, status: res.status });
+      setOutput(`Proposal ${proposal.proposal_id} approved — gio Create de execute.`);
+    } catch (e: any) {
+      setOutput(`Approve error: ${e.message}`);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!proposal?.proposal_id) return;
+    try {
+      await pipelines.rejectProposal(proposal.proposal_id);
+      setProposal(null);
+      setOutput(`Proposal ${proposal.proposal_id} rejected.`);
+    } catch (e: any) {
+      setOutput(`Reject error: ${e.message}`);
     }
   };
 
@@ -155,9 +196,33 @@ export default function Pipeline() {
         </Card>
       )}
 
+      {proposal && (
+        <Card style={{ borderColor: "var(--accent)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <h4>Proposal {proposal.proposal_id} · {proposal.model_used} · {proposal.status}</h4>
+            <div style={{ display: "flex", gap: 8 }}>
+              {proposal.status === "proposed" && (
+                <><Button size="sm" onClick={handleApprove}>Approve → cho execute</Button>
+                <Button variant="ghost" size="sm" onClick={handleReject}>Reject</Button></>
+              )}
+            </div>
+          </div>
+          <LayerRow title="schema" ok={proposal.validations?.schema_ok} errs={proposal.validations?.schema_errors} />
+          <LayerRow title="semantic" ok={proposal.validations?.semantic_ok} errs={proposal.validations?.semantic_errors} />
+          <LayerRow title="safety" ok={proposal.validations?.safety_ok} errs={proposal.validations?.safety_errors} />
+          <LayerRow title="dry-run" ok={proposal.validations?.dry_run_ok} errs={proposal.validations?.dry_run_error ? [proposal.validations.dry_run_error] : []} />
+          <div style={{ fontSize: 12, marginTop: 8, color: "var(--text-muted)" }}>
+            cost: {proposal.cost?.source_rows ?? "?"} rows · {proposal.cost?.steps} steps → engine {proposal.cost?.recommended_engine} ({proposal.cost?.reason})
+            {proposal.dry_run?.rows !== undefined && <span> · dry-run {proposal.dry_run.rows} rows</span>}
+          </div>
+          {(proposal.notes ?? []).length > 0 && <div style={{ fontSize: 11, color: "var(--warn)", marginTop: 4 }}>{proposal.notes.join(" ")}</div>}
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>LLM proposes. Engine validates. Human approves. Executor executes.</div>
+        </Card>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 6fr)", gap: 20 }}>
         <Card style={{ background: "rgba(45,212,191,0.04)", borderColor: "rgba(45,212,191,0.25)" }}>
-          <h4>STEP 1 · Mô tả → spec</h4>
+          <h4>STEP 1 · Mô tả → proposal</h4>
           <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={4} style={{ marginTop: 8 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>Cần BYOK key ở Settings, không thì dùng spec mặc định.</div>
           <div style={{ marginTop: 10 }}>

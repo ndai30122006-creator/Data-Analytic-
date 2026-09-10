@@ -15,16 +15,11 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Muc 14: retry + timeout cho LLM (env-overridable)
+# Muc 14: retry + timeout cho LLM (env-overridable; retry policy theo typed
+# ProviderException trong src/core/llm_errors.py — khong string-matching)
 LLM_TIMEOUT_S = float(os.environ.get("LLM_TIMEOUT_S", "30"))
 LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "3"))
 LLM_BACKOFF_S = float(os.environ.get("LLM_BACKOFF_S", "1.0"))
-_LLM_RETRYABLE = ("timeout", "timed out", "rate limit", "429", "503", "502", "500", "connection", "temporarily")
-
-
-def _retryable_llm_error(exc: Exception) -> bool:
-    msg = f"{type(exc).__name__}: {exc}".lower()
-    return any(s in msg for s in _LLM_RETRYABLE)
 
 
 @dataclass
@@ -189,24 +184,28 @@ Format your response as JSON with these keys:
             }
 
     def _call_with_retry(self, prompt: str):
-        """Invoke LLM toi da LLM_MAX_RETRIES lan, backoff mu, log tung lan (muc 14)."""
+        """Invoke LLM toi da LLM_MAX_RETRIES lan — retry theo typed ProviderException."""
         import time
+
+        from src.core.llm_errors import classify
 
         last_exc: Optional[Exception] = None
         for attempt in range(1, LLM_MAX_RETRIES + 1):
             try:
                 return self._llm.invoke(prompt)
             except Exception as exc:
-                last_exc = exc
-                if attempt >= LLM_MAX_RETRIES or not _retryable_llm_error(exc):
-                    raise
+                typed = classify(exc, provider=self.provider)
+                last_exc = typed
+                if attempt >= LLM_MAX_RETRIES or not typed.retryable:
+                    raise typed from exc
                 wait = LLM_BACKOFF_S * (2 ** (attempt - 1))
                 logger.warning(
-                    "LLM invoke failed (attempt %d/%d, provider=%s): %s — retry sau %.1fs",
+                    "LLM %s failed (attempt %d/%d, provider=%s): %s — retry sau %.1fs",
+                    type(typed).__name__,
                     attempt,
                     LLM_MAX_RETRIES,
                     self.provider,
-                    exc,
+                    typed,
                     wait,
                 )
                 time.sleep(wait)

@@ -245,8 +245,6 @@ async def generate_dashboard(dataset_id: int, username: str = Depends(get_curren
             import os as _os
 
             from src.core.database import get_api_key
-            from src.core.llm_client import complete_json
-            from src.dashboard.spec_schema import ChartSpec
             from src.prompts.dashboard_author import build_prompt
 
             _logger = _logging.getLogger(__name__)
@@ -254,27 +252,29 @@ async def generate_dashboard(dataset_id: int, username: str = Depends(get_curren
             if user_key:
                 provider = _os.environ.get("AI_PROVIDER", "openai")
                 try:
-                    data, model = complete_json(user_key, provider, build_prompt(profile, "", source))
-                    charts = data.get("charts", []) if isinstance(data, dict) else []
+                    # Structured output: charts validate bang ChartSpec schema
+                    from src.core.llm_client import complete_model
+                    from src.prompts.schemas import DashboardLLMBody
+
+                    body, model = complete_model(
+                        user_key, provider, build_prompt(profile, "", source), DashboardLLMBody
+                    )
                     allowed = {"kpi", "bar", "hist", "box", "line", "scatter"}
+                    # Business validation: type ho tro + column ton tai trong profile
+                    prof_cols = set((profile.get("columns") or {}).keys()) if isinstance(profile, dict) else set()
                     valid = []
-                    for c in charts[:6]:
-                        try:
-                            cs = ChartSpec(**c)
-                            if cs.type.lower() in allowed:
-                                valid.append(cs.model_dump())
-                        except Exception:
+                    for cs in body.charts[:6]:
+                        if cs.type.lower() not in allowed:
                             continue
+                        cols_used = [c for c in [cs.x, cs.y, (cs.metric or {}).get("column")] if c]
+                        if prof_cols and any(c not in prof_cols for c in cols_used):
+                            continue
+                        valid.append(cs.model_dump())
                     if len(valid) >= 2:
-                        spec = {
-                            "id": data.get("id", "dash_ai"),
-                            "title": data.get("title", "Dashboard AI"),
-                            "source": source,
-                            "charts": valid,
-                        }
+                        spec = {"id": body.id, "title": body.title, "source": source, "charts": valid}
                         model_used = f"{provider}:{model}"
                 except Exception as exc:
-                    _logger.warning("LLM dashboard failed, fallback rule-based: %s", exc)
+                    _logger.warning("LLM dashboard failed (%s), fallback rule-based", type(exc).__name__)
         except Exception:
             pass
         return {"spec": spec, "model_used": model_used}

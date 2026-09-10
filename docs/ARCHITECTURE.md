@@ -69,6 +69,27 @@ flowchart TD
 
 LLM only ever receives **profile JSON + brief text** (never raw rows).
 
+### 2c. AI production-grade — LLM proposes. Engine validates. Human approves. Executor executes.
+
+```mermaid
+flowchart LR
+  NL["mo ta tieng Viet"] --> LLM["LLM + structured output\n(Pydantic schema)"]
+  LLM --> V1["schema validation"]
+  V1 --> V2["semantic validation\n(cot ton tai, engine compat)"]
+  V2 --> V3["safety validation\n(mart.* only, SELECT-only)"]
+  V3 --> COST["cost estimation\n(rows, engine goi y)"]
+  COST --> DRY["auto dry-run 100 rows"]
+  DRY --> PROP["ai_proposals\nstatus=proposed"]
+  PROP --> HUMAN{"human approve?"}
+  HUMAN -->|approve| EXEC["create pipeline\n-> executor"]
+  HUMAN -->|reject| END["rejected"]
+```
+
+- Loi provider co kieu (`llm_errors.py`): retry `RateLimit/Timeout/Server`, fallback ngay `Auth/InvalidRequest` — khong string-matching.
+- Output validate 2 lop: Pydantic schema (`prompts/schemas.py`) + business validation (column ton tai, type ho tro).
+- AI khong bao gio execute truc tiep: `POST /pipelines` voi `proposal_id` doi hoi status `approved` (403 neu chua).
+- Rate limit: Redis share giua workers (`redis` service trong compose); in-memory chi fallback dev single-worker.
+
 ## 3. Backend layout
 
 ```

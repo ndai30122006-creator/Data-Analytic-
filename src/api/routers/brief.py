@@ -40,18 +40,19 @@ async def create_brief(dataset_id: int, username: str = Depends(get_current_user
             content, model_used = generate_brief_fallback(profile), "rule-based"
             try:
                 from src.core.database import get_api_key
-                from src.core.llm_client import complete_text
+                from src.core.llm_client import complete_model
                 from src.prompts.briefer import build_prompt
+                from src.prompts.schemas import BriefDoc
 
                 user_key = get_api_key(username)
                 if user_key:
                     provider = _os.environ.get("AI_PROVIDER", "openai")
                     try:
-                        llm_text, model = complete_text(user_key, provider, build_prompt(profile))
-                        if llm_text:
-                            content, model_used = llm_text, f"{provider}:{model}"
+                        # Structured output: validate schema truoc khi dung
+                        doc, model = complete_model(user_key, provider, build_prompt(profile), BriefDoc)
+                        content, model_used = doc.brief, f"{provider}:{model}"
                     except Exception as exc:
-                        _logger.warning("LLM brief failed, fallback rule-based: %s", exc)
+                        _logger.warning("LLM brief failed (%s), fallback rule-based", type(exc).__name__)
             except Exception as exc:
                 _logger.warning("Brief AI path error, fallback rule-based: %s", exc)
             max_v = s.query(Brief).filter(Brief.dataset_id == dataset_id).count()

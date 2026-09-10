@@ -111,6 +111,27 @@ class PipelineRun(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class AIProposal(Base):
+    """AI proposals — LLM proposes, engine validates, human approves, executor executes."""
+
+    __tablename__ = "ai_proposals"
+
+    id = Column(String(16), primary_key=True)
+    owner = Column(String(50), nullable=False, index=True)
+    kind = Column(String(16), nullable=False, default="pipeline")
+    name = Column(String(128), nullable=True)
+    source = Column(String(128), nullable=True)
+    target = Column(String(128), nullable=True)
+    description = Column(Text, nullable=True)
+    spec_json = Column(Text, nullable=False)
+    validations_json = Column(Text, nullable=True)
+    cost_json = Column(Text, nullable=True)
+    dry_run_json = Column(Text, nullable=True)
+    model_used = Column(String(64), nullable=False, default="rule-based")
+    status = Column(String(16), nullable=False, default="proposed")  # proposed|approved|rejected
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class PipelineStep(Base):
     """Pipeline steps log (Plan 03)."""
 

@@ -33,11 +33,35 @@ def test_retry_then_success(monkeypatch):
     assert fake.invoke.call_count == 2
 
 
+def test_classify_typed_errors():
+    """Muc production-grade: loi co kieu, retry dung loai."""
+    from src.core.llm_errors import (
+        AuthenticationError,
+        InvalidRequestError,
+        ProviderException,
+        RateLimitError,
+        ServerError,
+        TimeoutError,
+        classify,
+    )
+
+    assert isinstance(classify(TimeoutError("timed out")), TimeoutError)
+    assert isinstance(classify(RateLimitError("429")), RateLimitError)
+    assert isinstance(classify(AuthenticationError("401")), AuthenticationError)
+    err400 = ValueError("bad request")
+    err400.status_code = 400  # type: ignore[attr-defined]
+    assert isinstance(classify(err400), InvalidRequestError)
+    assert isinstance(classify(ValueError("boom")), ServerError)
+    assert isinstance(classify(ValueError("x")), ProviderException)
+
+
 def test_non_retryable_no_retry():
     """Loi khong retryable -> raise ngay, fallback rule-based."""
     svc = AIService(api_key="sk-x", provider="openai")
     fake = MagicMock()
-    fake.invoke.side_effect = ValueError("bad request: invalid prompt")
+    err = ValueError("bad request: invalid prompt")
+    err.status_code = 400  # type: ignore[attr-defined]
+    fake.invoke.side_effect = err
     svc._llm = fake
     svc._initialized = True
     report = svc.generate_report(_df())
