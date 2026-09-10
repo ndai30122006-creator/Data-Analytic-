@@ -1,29 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { datasets } from "@app/shared/api/datasets";
 import { pipelines } from "@app/shared/api/pipelines";
 import { dashboards } from "@app/shared/api/dashboards";
-import { brief } from "@app/shared/api/brief";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { Skeleton } from "@app/shared/components/ui/Skeleton";
 
-const FLOW = [
-  { n: "01", label: "Ingest", desc: "upload csv/excel → raw.* + profile", to: "/ingest" },
-  { n: "02", label: "Pipeline", desc: "AI spec → dry-run → mart.*", to: "/pipeline" },
-  { n: "03", label: "Brief", desc: "narrative tiếng Việt, version", to: "/brief" },
-  { n: "04", label: "Dashboard", desc: "4-6 charts real-data", to: "/dashboard" },
-];
+function Trunk() {
+  return <div style={{ width: 2, height: 22, background: "linear-gradient(180deg, var(--accent), var(--accent-2))", opacity: 0.6 }} />;
+}
+
+function TreeNode({ label, desc, to, go }: { label: string; desc: string; to: string; go: (t: string) => void }) {
+  return (
+    <div onClick={() => go(to)}
+      style={{ cursor: "pointer", textAlign: "center", padding: "12px 28px", background: "var(--bg)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-card)", minWidth: 170, transition: "border-color 0.2s, box-shadow 0.25s, transform 0.2s" }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 18px rgba(45,212,191,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}>
+      <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{desc}</div>
+    </div>
+  );
+}
 
 export default function Overview() {
   const nav = useNavigate();
-  const [stats, setStats] = useState({ ds: 0, pipe: 0, runs: 0, dash: 0, brief: 0 });
+  const [stats, setStats] = useState({ ds: 0, pipe: 0, runs: 0, dash: 0 });
   const [recentRuns, setRecentRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [visited, setVisited] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("roadmap_visited") ?? "[]"); } catch { return []; }
-  });
 
   useEffect(() => {
     (async () => {
@@ -34,21 +39,11 @@ export default function Overview() {
           pipelines.listRuns().catch(() => ({ runs: [] }) as any),
           dashboards.list().catch(() => ({ dashboards: [] }) as any),
         ]);
-        const dsList = d.datasets ?? [];
-        let briefCount = 0;
-        try {
-          const first = dsList.find((x: any) => x.id);
-          if (first) {
-            const bl = await brief.list(first.id).catch(() => ({ briefs: [] }) as any);
-            briefCount = (bl.briefs ?? []).length;
-          }
-        } catch { /* ignore */ }
         setStats({
-          ds: dsList.length,
+          ds: (d.datasets ?? []).length,
           pipe: (p.pipelines ?? []).length,
           runs: (r.runs ?? []).length,
           dash: (b.dashboards ?? []).length,
-          brief: briefCount,
         });
         setRecentRuns((r.runs ?? []).slice(0, 5));
       } finally {
@@ -57,24 +52,7 @@ export default function Overview() {
     })();
   }, []);
 
-  // Roadmap: done = co data that HOAC da ghe tham; current = buoc dau tien chua xong
-  const steps = useMemo(() => {
-    const evidence = [stats.ds > 0, stats.pipe > 0, stats.brief > 0, stats.dash > 0];
-    return FLOW.map((f, i) => ({
-      ...f,
-      done: evidence[i] || visited.includes(f.to),
-      current: false,
-    })).map((s, i, arr) => ({ ...s, current: !s.done && (i === 0 || arr[i - 1].done) }));
-  }, [stats, visited]);
-
-  const go = (to: string) => {
-    setVisited((v) => {
-      const next = v.includes(to) ? v : [...v, to];
-      try { localStorage.setItem("roadmap_visited", JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
-    nav(to);
-  };
+  const go = (to: string) => nav(to);
 
   const cards = [
     { label: "datasets", value: stats.ds, to: "/ingest" },
@@ -113,35 +91,21 @@ export default function Overview() {
         ))}
       </div>
 
-      {/* roadmap */}
+      {/* cay luồng du lieu */}
       <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h4>Roadmap — bấm ô để chạy tới bước đó</h4>
-          <Badge variant="neutral">{steps.filter((s) => s.done).length}/{steps.length} done</Badge>
-        </div>
-        <div style={{ position: "relative", display: "flex", alignItems: "stretch", gap: 0, marginTop: 16 }}>
-          <div style={{ position: "absolute", top: 23, left: 40, right: 40, height: 2, background: "var(--border)" }} />
-          <div style={{ position: "absolute", top: 23, left: 40, right: 40, height: 2, background: "linear-gradient(90deg, var(--accent), var(--accent-2))", opacity: 0.6, transformOrigin: "left", transform: `scaleX(${(steps.filter((s) => s.done).length) / steps.length})`, transition: "transform 0.6s var(--ease)" }} />
-          <div className="traveler" />
-          {steps.map((f) => (
-            <div key={f.label} onClick={() => go(f.to)}
-              style={{ position: "relative", flex: 1, minWidth: 0, cursor: "pointer", textAlign: "center", padding: "0 8px", opacity: !f.done && !f.current ? 0.65 : 1 }}>
-              <div style={{
-                width: 48, height: 48, margin: "0 auto", borderRadius: "50%",
-                border: `2px solid ${f.done ? "var(--accent)" : f.current ? "var(--accent-2)" : "var(--border-strong)"}`,
-                background: f.done ? "rgba(45,212,191,0.15)" : "var(--bg)",
-                boxShadow: f.done ? "0 0 16px rgba(45,212,191,0.35)" : f.current ? "0 0 16px rgba(34,211,238,0.5)" : "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 800, fontSize: 14, color: f.done ? "var(--accent)" : f.current ? "var(--accent-2)" : "var(--text-muted)",
-                fontFamily: "var(--font-mono)",
-                animation: f.current ? "soft-pulse 1.6s ease-in-out infinite" : "none",
-              }}>{f.done ? "✓" : f.n}</div>
-              <div style={{ fontWeight: 700, fontSize: 13, marginTop: 8 }}>{f.label}</div>
-              <div style={{ fontSize: 11, color: f.current ? "var(--accent-2)" : "var(--text-muted)", marginTop: 2 }}>
-                {f.done ? "done" : f.current ? "▶ next" : f.desc}
-              </div>
-            </div>
-          ))}
+        <h4>Cây luồng dữ liệu — bấm ô để đi tới</h4>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16 }}>
+          <TreeNode label="Ingest" desc="upload csv/excel → raw.* + profile" to="/ingest" go={go} />
+          <Trunk />
+          <TreeNode label="Pipeline" desc="AI spec → dry-run → mart.*" to="/pipeline" go={go} />
+          <div style={{ display: "flex", width: "100%", maxWidth: 560 }}>
+            <div style={{ flex: 1, borderTop: "2px solid var(--border-strong)", borderRight: "1px solid var(--border-strong)", height: 22, marginRight: -1 }} />
+            <div style={{ flex: 1, borderTop: "2px solid var(--border-strong)", borderLeft: "1px solid var(--border-strong)", height: 22, marginLeft: -1 }} />
+          </div>
+          <div style={{ display: "flex", gap: 32, flexWrap: "wrap", justifyContent: "center" }}>
+            <TreeNode label="Brief" desc="narrative tiếng Việt" to="/brief" go={go} />
+            <TreeNode label="Dashboard" desc="4-6 charts real-data" to="/dashboard" go={go} />
+          </div>
         </div>
       </Card>
 
