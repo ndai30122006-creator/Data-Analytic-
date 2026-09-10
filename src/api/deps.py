@@ -90,6 +90,10 @@ def _check_rate_limit_memory(client_ip: str) -> bool:
 
 async def check_rate_limit(request: Request) -> None:
     """Dependency: check rate limit for the current request."""
+    # Tests tat rate limit de tranh 429 rac giua cac test (DISABLE_RATE_LIMIT=1).
+    # Production mac dinh bat (khong dat env nay).
+    if os.environ.get("DISABLE_RATE_LIMIT", "").lower() in ("1", "true", "yes"):
+        return
     client_ip = request.client.host if request.client else "unknown"
     allowed = await _check_rate_limit_redis(client_ip)
     if not allowed:

@@ -13,6 +13,9 @@ import pytest
 # Ensure src is on the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Tat rate limit trong tests (tranh 429 rac giua cac test chung process)
+os.environ["DISABLE_RATE_LIMIT"] = "true"
+
 # Use a temporary database for all tests to avoid polluting the real users.db
 _temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 _temp_db_path = _temp_db.name
