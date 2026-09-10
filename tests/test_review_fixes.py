@@ -47,9 +47,9 @@ def test_target_must_be_mart():
 
 
 def test_duplicate_step_id_clear_error():
-    from src.pipeline.spec_schema import PipelineSpec
-
     import pytest
+
+    from src.pipeline.spec_schema import PipelineSpec
 
     spec = PipelineSpec(
         name="x",

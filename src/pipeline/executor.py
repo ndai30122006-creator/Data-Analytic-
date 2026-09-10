@@ -103,10 +103,10 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
         current = df
 
         # Import ops
+        import time as _time
+
         from src.pipeline.ops.pandas_ops import OPS as PANDAS_OPS
         from src.pipeline.ops.sql_ops import run_sql
-
-        import time as _time
 
         step_timings: Dict[str, float] = {}
         for step in order:

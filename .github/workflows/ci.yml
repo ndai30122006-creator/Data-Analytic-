@@ -73,6 +73,9 @@ jobs:
 
   frontend-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -81,12 +84,12 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-      - run: pnpm --prefix frontend install
+      - run: pnpm install --frozen-lockfile
       # Muc 17: typecheck bat buoc (dang xanh); test/build giu lenient ke ca flaky env
-      - run: pnpm --prefix frontend --filter @app/shared typecheck
-      - run: pnpm --prefix frontend --filter @app/web typecheck
-      - run: pnpm --prefix frontend --filter @app/shared test || true
-      - run: pnpm --prefix frontend -r build || true
+      - run: pnpm --filter @app/shared typecheck
+      - run: pnpm --filter @app/web typecheck
+      - run: pnpm --filter @app/shared test || true
+      - run: pnpm -r build || true
 
   docker-build:
     needs: lint-and-test
