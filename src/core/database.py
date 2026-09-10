@@ -96,6 +96,7 @@ class Pipeline(Base):
     target = Column(String(128), nullable=False)
     spec_json = Column(Text, nullable=False)
     version = Column(Integer, nullable=True, default=1)  # muc 15: tang moi lan PUT
+    proposal_id = Column(String(16), nullable=True)  # plan 2: proposal da approve sinh ra pipeline nay
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -108,6 +109,11 @@ class PipelineRun(Base):
     pipeline_id = Column(String(16), ForeignKey("pipelines.id", ondelete="CASCADE"), nullable=False, index=True)
     status = Column(String(16), nullable=False, default="queued")
     result_json = Column(Text, nullable=True)
+    spec_hash = Column(String(64), nullable=True)  # plan 2: reproducibility
+    engine = Column(String(16), nullable=True)  # plan 2+3: pandas|duckdb
+    started_at = Column(DateTime, nullable=True)  # plan 3: observability
+    finished_at = Column(DateTime, nullable=True)  # plan 3: observability
+    rows_out = Column(Integer, nullable=True)  # plan 3: observability
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -129,6 +135,7 @@ class AIProposal(Base):
     dry_run_json = Column(Text, nullable=True)
     model_used = Column(String(64), nullable=False, default="rule-based")
     status = Column(String(16), nullable=False, default="proposed")  # proposed|approved|rejected
+    spec_hash = Column(String(64), nullable=True)  # plan 2: reproducibility
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -146,23 +153,42 @@ class PipelineStep(Base):
 
 
 def _ensure_version_columns():
-    """Muc 15: tu them cot version cho DB cu (SQLite) neu thieu — phong khi chua chay alembic."""
+    """Tu them cot con thieu cho DB cu (SQLite) neu chua chay alembic (muc 15 + plan 2/3)."""
+    wanted = {
+        "datasets": {"version": "INTEGER"},
+        "pipelines": {"version": "INTEGER", "proposal_id": "VARCHAR(16)"},
+        "dashboards": {"version": "INTEGER"},
+        "pipeline_runs": {
+            "spec_hash": "VARCHAR(64)",
+            "engine": "VARCHAR(16)",
+            "started_at": "DATETIME",
+            "finished_at": "DATETIME",
+            "rows_out": "INTEGER",
+        },
+        "ai_proposals": {"spec_hash": "VARCHAR(64)"},
+    }
     try:
         from sqlalchemy import inspect, text
 
         insp = inspect(engine)
-        for table in ("datasets", "pipelines", "dashboards"):
+        for table, cols_want in wanted.items():
             try:
                 cols = {c["name"] for c in insp.get_columns(table)}
             except Exception:
                 continue
-            if "version" not in cols:
-                with engine.begin() as conn:
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN version INTEGER"))
+            for col, ddl in cols_want.items():
+                if col not in cols:
+                    with engine.begin() as conn:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                    logger.info("Added %s.%s column", table, col)
+        with engine.begin() as conn:
+            for table in ("datasets", "pipelines", "dashboards"):
+                try:
                     conn.execute(text(f"UPDATE {table} SET version = 1 WHERE version IS NULL"))
-                logger.info("Added %s.version column (muc 15)", table)
+                except Exception:
+                    pass
     except Exception as exc:
-        logger.warning("ensure version columns failed: %s", exc)
+        logger.warning("ensure columns failed: %s", exc)
 
 
 def init_db():

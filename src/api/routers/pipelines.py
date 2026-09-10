@@ -65,6 +65,7 @@ class PipelineCreateRequest(BaseModel):
     target: str
     steps: list = []
     engine: str = "pandas"
+    contract: dict | None = None  # plan 1: DataContract gate
     proposal_id: str | None = None  # AI spec: bat buoc approved moi duoc tao
 
 
@@ -103,7 +104,8 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
     if not _user_owns_table(username, req.source):
         raise HTTPException(status_code=403, detail="Source table does not belong to user")
     pid = str(uuid.uuid4())[:8]
-    spec_json = json.dumps(req.model_dump(), ensure_ascii=False)
+    payload = req.model_dump(exclude={"proposal_id"})
+    spec_json = json.dumps(payload, ensure_ascii=False)
     try:
         with SessionLocal() as s:
             p = Pipeline(
@@ -114,6 +116,7 @@ async def create_pipeline(req: PipelineCreateRequest, username: str = Depends(ge
                 target=req.target,
                 spec_json=spec_json,
                 version=1,
+                proposal_id=req.proposal_id,
             )
             s.add(p)
             s.commit()
@@ -399,6 +402,9 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
             validations["dry_run_error"] = str(e)
             dry_run = {"status": "failed", "error": str(e)}
     pid = str(uuid.uuid4())[:8]
+    from src.pipeline.planner import spec_hash
+
+    proposal_hash = spec_hash(spec)
     try:
         with SessionLocal() as s:
             s.add(
@@ -416,6 +422,7 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
                     dry_run_json=json.dumps(dry_run, ensure_ascii=False),
                     model_used=model_used,
                     status="proposed",
+                    spec_hash=proposal_hash,
                 )
             )
             s.commit()
@@ -426,6 +433,7 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
         "proposal_id": pid,
         "status": "proposed",
         "spec": spec,
+        "spec_hash": proposal_hash,
         "validations": validations,
         "cost": cost,
         "dry_run": dry_run,
@@ -481,6 +489,7 @@ async def get_proposal(proposal_id: str, username: str = Depends(get_current_use
             "dry_run": json.loads(r.dry_run_json) if r.dry_run_json else {},
             "model_used": r.model_used,
             "status": r.status,
+            "spec_hash": r.spec_hash,
         }
 
 
@@ -559,6 +568,8 @@ def _run_pipeline_task(pipeline_id: str, run_id: str):
             source=spec_dict.get("source", "raw.t"),
             target=spec_dict.get("target", "mart.t"),
             steps=spec_dict.get("steps", []),
+            engine=spec_dict.get("engine", "pandas"),
+            contract=spec_dict.get("contract"),
         )
         run_log.info(
             "Run %s started: pipeline=%s target=%s steps=%d", run_id, pipeline_id, spec.target, len(steps_spec)
@@ -568,13 +579,19 @@ def _run_pipeline_task(pipeline_id: str, run_id: str):
         res = sanitize_for_json(execute(spec, sample=False))
         status = "done" if res.get("status") == "done" else "failed"
         run_log.info("Run %s finished: status=%s rows=%s", run_id, status, res.get("rows"))
-        # Update DB (rollback-safe)
+        # Update DB (rollback-safe) + observability columns (plan 3)
         try:
+            from datetime import datetime as _dt
+
             with SessionLocal() as s:
                 r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
                 if r:
                     r.status = status
                     r.result_json = json.dumps(res, ensure_ascii=False)
+                    r.spec_hash = res.get("spec_hash")
+                    r.engine = res.get("engine_used")
+                    r.rows_out = res.get("rows") if isinstance(res.get("rows"), int) else None
+                    r.finished_at = _dt.now(timezone.utc)
                     s.commit()
         except Exception as exc:
             run_log.error("Run %s DB update failed: %s", run_id, exc, exc_info=True)
@@ -611,11 +628,14 @@ def _run_pipeline_task(pipeline_id: str, run_id: str):
 
         run_log.error("Run %s lock timeout: %s", run_id, e)
         try:
+            from datetime import datetime as _dt2
+
             with SessionLocal() as s:
                 r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
                 if r:
                     r.status = "failed"
                     r.result_json = _json.dumps({"error": f"Warehouse busy, thử lại sau: {e}"}, ensure_ascii=False)
+                    r.finished_at = _dt2.now(timezone.utc)
                     s.commit()
         except Exception:
             pass
@@ -628,11 +648,14 @@ def _run_pipeline_task(pipeline_id: str, run_id: str):
 
         run_log.error("Run %s crashed: %s", run_id, e, exc_info=True)
         try:
+            from datetime import datetime as _dt3
+
             with SessionLocal() as s:
                 r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
                 if r:
                     r.status = "failed"
                     r.result_json = _json.dumps({"error": str(e)}, ensure_ascii=False)
+                    r.finished_at = _dt3.now(timezone.utc)
                     s.commit()
         except Exception:
             pass
@@ -684,12 +707,13 @@ async def run_pipeline(pipeline_id: str, background_tasks: BackgroundTasks, user
     }
     background_tasks.add_task(_guarded_task, pipeline_id, run_id)
     _runs[run_id]["status"] = "running"
-    # Update DB to running
+    # Update DB to running + started_at (plan 3)
     try:
         with SessionLocal() as s:
             r = s.query(PipelineRun).filter(PipelineRun.id == run_id).first()
             if r:
                 r.status = "running"
+                r.started_at = datetime.now(timezone.utc)
                 s.commit()
     except Exception:
         pass
@@ -718,12 +742,24 @@ async def get_run(run_id: str, username: str = Depends(get_current_user)):
                     {"step_id": st.step_id, "status": st.status, "log": st.log}
                     for st in s.query(PipelineStep).filter(PipelineStep.run_id == run_id).all()
                 ]
+                duration_s = None
+                try:
+                    if r.started_at and r.finished_at:
+                        duration_s = round((r.finished_at - r.started_at).total_seconds(), 2)
+                except Exception:
+                    pass
                 return {
                     "run_id": r.id,
                     "pipeline_id": r.pipeline_id,
                     "status": r.status,
                     "result": result,
                     "steps": steps,
+                    "spec_hash": r.spec_hash,
+                    "engine": r.engine,
+                    "rows_out": r.rows_out,
+                    "started_at": r.started_at.isoformat() if r.started_at else None,
+                    "finished_at": r.finished_at.isoformat() if r.finished_at else None,
+                    "duration_s": duration_s,
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                 }
     # Fallback in-memory
@@ -759,3 +795,79 @@ async def list_runs(username: str = Depends(get_current_user)):
     # Fallback
     items = [v for v in _runs.values() if v["owner"] == username]
     return {"runs": items, "count": len(items)}
+
+
+@router.get("/pipelines/{pipeline_id}/stats", dependencies=[Depends(check_rate_limit)])
+async def pipeline_stats(pipeline_id: str, username: str = Depends(get_current_user)):
+    """Observability (plan 3): success rate, durations, engine breakdown, step status."""
+    from src.core.database import Pipeline, PipelineRun, PipelineStep, SessionLocal
+
+    with SessionLocal() as s:
+        p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
+        if not p or p.owner != username:
+            raise HTTPException(status_code=404, detail="Pipeline not found")
+        runs = s.query(PipelineRun).filter(PipelineRun.pipeline_id == pipeline_id).all()
+        by_status: dict = {}
+        durations: list = []
+        engines: dict = {}
+        total_rows = 0
+        for r in runs:
+            by_status[r.status] = by_status.get(r.status, 0) + 1
+            if r.engine:
+                engines[r.engine] = engines.get(r.engine, 0) + 1
+            if r.rows_out:
+                total_rows += r.rows_out
+            try:
+                if r.started_at and r.finished_at:
+                    durations.append((r.finished_at - r.started_at).total_seconds())
+            except Exception:
+                pass
+        step_status: dict = {}
+        if runs:
+            ids = [r.id for r in runs]
+            for st in s.query(PipelineStep).filter(PipelineStep.run_id.in_(ids)).all():
+                key = f"{st.step_id}:{st.status}"
+                step_status[key] = step_status.get(key, 0) + 1
+        done = by_status.get("done", 0)
+        total = len(runs)
+        return {
+            "pipeline_id": pipeline_id,
+            "runs": total,
+            "by_status": by_status,
+            "success_rate": round(done / total, 3) if total else None,
+            "avg_duration_s": round(sum(durations) / len(durations), 2) if durations else None,
+            "last_duration_s": round(durations[-1], 2) if durations else None,
+            "engines": engines,
+            "total_rows_out": total_rows,
+            "step_status": step_status,
+        }
+
+
+@router.get("/pipelines/{pipeline_id}/reproduce", dependencies=[Depends(check_rate_limit)])
+async def reproduce_pipeline(pipeline_id: str, username: str = Depends(get_current_user)):
+    """Reproducibility (plan 2): snapshot tao pipeline + hash + proposal goc."""
+    import json
+
+    from src.core.database import AIProposal, Pipeline, SessionLocal
+    from src.pipeline.planner import spec_hash
+
+    with SessionLocal() as s:
+        p = s.query(Pipeline).filter(Pipeline.id == pipeline_id).first()
+        if not p or p.owner != username:
+            raise HTTPException(status_code=404, detail="Pipeline not found")
+        stored = json.loads(p.spec_json) if p.spec_json else {}
+        current_hash = spec_hash(stored)
+        prop = None
+        if p.proposal_id:
+            r = s.query(AIProposal).filter(AIProposal.id == p.proposal_id).first()
+            if r and r.owner == username:
+                prop = {"proposal_id": r.id, "status": r.status, "model_used": r.model_used, "spec_hash": r.spec_hash}
+        return {
+            "pipeline_id": p.id,
+            "version": getattr(p, "version", 1) or 1,
+            "spec": stored,
+            "spec_hash": current_hash,
+            "engine": stored.get("engine", "pandas"),
+            "proposal": prop,
+            "note": "Chay lai execute voi spec+engine nay de tai lap ket qua (cung source snapshot).",
+        }

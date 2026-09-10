@@ -18,6 +18,7 @@ class PipelineSpec(BaseModel):
     target: str  # mart.<dataset>
     steps: List[PipelineStep]
     engine: str = "pandas"  # pandas (small data) | duckdb (large data, SQL push-down)
+    contract: Optional[dict] = None  # plan 1: DataContract gate truoc execute
 
     def validate_dag(self) -> None:
         """Validate DAG: engine, no cycle, depends_on exists, op in catalog."""

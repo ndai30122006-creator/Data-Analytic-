@@ -12,6 +12,7 @@ import pandas as pd
 
 from src.pipeline.context import ExecutionContext
 from src.pipeline.planner import plan as plan_dag
+from src.pipeline.planner import spec_hash as spec_hash_of
 from src.pipeline.spec_schema import PipelineSpec
 from src.warehouse.connection import get_conn, warehouse_write_lock
 
@@ -81,6 +82,18 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
         except Exception as e:
             return {"status": "failed", "error": f"source {spec.source} not found: {e}"}
 
+        # Plan 1: Quality Gate tren bounded sample (toi da 10k rows) truoc execute
+        from src.pipeline.contract import check_contract
+
+        gate = check_contract(df.head(10000), spec.contract)
+        if not gate["passed"]:
+            return {
+                "status": "failed",
+                "error": f"Quality gate blocked: {'; '.join(gate['violations'][:5])}",
+                "gate": gate,
+                "spec_hash": spec_hash_of(spec),
+            }
+
         if sample:
             df = df.head(100)
 
@@ -93,6 +106,9 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
         from src.pipeline.ops.pandas_ops import OPS as PANDAS_OPS
         from src.pipeline.ops.sql_ops import run_sql
 
+        import time as _time
+
+        step_timings: Dict[str, float] = {}
         for step in order:
             op = step.op
             params = step.params or {}
@@ -100,6 +116,7 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
                 inputs = ctx.resolve(step)
             except ValueError as e:
                 return {"status": "failed", "error": str(e)}
+            _t0 = _time.perf_counter()
 
             try:
                 if op in PANDAS_OPS:
@@ -146,6 +163,7 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
                     return {"status": "failed", "error": f"Unknown op {op}"}
                 ctx.put(step.id, current.copy())
                 results[step.id] = current.copy()
+                step_timings[step.id] = round((_time.perf_counter() - _t0) * 1000, 1)
             except Exception as e:
                 return {"status": "failed", "error": f"Step {step.id} ({op}) failed: {e}"}
 
@@ -172,6 +190,9 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
             "levels": dag.levels,
             "engine_used": "pandas",
             "fallbacks": [],
+            "spec_hash": spec_hash_of(spec),
+            "gate": gate,
+            "step_timings": step_timings,
             "preview": sanitize_for_json(current.head(5).to_dict(orient="records")),
         }
     finally:

@@ -90,6 +90,15 @@ flowchart LR
 - AI khong bao gio execute truc tiep: `POST /pipelines` voi `proposal_id` doi hoi status `approved` (403 neu chua).
 - Rate limit: Redis share giua workers (`redis` service trong compose); in-memory chi fallback dev single-worker.
 
+### 2d. Data Contract + reproducibility + observability
+
+- **Contract gate** (`pipeline/contract.py`): spec mang `contract` (min_rows, missing/dup %, kieu/mien gia tri tung cot).
+  Gate chay tren bounded sample (10k rows, ke ca engine duckdb) truoc execute — rot la failed kem report.
+- **Reproducibility**: `spec_hash` (sha256 canonical) tren proposal + run; pipeline luu `proposal_id`;
+  `GET /pipelines/{id}/reproduce` tra snapshot tao + hash + engine; `GET /runs/{id}` tra hash/engine/duration.
+- **Observability**: run ghi `started_at/finished_at/rows_out/engine`; `GET /pipelines/{id}/stats`
+  (success rate, avg/last duration, engine breakdown, step status); executor tra `step_timings` moi step.
+
 ## 3. Backend layout
 
 ```

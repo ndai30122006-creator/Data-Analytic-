@@ -32,6 +32,16 @@ class Plan:
         return [p.step for p in self.steps]
 
 
+def spec_hash(spec) -> str:
+    """Fingerprint sha256 canonical JSON — reproducibility (plan 2)."""
+    import hashlib
+    import json
+
+    data = spec.model_dump() if hasattr(spec, "model_dump") else dict(spec)
+    canonical = json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
 def plan(spec: PipelineSpec) -> Plan:
     """Validate DAG + tra Plan (raise ValueError neu DAG sai)."""
     spec.validate_dag()

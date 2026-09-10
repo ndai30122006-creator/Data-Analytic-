@@ -181,12 +181,30 @@ def execute_duckdb(spec, dag, src_q: str, tgt_q: str, conn, sample: bool = False
             base_sql += " LIMIT 100"
         conn.execute(f"CREATE OR REPLACE TEMP VIEW wb_src AS {base_sql}")
         _track("wb_src")
+        # Plan 1: Quality Gate tren bounded sample (khong fetch full table)
+        from src.pipeline.contract import check_contract
+
+        gate_df = conn.execute("SELECT * FROM wb_src LIMIT 10000").fetchdf()
+        gate = check_contract(gate_df, getattr(spec, "contract", None))
+        if not gate["passed"]:
+            from src.pipeline.planner import spec_hash as _sh
+
+            return {
+                "status": "failed",
+                "error": f"Quality gate blocked: {'; '.join(gate['violations'][:5])}",
+                "gate": gate,
+                "spec_hash": _sh(spec),
+            }
         views_map: Dict[str, str] = {"source": "wb_src"}
         fallbacks: List[str] = []
+        import time as _time
+
+        step_timings: Dict[str, float] = {}
 
         for plan_step in dag.steps:
             step = plan_step.step
             op, params = step.op, step.params or {}
+            _t0 = _time.perf_counter()
             deps = list(step.depends_on or [])
             if not all(_STEP_VIEW.match(d) for d in deps):
                 return {"status": "failed", "error": f"Step {step.id} depends_on id khong hop le"}
@@ -251,6 +269,7 @@ def execute_duckdb(spec, dag, src_q: str, tgt_q: str, conn, sample: bool = False
 
             _track(out_view)
             views_map[step.id] = out_view
+            step_timings[step.id] = round((_time.perf_counter() - _t0) * 1000, 1)
 
         last_view = views_map[dag.sink] if dag.sink else "wb_src"
         if not sample:
@@ -261,6 +280,8 @@ def execute_duckdb(spec, dag, src_q: str, tgt_q: str, conn, sample: bool = False
         cols = _cols(conn, last_view)
         total = conn.execute(f"SELECT COUNT(*) FROM {last_view}").fetchone()[0]
         preview = conn.execute(f"SELECT * FROM {last_view} LIMIT 5").fetchdf().to_dict(orient="records")
+        from src.pipeline.planner import spec_hash as _sh2
+
         return {
             "status": "done",
             "source": spec.source,
@@ -271,6 +292,9 @@ def execute_duckdb(spec, dag, src_q: str, tgt_q: str, conn, sample: bool = False
             "levels": dag.levels,
             "engine_used": "duckdb",
             "fallbacks": fallbacks,
+            "spec_hash": _sh2(spec),
+            "gate": gate,
+            "step_timings": step_timings,
             "preview": sanitize_for_json(preview),
         }
     finally:
