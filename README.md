@@ -49,8 +49,8 @@
 
 ### 1. Clone
 ```bash
-git clone https://github.com/ndai30122006-creator/dataworkbench.git
-cd dataworkbench
+git clone https://github.com/ndai30122006-creator/Dataworkbench-ai.git
+cd Dataworkbench-ai
 git checkout main
 ```
 
