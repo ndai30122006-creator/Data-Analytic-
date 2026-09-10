@@ -51,8 +51,9 @@ services:
       target: frontend
     image: dataworkbench-frontend:latest
     container_name: wb-frontend
+    # Port 8080 (khong 80) de khoi tranh nginx production profile
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       backend:
         condition: service_healthy

@@ -5,7 +5,7 @@ Security utilities — auto-generated SECRET_KEY, CORS configuration, environmen
 import logging
 import os
 import secrets
-from typing import List, Optional
+from typing import List
 
 logger = logging.getLogger(__name__)
 

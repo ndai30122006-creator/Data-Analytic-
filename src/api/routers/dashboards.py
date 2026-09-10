@@ -23,6 +23,12 @@ async def create_dashboard(req: DashboardCreateRequest, username: str = Depends(
     import json
 
     from src.core.database import Dashboard, SessionLocal
+    from src.dashboard.spec_schema import DashboardSpec
+
+    try:
+        DashboardSpec(**req.spec)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid DashboardSpec: {e}")
 
     try:
         with SessionLocal() as s:
@@ -78,6 +84,12 @@ async def update_dashboard(dashboard_id: int, req: DashboardCreateRequest, usern
     import json
 
     from src.core.database import Dashboard, SessionLocal
+    from src.dashboard.spec_schema import DashboardSpec
+
+    try:
+        DashboardSpec(**req.spec)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid DashboardSpec: {e}")
 
     try:
         with SessionLocal() as s:
@@ -242,7 +254,6 @@ async def generate_dashboard(dataset_id: int, username: str = Depends(get_curren
         # AI (BYOK) neu user co key — chi gui profile + brief rong
         try:
             import logging as _logging
-            import os as _os
 
             from src.core.database import get_api_key, get_api_provider
             from src.prompts.dashboard_author import build_prompt

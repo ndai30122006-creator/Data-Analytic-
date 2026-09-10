@@ -7,7 +7,7 @@ Falls back to rule-based insights when no API key is configured.
 
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import numpy as np

@@ -11,7 +11,7 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Dict
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
 from src.api.deps import _user_owns_table, check_rate_limit, get_current_user
@@ -324,7 +324,6 @@ async def generate_pipeline(req: PipelineGenerateRequest, username: str = Depend
     """
     import json
     import logging as _logging
-    import os as _os
     import uuid
 
     from src.core.database import AIProposal, SessionLocal

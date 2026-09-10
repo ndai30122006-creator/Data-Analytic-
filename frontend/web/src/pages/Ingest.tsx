@@ -41,7 +41,7 @@ export default function Ingest() {
       setMsg(`Ingested: ${res.message} — dataset_id=${res.dataset_id}`);
       if (res.profile) setProfile(JSON.stringify(res.profile, null, 2));
       setFile(null);
-      refresh();
+      await refresh();
     } catch (e: any) {
       const info = parseApiError(e);
       setMsg(info.message);
@@ -52,12 +52,13 @@ export default function Ingest() {
 
   const viewProfile = async (id: number, name: string) => {
     try {
+      const res = await datasets.getProfile(id);
       setSelected(name);
       setSelectedId(id);
-      const res = await datasets.getProfile(id);
       setProfile(JSON.stringify(res, null, 2));
     } catch (e: any) {
-      setProfile(`Error: ${e.message}`);
+      const info = parseApiError(e);
+      setProfile(info.message);
     }
   };
 
@@ -91,7 +92,7 @@ export default function Ingest() {
           {loading ? <><Skeleton height={34} style={{ marginBottom: 8 }} /><Skeleton height={34} style={{ marginBottom: 8 }} /><Skeleton height={34} /></>
             : list.length === 0 ? <EmptyState title="Chưa có dataset" hint="Upload file ở trên để bắt đầu" />
             : list.map((d: any) => (
-              <div key={d.dataset_name}
+              <div key={d.id ?? d.dataset_name}
                 onClick={() => d.id && viewProfile(d.id, d.dataset_name)}
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "10px 8px", borderBottom: "1px solid var(--border)", fontSize: 12, cursor: "pointer", background: selected === d.dataset_name ? "rgba(45,212,191,0.07)" : "transparent", borderRadius: "var(--radius-input)" }}>
                 <div>

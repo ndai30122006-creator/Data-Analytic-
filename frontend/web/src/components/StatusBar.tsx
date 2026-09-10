@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { apiBase } from "@app/shared/src/api/client";
 import { getStoredUser } from "@app/shared/src/features/auth/store";
 
 export default function StatusBar() {
@@ -13,7 +14,7 @@ export default function StatusBar() {
     const ping = async () => {
       const t0 = performance.now();
       try {
-        const res = await fetch("http://localhost:8000/health");
+        const res = await fetch(`${apiBase()}/health`);
         if (!stop) {
           setApi(res.ok ? "online" : "offline");
           setLatency(res.ok ? Math.round(performance.now() - t0) : null);

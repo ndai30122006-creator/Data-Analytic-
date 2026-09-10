@@ -83,8 +83,15 @@ def _dispatch_analysis(analysis_type: str, params: Dict[str, Any]) -> Dict[str, 
         data = np.asarray(params.get("data") or params.get("group_a") or [], dtype=float)
         if data.size == 0:
             raise ValueError("data is required for bootstrap")
-        n_iter = int(params.get("n_iter", 1000))
-        conf_level = int(params.get("conf_level", 95))
+        try:
+            n_iter = int(params.get("n_iter", 1000))
+            conf_level = int(params.get("conf_level", 95))
+        except (TypeError, ValueError):
+            raise ValueError("n_iter/conf_level phai la so")
+        if not 10 <= n_iter <= 100_000:
+            raise ValueError("n_iter phai 10..100000")
+        if not 0 < conf_level < 100:
+            raise ValueError("conf_level phai 0..100")
         result = run_bootstrap(data, n_iter=n_iter, conf_level=conf_level)
         # Convert ndarray to list for JSON serialization
         result["boot_stats"] = (
@@ -100,7 +107,29 @@ def _dispatch_analysis(analysis_type: str, params: Dict[str, Any]) -> Dict[str, 
             tb = int(params["total_b"])
         except (KeyError, TypeError, ValueError):
             raise ValueError("ab_test can successes_a/total_a/successes_b/total_b (integers)")
+        if ta <= 0 or tb <= 0:
+            raise ValueError("total_a/total_b phai > 0")
+        if not (0 <= sa <= ta and 0 <= sb <= tb):
+            raise ValueError("successes phai 0..total")
         return run_two_proportion_ztest(sa, ta, sb, tb)
+
+    if at in ("chisquare", "chi_square", "chi2"):
+        import pandas as _pd
+
+        table = params.get("table") or params.get("contingency")
+        if not table or not isinstance(table, list):
+            raise ValueError("chisquare can table (list 2D >= 2x2)")
+        try:
+            df = _pd.DataFrame(table, dtype=float)
+        except Exception:
+            raise ValueError("table phai la ma tran so")
+        if df.shape[0] < 2 or df.shape[1] < 2:
+            raise ValueError("table phai >= 2x2")
+        if (df < 0).any().any():
+            raise ValueError("table khong co so am")
+        from src.core.statistical_tests import run_chisquare
+
+        return run_chisquare(df)
 
     if at in ("overview", "summary", "descriptive"):
         # Generic descriptive fallback — expects data array

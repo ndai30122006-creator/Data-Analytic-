@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@app/shared/src/components/ErrorBoundary";
 import { RequireAuth } from "@app/shared/src/features/auth/RequireAuth";
 import DesktopShell from "./layout/DesktopShell";

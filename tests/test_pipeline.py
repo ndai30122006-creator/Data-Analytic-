@@ -74,16 +74,18 @@ def test_dry_run_no_overwrite(tmp_path):
     )
     res = execute(spec, sample=True)
     assert res["status"] == "done"
-    # Verify mart not created in dry-run
+    # Verify mart not created in dry-run — khong nuot assert (T2)
     conn = get_conn()
+    mart_exists = True
     try:
-        cnt = conn.execute("SELECT COUNT(*) FROM mart.t_dry").fetchone()[0]
-        # Should fail or 0 if not created; dry-run shouldn't create
-        assert False, "mart should not exist after dry-run"
+        conn.execute("SELECT COUNT(*) FROM mart.t_dry").fetchone()
     except Exception:
-        pass
+        mart_exists = False
     finally:
         conn.close()
+    try:
+        assert not mart_exists, "mart should not exist after dry-run"
+    finally:
         # Cleanup
         conn = get_conn()
         try:

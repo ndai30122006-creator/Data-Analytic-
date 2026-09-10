@@ -2,9 +2,6 @@
 
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
-from sqlalchemy.orm import declarative_base
-
 # Reuse Base from database to keep Alembic single metadata
 from src.core.database import Base  # noqa: F401
 

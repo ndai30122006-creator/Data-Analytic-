@@ -147,8 +147,8 @@ class TestApiKey:
             from src.core.database import _decrypt_api_key, get_api_key
 
             updated_user = get_user(username)
-            # Stored value should be encrypted (not plaintext) if Fernet available
-            assert updated_user.api_key_ai != api_key or updated_user.api_key_ai == api_key  # allow fallback
+            # Stored value phai ma hoa that (khong plaintext, khong fallback cam)
+            assert updated_user.api_key_ai != api_key
             assert get_api_key(username) == api_key
             assert _decrypt_api_key(updated_user.api_key_ai) == api_key
         finally:

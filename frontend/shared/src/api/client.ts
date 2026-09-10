@@ -13,7 +13,13 @@ export class ApiError extends Error {
   }
 }
 
-const BASE = (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8000";
+const _envBase = (import.meta as any).env?.VITE_API_BASE;
+const BASE = _envBase ? _envBase : "http://localhost:8000";
+
+/** Base URL cua API (StatusBar/health check dung chung, khong hardcode). */
+export function apiBase() {
+  return BASE;
+}
 let _token: string | null = null;
 
 export function setToken(t: string | null) {

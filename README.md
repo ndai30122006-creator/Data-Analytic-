@@ -92,9 +92,10 @@ DEMO_USER_USERNAME=user DEMO_USER_PASSWORD=user123
 ```bash
 copy .env.example .env
 # JWT_SECRET_KEY=python -c "import secrets; print(secrets.token_hex(32))"
-docker compose up --build          # dev (web+api)
-docker compose --profile production up --build -d  # + nginx 80/443
+docker compose up --build          # dev: web :8080 + api :8000
+docker compose --profile production up --build -d  # + nginx :80 (can VITE_API_BASE=/api khi build prod)
 ```
+Mở `http://localhost:8080` (web docker) hoặc `http://localhost` (qua nginx production).
 `data/warehouse.duckdb` + `users.db` trong volume `app_data:/app/data` → `docker compose down -v` mới mất.
 
 ## 📖 Hướng dẫn sử dụng (Workbench)

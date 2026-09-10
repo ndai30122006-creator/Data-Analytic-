@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { pipelines } from "@app/shared/api/pipelines";
 import type { PipelineSpec } from "@app/shared/types/index";
 import { Button } from "@app/shared/components/ui/Button";
@@ -8,6 +8,17 @@ import { Badge } from "@app/shared/components/ui/Badge";
 import { useErrorHandler } from "@app/shared/hooks/useErrorHandler";
 import { PageHead } from "@app/shared/src/components/PageHead";
 import { DagEditor } from "@app/shared/src/components/DagEditor";
+
+function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: string[] }) {
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 12, marginTop: 6 }}>
+      <span style={{ minWidth: 70, color: ok ? "var(--success)" : "var(--danger)", fontWeight: 700 }}>
+        {ok ? "✓" : "✗"} {title}
+      </span>
+      <span style={{ color: "var(--text-muted)" }}>{(errs ?? []).join(" | ") || "ok"}</span>
+    </div>
+  );
+}
 
 const defaultSpec: PipelineSpec = {
   name: "demo-pipeline",
@@ -25,16 +36,6 @@ export default function Pipeline() {
   const [nl, setNl] = useState("xóa dòng trùng, điền missing cột diem bằng median");
   const [proposal, setProposal] = useState<any | null>(null);
 
-function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: string[] }) {
-  return (
-    <div style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 12, marginTop: 6 }}>
-      <span style={{ minWidth: 70, color: ok ? "var(--success)" : "var(--danger)", fontWeight: 700 }}>
-        {ok ? "✓" : "✗"} {title}
-      </span>
-      <span style={{ color: "var(--text-muted)" }}>{(errs ?? []).join(" | ") || "ok"}</span>
-    </div>
-  );
-}
   const { error: apiError, handleError, clearError } = useErrorHandler();
 
   const refresh = async () => {
@@ -53,13 +54,18 @@ function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: str
     refresh();
   }, []);
 
-  const parseSpec = (): PipelineSpec | null => {
+  const tryParse = (): PipelineSpec | null => {
     try {
       return JSON.parse(specText);
-    } catch (e: any) {
-      setOutput(`JSON parse error: ${e.message}`);
+    } catch {
       return null;
     }
+  };
+
+  const parseSpec = (): PipelineSpec | null => {
+    const s = tryParse();
+    if (!s) setOutput("JSON parse error: spec khong phai JSON hop le.");
+    return s;
   };
 
   const [mode, setMode] = useState<"visual" | "json">("visual");
@@ -154,29 +160,51 @@ function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: str
     }
   };
 
+  const [runningId, setRunningId] = useState<string | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); }, []);
+
+  const later = (fn: () => void, ms: number) => {
+    const t = setTimeout(fn, ms);
+    timers.current.push(t);
+  };
+
   const handleRun = async (pipelineId: string) => {
     setLoading(true);
+    setRunningId(null);
     try {
       const { run_id } = await pipelines.run(pipelineId);
+      setRunningId(run_id);
       setOutput(`Run started: ${run_id} — polling...`);
       let attempts = 0;
       const poll = async () => {
         attempts++;
-        const info: any = await pipelines.getRun(run_id);
-        setOutput(`Run ${run_id} [${info.status}] (poll ${attempts}):\n${JSON.stringify(info, null, 2)}`);
-        if (info.status === "queued" || info.status === "running") {
-          const delay = Math.min(2000 * Math.pow(1.5, attempts - 1), 8000);
-          setTimeout(poll, delay);
-        } else {
-          refresh();
+        try {
+          const info: any = await pipelines.getRun(run_id);
+          setOutput(`Run ${run_id} [${info.status}] (poll ${attempts}):\n${JSON.stringify(info, null, 2)}`);
+          if (info.status === "queued" || info.status === "running") {
+            if (attempts >= 20) {
+              setOutput(`Run ${run_id} van chua xong sau 20 lan poll — vao Runs de xem lai.`);
+              setLoading(false);
+              return;
+            }
+            const delay = Math.min(2000 * Math.pow(1.5, attempts - 1), 8000);
+            later(poll, delay);
+          } else {
+            setLoading(false);
+            refresh();
+          }
+        } catch (e: any) {
+          setOutput(`Poll error: ${e.message}`);
+          setLoading(false);
         }
       };
-      setTimeout(poll, 1500);
+      later(poll, 1500);
     } catch (e: any) {
       setOutput(`Run error: ${e.message}`);
-    } finally {
       setLoading(false);
     }
+    // Khong setLoading(false) o finally — poll nen giu loading den khi xong/timeout
   };
 
   return (
@@ -234,7 +262,7 @@ function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: str
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <h4>STEP 2 · Spec → dry-run → create</h4>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              <select value={parseSpec()?.engine ?? "pandas"} onChange={(e) => {
+              <select value={tryParse()?.engine ?? "pandas"} onChange={(e) => {
                 try {
                   const s = JSON.parse(specText || "{}");
                   setSpecText(JSON.stringify({ ...s, engine: e.target.value }, null, 2));
@@ -284,7 +312,7 @@ function LayerRow({ title, ok, errs }: { title: string; ok?: boolean; errs?: str
         </Card>
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <h4>Runs</h4>
+            <h4>Runs {runningId && <span style={{ color: "var(--accent)" }}>· polling {runningId}…</span>}</h4>
             <Badge variant="neutral">{runs.length}</Badge>
           </div>
           {runs.length === 0 ? (

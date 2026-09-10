@@ -2,7 +2,7 @@
 Separates computation from UI rendering (clean architecture)."""
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -84,6 +84,8 @@ def run_kruskal(*groups: np.ndarray) -> Dict[str, Any]:
 
 def run_chisquare(contingency_table: pd.DataFrame) -> Dict[str, Any]:
     """Chi-square test of independence with Cramer's V."""
+    if contingency_table.shape[0] < 2 or contingency_table.shape[1] < 2:
+        raise ValueError("contingency table phai >= 2x2")
     stat, p, dof, expected = scipy_stats.chi2_contingency(contingency_table)
     n = contingency_table.sum().sum()
     cramer_v = np.sqrt(stat / (n * min(contingency_table.shape[0] - 1, contingency_table.shape[1] - 1))) if n > 0 else 0

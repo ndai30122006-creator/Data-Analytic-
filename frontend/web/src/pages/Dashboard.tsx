@@ -105,8 +105,15 @@ export default function Dashboard() {
     if (!selectedId) { setOutput("Chua chon dashboard de luu layout."); return; }
     try {
       const spec = JSON.parse(specText || "{}");
-      const order = realCharts.map((c: any) => c.id);
-      const charts = (spec.charts ?? []).filter((c: any) => !hidden[c.id]).sort((a: any, b: any) => order.indexOf(a.id) - order.indexOf(b.id));
+      const orderIds = realCharts.map((c: any) => c.id).filter(Boolean);
+      const hiddenIds = new Set(
+        realCharts.filter((c: any, i: number) => hidden[`${i}-${c.id ?? c.type}`]).map((c: any) => c.id)
+      );
+      const charts = (spec.charts ?? [])
+        .filter((c: any) => !c.id || !hiddenIds.has(c.id))
+        .map((c: any, i: number) => ({ c, pos: c.id ? orderIds.indexOf(c.id) : -1, fallback: i }))
+        .sort((a: any, b: any) => (a.pos === -1 ? 999 + a.fallback : a.pos) - (b.pos === -1 ? 999 + b.fallback : b.pos))
+        .map(({ c }: any) => c);
       const res = await dashboards.update(selectedId, { ...(spec as object), name: selectedName || (spec as any).name, charts } as any);
       setOutput(`Saved layout order+hidden -> version ${(res as any).version ?? "?"}`);
       refresh();
@@ -182,22 +189,26 @@ export default function Dashboard() {
       )}
 
       <div className="rise" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: 20 }}>
-        {realCharts.length > 0 ? realCharts.map((c: any, i: number) => (
-          <Card key={c.id ?? i} style={{ padding: 0, overflow: "hidden", opacity: hidden[c.id] ? 0.45 : 1 }}>
+        {realCharts.length > 0 ? realCharts.map((c: any, i: number) => {
+          const key = `${i}-${c.id ?? c.type}`;
+          const isHidden = !!hidden[key];
+          return (
+          <Card key={key} style={{ padding: 0, overflow: "hidden", opacity: isHidden ? 0.45 : 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 12, fontWeight: 600 }}>{c.title ?? c.type}</span>
               <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                 <Badge variant="success">{c.type}</Badge>
                 <Button variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
                 <Button variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === realCharts.length - 1}>↓</Button>
-                <Button variant="ghost" size="sm" onClick={() => setHidden((h) => ({ ...h, [c.id]: !h[c.id] }))}>{hidden[c.id] ? "show" : "hide"}</Button>
+                <Button variant="ghost" size="sm" onClick={() => setHidden((h) => ({ ...h, [key]: !h[key] }))}>{isHidden ? "show" : "hide"}</Button>
               </div>
             </div>
             <div style={{ padding: 12 }}>
               <Chart type={c.type} height={150} options={toOptions(c)} toolbar />
             </div>
           </Card>
-        )) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
+          );
+        }) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
           <Card key={t} style={{ padding: 0, overflow: "hidden", opacity: 0.75 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t} · mock</span>

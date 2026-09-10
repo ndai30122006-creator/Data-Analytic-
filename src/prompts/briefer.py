@@ -17,9 +17,7 @@ def build_prompt(profile: dict) -> list[dict]:
 
 
 def generate_brief_fallback(profile: dict) -> str:
-    """Rule-based fallback dùng core/insights (không tốn token)."""
-    from src.core.insights import generate_data_summary
-
+    """Rule-based fallback (khong ton token LLM)."""
     # profile may contain summary already; fallback to simple narrative
     try:
         # If profile has rows/cols, craft brief

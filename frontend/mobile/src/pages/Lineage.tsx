@@ -3,6 +3,7 @@ import { datasets } from "@app/shared/api/datasets";
 import { lineage, type LineageResponse } from "@app/shared/api/lineage";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
+import { Badge } from "@app/shared/components/ui/Badge";
 import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
 import { PageHead } from "@app/shared/src/components/PageHead";
 
@@ -42,21 +43,28 @@ export default function Lineage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <PageHead path="lineage" title="Lineage" desc="dataset → pipeline → dashboard." />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16 }}>
+      <PageHead
+        path="lineage"
+        title="Lineage"
+        desc="Đồ thị dataset → brief/pipeline → mart → dashboard. Hover node để xem quan hệ."
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 7fr)", gap: 20 }}>
         <Card>
-          <h4>Datasets ({list.length})</h4>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h4>Datasets</h4>
+            <Badge variant="neutral">{list.length}</Badge>
+          </div>
           {list.length === 0 ? <EmptyState title="Chưa có dataset" hint="Upload ở Ingest trước" /> : list.map((d: any) => (
-            <div key={d.dataset_name} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
+            <div key={d.id ?? d.dataset_name} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
               <span>{d.dataset_name} <span style={{ color: "var(--text-muted)" }}>{d.rows}×{d.cols}</span></span>
-              <Button variant="ghost" size="sm" onClick={() => d.id && view(d.id)}>View</Button>
+              <Button variant="ghost" size="sm" onClick={() => d.id ? view(d.id) : setError("Dataset thiếu id — refresh lại danh sách.")}>View</Button>
             </div>
           ))}
         </Card>
         <Card>
           <h4>Graph trực quan {detail && <span style={{ color: "var(--text-muted)" }}>— {detail.dataset}</span>}</h4>
           {loading ? <><Skeleton height={40} style={{ marginBottom: 8 }} /><Skeleton height={40} /></>
-            : error ? <div style={{ color: "#EF4444", fontSize: 12 }}>{error}</div>
+            : error ? <div style={{ color: "var(--danger)", fontSize: 12 }}>{error}</div>
             : !detail ? <EmptyState title="Chọn dataset để xem lineage" hint="Nodes: dataset → pipeline → mart → dashboard + brief" />
             : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -76,7 +84,7 @@ export default function Lineage() {
                   </div>
                 ))}
                 <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  {detail.edges.length} edges · pipelines: {detail.pipelines_count} · dashboards: {detail.dashboards} · briefs: {detail.briefs} (hover node để xem quan hệ)
+                  {(detail.edges ?? []).length} edges · pipelines: {detail.pipelines_count} · dashboards: {detail.dashboards} · briefs: {detail.briefs} (hover node để xem quan hệ)
                 </div>
               </div>
             )}

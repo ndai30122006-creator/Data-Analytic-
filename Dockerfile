@@ -67,6 +67,10 @@ CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "
 # Build React web+mobile via Node, serve via nginx (production)
 FROM node:20-alpine AS web-build
 WORKDIR /app/frontend
+# VITE_API_BASE: dev mac dinh http://localhost:8000; production build voi
+# --build-arg VITE_API_BASE=/api de di qua nginx cung origin
+ARG VITE_API_BASE=http://localhost:8000
+ENV VITE_API_BASE=$VITE_API_BASE
 COPY frontend/package.json frontend/pnpm-workspace.yaml frontend/pnpm-lock.yaml ./
 COPY frontend/shared ./shared
 COPY frontend/web ./web

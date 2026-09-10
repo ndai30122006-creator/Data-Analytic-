@@ -36,7 +36,8 @@ export default function Brief() {
   const list = async () => {
     try {
       const res = await brief.list(datasetId);
-      setHistory(res.briefs ?? res ?? []);
+      const items = res.briefs ?? res ?? [];
+      setHistory(Array.isArray(items) ? items : []);
     } catch (e: any) {
       setContent(friendly(e));
     }
@@ -54,8 +55,10 @@ export default function Brief() {
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `brief-${datasetId}.md`; a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `brief-${datasetId}.md`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
   };
 
   return (

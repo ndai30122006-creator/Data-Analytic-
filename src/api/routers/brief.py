@@ -32,7 +32,6 @@ async def create_brief(dataset_id: int, username: str = Depends(get_current_user
                     profile = {}
             # AI (BYOK) neu user co key — chi gui profile, khong gui raw
             import logging as _logging
-            import os as _os
 
             from src.prompts.briefer import generate_brief_fallback
 

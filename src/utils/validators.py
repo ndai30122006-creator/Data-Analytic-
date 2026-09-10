@@ -1,12 +1,12 @@
 """Validation utilities for Data Workbench"""
 
 import logging
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import pandas as pd
 
-from src.utils.exceptions import DataValidationError, handle_error
+from src.utils.exceptions import DataValidationError
 from src.utils.optional_deps import cache_data
 
 logger = logging.getLogger(__name__)
@@ -61,74 +61,7 @@ def validate_dataframe_schema(df: pd.DataFrame, schema: dict) -> bool:
     return True
 
 
-def safe_execute(func: Callable, error_msg: str = "Lỗi thực thi", default: Any = None) -> Any:
-    """
-    Wrapper để execute function với error handling.
-
-    Args:
-        func: Function cần execute (không tham số)
-        error_msg: Thông báo lỗi hiển thị (default: "Lỗi thực thi")
-        default: Giá trị trả về nếu có lỗi (default: None)
-
-    Returns:
-        Kết quả của func hoặc default nếu có lỗi
-    """
-    try:
-        return func()
-    except Exception as e:
-        logger.error(
-            "safe_execute failed [%s] | Context: %s | Detail: %s", type(e).__name__, error_msg, str(e), exc_info=True
-        )
-        logger.error("safe_execute UI notice [%s]: %s", error_msg, str(e))
-        return default
-
-
 @cache_data
-def get_column_stats(df: pd.DataFrame, col: str) -> Dict[str, Any]:
-    """
-    Cache thống kê chi tiết cho từng cột.
-
-    Args:
-        df: Input DataFrame
-        col: Tên cột cần phân tích
-
-    Returns:
-        dict với các keys:
-            - count (int): Số lượng giá trị
-            - missing (int): Số lượng null
-            - missing_pct (float): Phần trăm null
-            - unique (int): Số lượng unique values
-            - dtype (str): Kiểu dữ liệu
-            - Nếu numeric: min, max, mean, median, std, q1, q3, iqr
-            - Nếu categorical: top_values (dict)
-    """
-    stats: Dict[str, Any] = {
-        "count": len(df[col]),
-        "missing": df[col].isnull().sum(),
-        "missing_pct": round(df[col].isnull().sum() / len(df) * 100, 1),
-        "unique": df[col].nunique(),
-        "dtype": str(df[col].dtype),
-    }
-
-    if pd.api.types.is_numeric_dtype(df[col].dtype):
-        stats.update(
-            {
-                "min": df[col].min(),
-                "max": df[col].max(),
-                "mean": df[col].mean(),
-                "median": df[col].median(),
-                "std": df[col].std(),
-                "q1": df[col].quantile(0.25),
-                "q3": df[col].quantile(0.75),
-                "iqr": df[col].quantile(0.75) - df[col].quantile(0.25),
-            }
-        )
-    else:
-        stats["top_values"] = df[col].value_counts().head(TOP_N_VALUES).to_dict()
-
-    return stats
-
-
 @cache_data
 def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
     """
@@ -177,37 +110,3 @@ def compute_data_quality_score(df: pd.DataFrame) -> Dict[str, Any]:
         "dup_rows": int(dup_rows),
         "outlier_count": int(outlier_count),
     }
-
-
-@cache_data
-def generate_data_dictionary(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Tạo Data Dictionary (metadata) cho dataset.
-
-    Args:
-        df: Input DataFrame
-
-    Returns:
-        pd.DataFrame với các cột:
-            Column, Type, Dtype, Non-Null, Null, Null%, Unique, Sample
-    """
-    dict_data = []
-    for col in df.columns:
-        col_type = "Numeric" if pd.api.types.is_numeric_dtype(df[col].dtype) else "Categorical"
-        if "date" in col.lower() or "time" in col.lower():
-            col_type = "DateTime"
-
-        dict_data.append(
-            {
-                "Column": col,
-                "Type": col_type,
-                "Dtype": str(df[col].dtype),
-                "Non-Null": df[col].count(),
-                "Null": df[col].isnull().sum(),
-                "Null%": round(df[col].isnull().sum() / len(df) * 100, 1),
-                "Unique": df[col].nunique(),
-                "Sample": str(df[col].dropna().iloc[0])[:50] if len(df[col].dropna()) > 0 else "N/A",
-            }
-        )
-
-    return pd.DataFrame(dict_data)

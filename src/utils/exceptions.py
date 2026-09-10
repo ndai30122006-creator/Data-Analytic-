@@ -4,8 +4,7 @@ import logging
 import uuid
 from typing import Optional
 
-from fastapi import HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 

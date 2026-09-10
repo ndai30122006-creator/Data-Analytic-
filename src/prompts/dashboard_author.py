@@ -1,7 +1,5 @@
 """Dashboard author — profile + brief -> DashboardSpec (Plan 05)."""
 
-from typing import List
-
 SYSTEM = (
     "Bạn là trợ lý dashboard. Từ profile JSON và brief, đề xuất 4-6 charts hợp lý "
     "(kpi, bar, hist, box, line, scatter) dưới dạng DashboardSpec JSON. "

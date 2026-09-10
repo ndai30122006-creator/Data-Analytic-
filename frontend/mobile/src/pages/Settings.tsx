@@ -13,15 +13,18 @@ export default function Settings() {
   const [key, setKey] = useState("");
   const [prov, setProv] = useState(provider);
   const [msg, setMsg] = useState("");
+  const [isErr, setIsErr] = useState(false);
   const [testing, setTesting] = useState(false);
 
   const save = async () => {
     try {
       const res = await saveApiKey(key, prov as any);
+      setIsErr(false);
       setMsg(`Key saved (provider: ${res.provider ?? prov}) — Brief/Dashboard/Pipeline-generate sẽ dùng LLM, fail thì fallback rule-based.`);
       setKey("");
     } catch (e: any) {
       const info = parseApiError(e);
+      setIsErr(true);
       setMsg(info.message);
     }
   };
@@ -30,9 +33,11 @@ export default function Settings() {
     setTesting(true);
     try {
       const res = await auth.testApiKey();
+      setIsErr(false);
       setMsg(`Key OK — ${res.provider}:${res.model} (${res.latency_ms}ms).`);
     } catch (e: any) {
       const info = parseApiError(e);
+      setIsErr(true);
       setMsg(info.message);
     } finally {
       setTesting(false);
@@ -54,7 +59,7 @@ export default function Settings() {
           <Button onClick={save} disabled={saving || !key.trim()}>{saving ? "Saving..." : "Save Key"}</Button>
           <Button variant="ghost" onClick={test} disabled={testing}>{testing ? "Testing..." : "Test connection"}</Button>
         </div>
-        {msg && <div style={{ marginTop: 12 }}><Toast message={msg} type={msg.startsWith("Error") ? "error" : "success"} onClose={() => setMsg("")} /></div>}
+        {msg && <div style={{ marginTop: 12 }}><Toast message={msg} type={isErr ? "error" : "success"} onClose={() => { setMsg(""); setIsErr(false); }} /></div>}
       </Card>
       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Test: mở Brief → Generate, xem dòng model: openai:gpt-4o-mini thay vì rule-based.</div>
     </div>
