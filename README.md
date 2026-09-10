@@ -9,20 +9,21 @@
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> **Pivot P0-P5 Done (`main` `eba1ed1`):** UI 7 screens `Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage` + `Statistics Lab` + BYOK `POST /auth/api-key`. Xem `docs/plan/README.md` & `docs/plan/implement_plan.md`.
+> **Hiện tại (`main`):** UI 8 screens `Overview/Ingest/Pipeline/Brief/Dashboard/Lab/Settings/Lineage` + `Statistics Lab` + BYOK `POST /auth/api-key` + AI proposals (approve gate) + DAG engine 2 chế độ (pandas/duckdb). Xem `docs/ARCHITECTURE.md` (tổng quan) & `docs/plan/README.md`.
 > **Kiến trúc tổng quan + sơ đồ dữ liệu:** xem [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## ✨ Tính năng chính (Workbench)
 
 ### 📥 Ingest
-- Upload CSV/Excel → `raw.<name>` DuckDB (`data/warehouse.duckdb`)
-- Preview 20 rows, profile JSON (KHÔNG gửi raw cho LLM), quality score
-- Registry `datasets` (SQLite) + `GET /datasets/{id}/profile`
+- Upload CSV/Excel (≤50MB, validate) → `raw.<name>` DuckDB (`data/warehouse.duckdb`), atomic + lock
+- Data Table Pro: xem rows thật (phân trang/sort/search), profile JSON (KHÔNG gửi raw cho LLM), quality score
+- Registry `datasets` (SQLite) + `GET /datasets/{id}/profile` + demo 1-click `POST /datasets/demo`
 
 ### ⚙️ Pipeline (AI ETL/ELT)
-- Mô tả tiếng Việt → AI sinh `PipelineSpec` YAML (DAG `depends_on`)
-- 7 ops `pandas` (`fill_missing`, `drop_duplicates`, `type_cast`, `standardize_columns`, `derive_column`, `filter`, `aggregate`) + `sql` ELT `{{prev}}`
-- Dry-run 100 rows (không ghi `mart`), Run → `mart.<name>` + history `pipeline_runs/steps`
+- Mô tả tiếng Việt → AI sinh `PipelineSpec` JSON (DAG `depends_on`) → proposal (schema/semantic/safety + cost + dry-run) → human Approve → Create → Run
+- 8 ops (`fill_missing`, `drop_duplicates`, `type_cast`, `standardize_columns`, `derive_column`, `filter`, `aggregate`, `merge`) + `sql` ELT `{{prev}}`, DAG editor kéo-thả trên UI
+- 2 engines: `pandas` (small data) / `duckdb` (SQL push-down, large data) + DataContract gate + versioning + reproduce hash
+- Dry-run 100 rows (không ghi `mart`), Run → `mart.<name>` + history `pipeline_runs/steps` + stats quan sát được
 
 ### 📋 Brief (AI)
 - 1-click từ profile → narrative tiếng Việt, lưu version, export Markdown
@@ -30,17 +31,19 @@
 
 ### 📊 Dashboard (AI)
 - AI đề xuất 4-6 charts `DashboardSpec` (6 types: `kpi/bar/hist/box/line/scatter`)
-- Renderer ApexCharts real-data 1 query/chart DuckDB, chỉnh tay, lưu `dashboards` + export JSON
+- Renderer ApexCharts real-data 1 query/chart DuckDB, sắp xếp/ẩn-hiện + save layout, export PNG/SVG/CSV, auto-refresh, versioning
 
 ### 🧪 Lab — Statistics Lab
-- Gộp `Statistics` + `Deep Analysis` cũ, giữ engine `src/core/statistical_tests.py` + `src/analytics` (8 tabs: Advanced Stats, Bootstrap... Data Quality)
-- Via `core` single source, fix `pooled_std`/`eta²`
+- Chạy qua `POST /analysis/run` → engine `src/core/statistical_tests.py` (t-test, ANOVA, bootstrap, Mann-Whitney, Kruskal, AB-test)
+- JSON-serializable (NaN-safe), kiểm tra dataset thuộc user trước khi chạy
 
 ### ⚙️ Settings — BYOK
-- Nhập `OpenAI/Gemini` key → `POST /auth/api-key` (Fernet encrypt at-rest), Test `GET /health`, per-session cache
+- Chọn provider (`OpenAI/Gemini`) + key → `POST /auth/api-key` (Fernet encrypt at-rest), nút **Test connection** gọi LLM siêu nhẹ báo latency
+- Retry typed theo loại lỗi, structured output Pydantic, fallback rule-based khi không key
 
 ### 🔗 Lineage
-- `Dataset → Pipeline → Dashboard` từ `warehouse/lineage.py` + `scripts/generate_demo_data.py` (300 SV missing/dup/outlier)
+- Graph `dataset → brief/pipeline → mart → dashboard` (`nodes/edges`) từ `warehouse/lineage.py`, vẽ trực quan trên UI
+- Demo: `POST /datasets/demo` sinh 120 SV (missing/dup) 1-click, hoặc `scripts/generate_demo_data.py` (300 SV)
 
 ## 🚀 Cài đặt
 
@@ -102,13 +105,13 @@ docker compose --profile production up --build -d  # + nginx 80/443
 3. **Brief:** `📋 Brief` → Chọn dataset → Generate Brief → history version → Export MD
 4. **Dashboard:** `📊 Dashboard` → Chọn `mart` → Generate 4-6 charts → Render ApexCharts real-data → Edit JSON → Save → Export
 5. **Lab:** `🧪 Lab` → Advanced Stats/Bootstrap/... (t-test, ANOVA, bootstrap via `core`)
-6. **Settings:** `⚙️ Settings` → Chọn provider + key → Save (session + DB encrypt) → Test Connection `GET /health`
-7. **Lineage:** `🔗 Lineage` → Chọn dataset → xem `table/briefs/dashboards` count
+6. **Settings:** `⚙️ Settings` → Chọn provider + key → Save (DB encrypt) → Test connection (báo latency)
+7. **Lineage:** `🔗 Lineage` → Chọn dataset → xem graph nodes/edges (hover xem quan hệ)
 
-**Frontend 2 bản (GĐ3/GĐ4):**
-- `frontend/web` — React+Vite desktop (sidebar 240px, 7 routes, ApexCharts, proxy `/api` → 8000) — `pnpm --filter @app/web dev` (5173)
-- `frontend/mobile` — React+Vite mobile web (BottomNav 44px touch, 6 routes read-first) — `pnpm --filter @app/mobile dev` (5174)
-- `frontend/shared` — logic dùng chung `@app/shared` (`api` + `features` + `hooks`), `vitest` test `client.ts`
+**Frontend 2 bản:**
+- `frontend/web` — React+Vite desktop (top navbar pill, 8 routes + Overview, ApexCharts, command palette `Ctrl+K`) — `pnpm --filter @app/web dev` (5173)
+- `frontend/mobile` — React+Vite mobile web (BottomNav touch, 8 routes) — `pnpm --filter @app/mobile dev` (5174)
+- `frontend/shared` — logic dùng chung `@app/shared` (`api` + `features` + `hooks` + `components`), `vitest` test `client.ts`
 
 ## 🏗️ Cấu trúc dự án (mới)
 
@@ -120,12 +123,12 @@ Data-Analytic-/
 │   ├── pipeline/          # ETL/ELT engine (spec_schema DAG, executor, ops/pandas+sql)
 │   ├── dashboard/         # DashboardSpec + renderer (1 query/chart)
 │   ├── prompts/           # briefer/etl_author/dashboard_author (profile-only)
-│   ├── core/              # database (users/datasets/briefs/dashboards/pipelines), ai_service BYOK encrypt, insights, statistical_tests
-│   ├── analytics/         # Lab engine (8 tabs, archived 3 heavy)
-│   ├── utils/             # validators, helpers, security
-│   └── services/          # report/session (legacy)
-├── tests/                 # 102 tests (warehouse, pipeline, briefer, api, db, stats)
-├── migrations/            # 007_* (users→datasets→warehouse→briefs→dashboards→pipelines)
+│   ├── core/              # database (+session_scope), ai_service/llm_client/llm_errors BYOK, insights, statistical_tests
+│   ├── api/               # deps + routers/{auth,datasets,pipelines,brief,dashboards,analysis,system}
+│   ├── utils/             # validators, helpers, security, optional_deps
+│   └── prompts/           # + schemas.py (structured output), briefer/etl_author/dashboard_author
+├── tests/                 # 146 tests (e2e, stability, dag-engine, scale, proposals, review-fixes...)
+├── migrations/            # 011 (users→...→ai_proposals→observability→provider)
 ├── data/                  # warehouse.duckdb (gitignored) + demo_sinhvien.csv
 ├── docs/plan/             # pivot plan P0-P5 + implement_plan.md
 └── requirements/base.txt  # duckdb, pyyaml, fastapi, langchain
@@ -141,19 +144,19 @@ Data-Analytic-/
 
 ## 🎨 Theme
 
-Glassmorphism Aurora — `Bg #0A0A1A` aurora `blur(16px)`, `Nunito/Quicksand/Varela Round` pill `999px`, `radius 24px`, `Outfit` → `Nunito` tròn hơn theo yêu cầu.
+Modern dark SaaS — nền `#0A0C10`, accent teal `#2DD4BF` + cyan, Inter + JetBrains Mono, card kính mờ bo 16px, motion (page-enter, stagger, shimmer, hover lift), tôn trọng `prefers-reduced-motion`.
 
 ## 🔧 Troubleshooting
 
 ```bash
 pip install duckdb pyyaml  # warehouse
-pytest -q                  # 102 passed
-black --check --line-length 120 .
+pytest -q                  # 146 collected
+black --check --line-length 120 src/ api.py tests/
 ```
 
 ## 🤝 Contributing
 
-PR welcome — làm trên `refactor`, mỗi phase 1 commit nhỏ, push thường xuyên, `pytest` xanh, `flake8/black` sạch.
+PR welcome — làm trên `main`, mỗi phase 1 commit nhỏ, push thường xuyên, `pytest` xanh, `flake8/black` sạch.
 
 ## 📝 License
 
