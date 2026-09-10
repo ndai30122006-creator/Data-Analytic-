@@ -39,14 +39,14 @@ async def create_brief(dataset_id: int, username: str = Depends(get_current_user
             _logger = _logging.getLogger(__name__)
             content, model_used = generate_brief_fallback(profile), "rule-based"
             try:
-                from src.core.database import get_api_key
+                from src.core.database import get_api_key, get_api_provider
                 from src.core.llm_client import complete_model
                 from src.prompts.briefer import build_prompt
                 from src.prompts.schemas import BriefDoc
 
                 user_key = get_api_key(username)
                 if user_key:
-                    provider = _os.environ.get("AI_PROVIDER", "openai")
+                    provider = get_api_provider(username)
                     try:
                         # Structured output: validate schema truoc khi dung
                         doc, model = complete_model(user_key, provider, build_prompt(profile), BriefDoc)

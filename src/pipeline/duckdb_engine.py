@@ -13,6 +13,21 @@ import re
 from typing import Dict, List
 
 _STEP_VIEW = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,64}$")
+_BLOCKED_SQL = re.compile(
+    r"\b(drop|delete|insert|update|alter|create|attach|detach|copy|pragma|vacuum|checkpoint|install|load)\b",
+    re.IGNORECASE,
+)
+
+
+def _guard_select_only(q: str, step_id: str) -> None:
+    """Chan SQL nguy hiem tren duckdb engine (mirror sql_ops.py) — fail cung, khong fallback."""
+    s = (q or "").strip()
+    if ";" in s:
+        raise ValueError(f"Step {step_id}: multiple statements khong duoc phep")
+    if not re.match(r"^(select|with)\b", s, re.IGNORECASE):
+        raise ValueError(f"Step {step_id}: chi SELECT/WITH duoc phep")
+    if _BLOCKED_SQL.search(s):
+        raise ValueError(f"Step {step_id}: DDL/DML bi cam")
 
 
 class _FallbackToPandas(Exception):
@@ -121,6 +136,8 @@ def _sql_derive(view: str, params: dict, cols: List[str]) -> str:
         raise _FallbackToPandas("derive_column can name/expr")
     if not _STEP_VIEW.match(str(name)):
         raise _FallbackToPandas(f"ten cot {name!r} khong hop le")
+    if ";" in expr or _BLOCKED_SQL.search(expr):
+        raise ValueError(f"derive expr chua lenh bi cam")
     return f"SELECT *, ({expr}) AS {_qi(name)} FROM {view}"
 
 
@@ -128,6 +145,8 @@ def _sql_filter(view: str, params: dict, cols: List[str]) -> str:
     query = params.get("query")
     if not query:
         return f"SELECT * FROM {view}"
+    if ";" in query or _BLOCKED_SQL.search(query):
+        raise ValueError("filter query chua lenh bi cam")
     return f"SELECT * FROM {view} WHERE {query}"
 
 
@@ -218,6 +237,10 @@ def execute_duckdb(spec, dag, src_q: str, tgt_q: str, conn, sample: bool = False
                 if op == "sql":
                     q = params.get("query", f"SELECT * FROM {single or 'wb_src'}")
                     q = q.replace("{{prev}}", in_views[-1])
+                    try:
+                        _guard_select_only(q, step.id)
+                    except ValueError as ve:
+                        return {"status": "failed", "error": str(ve)}
                     conn.execute(f"CREATE OR REPLACE TEMP VIEW {out_view} AS {q}")
                 elif op == "merge":
                     how = str(params.get("how", "concat")).lower()

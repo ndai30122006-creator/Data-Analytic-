@@ -10,7 +10,7 @@ export function useSettings() {
   const saveApiKey = async (key: string, prov: Provider = provider) => {
     setSaving(true);
     try {
-      const res = await auth.saveApiKey(key);
+      const res = await auth.saveApiKey(key, prov);
       setApiKey(key);
       setProvider(prov);
       return res;

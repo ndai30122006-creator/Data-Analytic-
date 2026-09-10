@@ -244,13 +244,13 @@ async def generate_dashboard(dataset_id: int, username: str = Depends(get_curren
             import logging as _logging
             import os as _os
 
-            from src.core.database import get_api_key
+            from src.core.database import get_api_key, get_api_provider
             from src.prompts.dashboard_author import build_prompt
 
             _logger = _logging.getLogger(__name__)
             user_key = get_api_key(username)
             if user_key:
-                provider = _os.environ.get("AI_PROVIDER", "openai")
+                provider = get_api_provider(username)
                 try:
                     # Structured output: charts validate bang ChartSpec schema
                     from src.core.llm_client import complete_model
