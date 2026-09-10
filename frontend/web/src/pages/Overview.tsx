@@ -5,195 +5,154 @@ import { pipelines } from "@app/shared/api/pipelines";
 import { dashboards } from "@app/shared/api/dashboards";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
-import { Badge } from "@app/shared/components/ui/Badge";
+import { PageHeader } from "@app/shared/src/components/layout/PageHeader";
+import { StatusDot } from "@app/shared/src/components/ui/StatusDot";
 import { Skeleton } from "@app/shared/components/ui/Skeleton";
 
-function Trunk({ delay = 0 }: { delay?: number }) {
-  return (
-    <div style={{ position: "relative", width: 2, height: 26, background: "linear-gradient(180deg, var(--accent), var(--accent-2))", opacity: 0.7 }}>
-      <span className="flow-dot" style={{ left: -3, animation: "flow-y 1.6s linear infinite", animationDelay: `${delay}s` }} />
-    </div>
-  );
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 11) return "Good morning";
+  if (h < 14) return "Good midday";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
-function TreeNode({ label, desc, to, go }: { label: string; desc: string; to: string; go: (t: string) => void }) {
-  return (
-    <div onClick={() => go(to)}
-      style={{ cursor: "pointer", textAlign: "center", padding: "12px 28px", background: "var(--bg)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-card)", minWidth: 170, transition: "border-color 0.2s, box-shadow 0.25s, transform 0.2s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 18px rgba(45,212,191,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}>
-      <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
-      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{desc}</div>
-    </div>
-  );
-}
+const FLOW = [
+  { label: "Ingest", to: "/ingest" },
+  { label: "Pipeline", to: "/pipeline" },
+  { label: "Brief", to: "/brief" },
+  { label: "Dashboard", to: "/dashboard" },
+];
 
 export default function Overview() {
   const nav = useNavigate();
-  const [stats, setStats] = useState({ ds: 0, pipe: 0, runs: 0, dash: 0 });
+  const [stats, setStats] = useState({ ds: 0, pipe: 0, runs: 0, failed: 0, dash: 0 });
   const [recentRuns, setRecentRuns] = useState<any[]>([]);
+  const [recentDs, setRecentDs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [outputErr, setOutputErr] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [d, p, r, b] = await Promise.all([
-          datasets.list().catch(() => ({ datasets: [] }) as any),
-          pipelines.list().catch(() => ({ pipelines: [] }) as any),
-          pipelines.listRuns().catch(() => ({ runs: [] }) as any),
-          dashboards.list().catch(() => ({ dashboards: [] }) as any),
-        ]);
-        setStats({
-          ds: (d.datasets ?? []).length,
-          pipe: (p.pipelines ?? []).length,
-          runs: (r.runs ?? []).length,
-          dash: (b.dashboards ?? []).length,
-        });
-        setRecentRuns((r.runs ?? []).slice(0, 5));
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [d, p, r, b] = await Promise.all([
+        datasets.list().catch(() => ({ datasets: [] }) as any),
+        pipelines.list().catch(() => ({ pipelines: [] }) as any),
+        pipelines.listRuns().catch(() => ({ runs: [] }) as any),
+        dashboards.list().catch(() => ({ dashboards: [] }) as any),
+      ]);
+      const dsList = d.datasets ?? [];
+      const runList = r.runs ?? [];
+      setStats({
+        ds: dsList.length,
+        pipe: (p.pipelines ?? []).length,
+        runs: runList.length,
+        failed: runList.filter((x: any) => x.status === "failed").length,
+        dash: (b.dashboards ?? []).length,
+      });
+      setRecentDs(dsList.slice(0, 6));
+      setRecentRuns(runList.slice(0, 6));
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, []);
 
-  const go = (to: string) => nav(to);
+  const demo = async () => {
+    setLoading(true);
+    try {
+      await datasets.demo();
+      await load();
+    } catch (e: any) {
+      setOutputErr(e.message ?? "Demo failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const cards = [
+  const metrics = [
     { label: "datasets", value: stats.ds, to: "/ingest" },
     { label: "pipelines", value: stats.pipe, to: "/pipeline" },
-    { label: "runs", value: stats.runs, to: "/pipeline" },
-    { label: "dashboards", value: stats.dash, to: "/dashboard" },
+    { label: "runs", value: stats.runs, to: "/runs" },
+    { label: "failures", value: stats.failed, to: "/runs", alert: stats.failed > 0 },
   ];
 
   return (
     <div className="rise" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* hero */}
-      <Card className="hud" style={{ padding: 28, overflow: "hidden", position: "relative" }}>
-        <div style={{ fontSize: 11, color: "var(--accent)" }}>$ dataworkbench --overview</div>
-        <h2 style={{ fontSize: 30, marginTop: 8 }}>
-          Dữ liệu thô <span className="grad-text">→ quyết định</span>
-        </h2>
-        <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 8, maxWidth: 560 }}>
-          Ingest file, AI sinh pipeline ETL, brief narrative tiếng Việt và dashboard charts — local-first với DuckDB + BYOK.
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-          <Button onClick={() => nav("/ingest")}>Upload dataset</Button>
-          <Button variant="ghost" onClick={() => nav("/pipeline")}>AI Generate Spec</Button>
-          <Button variant="ghost" onClick={() => nav("/dashboard")}>Xem Dashboard</Button>
-        </div>
-      </Card>
+      <PageHeader
+        path=""
+        title={`${greeting()} — Control Center`}
+        desc="Dữ liệu thô → quyết định. Local-first với DuckDB + BYOK."
+        actions={<><Button onClick={() => nav("/ingest")}>+ New dataset</Button><Button variant="ghost" onClick={() => nav("/pipeline")}>AI Generate</Button></>}
+      />
 
-      {/* onboarding */}
       {!loading && stats.ds === 0 && (
         <Card style={{ borderColor: "var(--accent)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontWeight: 700, fontSize: 14 }}>Mới bắt đầu? Thử demo 1-click</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-              Sinh 120 sinh viên mẫu (có missing/dup) → chạy đủ luồng Ingest → Pipeline → Brief → Dashboard.
-            </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Sinh 120 sinh viên mẫu → chạy đủ luồng Ingest → Pipeline → Brief → Dashboard.</div>
           </div>
-          <Button onClick={async () => {
-            setLoading(true);
-            try {
-              await datasets.demo();
-              const [d, p, r, b] = await Promise.all([
-                datasets.list().catch(() => ({ datasets: [] }) as any),
-                pipelines.list().catch(() => ({ pipelines: [] }) as any),
-                pipelines.listRuns().catch(() => ({ runs: [] }) as any),
-                dashboards.list().catch(() => ({ dashboards: [] }) as any),
-              ]);
-              setStats({ ds: (d.datasets ?? []).length, pipe: (p.pipelines ?? []).length, runs: (r.runs ?? []).length, dash: (b.dashboards ?? []).length });
-            } catch (e: any) {
-              setRecentRuns([]);
-              setOutputErr(e.message ?? "Demo failed");
-            } finally {
-              setLoading(false);
-            }
-          }}>Tải demo 1-click</Button>
+          <Button onClick={demo}>Tải demo 1-click</Button>
         </Card>
       )}
       {outputErr && <div style={{ fontSize: 12, color: "var(--danger)" }}>{outputErr}</div>}
 
-      {/* bento grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-        {loading ? [0, 1, 2, 3].map((i) => <Skeleton key={i} height={120} />) : cards.map((c, i) => (
-          <Card key={c.label} hover
-            style={{
-              cursor: "pointer", padding: 18, gridColumn: i === 0 ? "span 2" : "span 1",
-              background: i === 0 ? "linear-gradient(135deg, rgba(45,212,191,0.12), rgba(34,211,238,0.04)), var(--bg-card)" : undefined,
-            }}>
-            <div onClick={() => nav(c.to)}>
-              <div style={{ fontSize: i === 0 ? 44 : 32, fontWeight: 800, fontFamily: "var(--font-mono)", color: "var(--accent)", textShadow: "0 0 18px rgba(45,212,191,0.35)", lineHeight: 1 }}>{c.value}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 6 }}>{c.label}</div>
-              {i === 0 && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>bấm để mở Ingest →</div>}
+      {/* key metrics */}
+      <div>
+        <h4 style={{ marginBottom: 8 }}>Key metrics</h4>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 0, border: "1px solid var(--border)", borderRadius: "var(--radius-card)", overflow: "hidden" }}>
+          {loading ? [0, 1, 2, 3].map((i) => <Skeleton key={i} height={76} />) : metrics.map((c, i) => (
+            <div key={c.label} onClick={() => nav(c.to)}
+              style={{ cursor: "pointer", padding: "14px 18px", background: "var(--bg-card)", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: "var(--font-mono)", color: c.alert ? "var(--danger)" : "var(--accent)" }}>{c.value}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 2 }}>{c.label}</div>
             </div>
-          </Card>
-        ))}
-        <div style={{ gridColumn: "span 3", display: "flex", gap: 16 }}>
-          <Card hover style={{ cursor: "pointer", padding: 18, flex: 1 }} >
-            <div onClick={() => nav("/pipeline")}>
-              <h4>AI Generate</h4>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Mô tả tiếng Việt → spec → approve → run</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginTop: 8 }}>Mở Pipeline →</div>
-            </div>
-          </Card>
-          <Card hover style={{ cursor: "pointer", padding: 18, flex: 1 }}>
-            <div onClick={() => nav("/dashboard")}>
-              <h4>Dashboard Pro</h4>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Layout, export PNG, auto-refresh</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginTop: 8 }}>Xem charts →</div>
-            </div>
-          </Card>
-          <Card hover style={{ cursor: "pointer", padding: 18, flex: 1 }}>
-            <div onClick={() => nav("/brief")}>
-              <h4>Brief AI</h4>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Narrative tiếng Việt, version</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginTop: 8 }}>Sinh brief →</div>
-            </div>
-          </Card>
+          ))}
         </div>
       </div>
 
-      {/* cay luồng du lieu */}
-      <Card>
-        <h4>Cây luồng dữ liệu — bấm ô để đi tới</h4>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16 }}>
-          <TreeNode label="Ingest" desc="upload csv/excel → raw.* + profile" to="/ingest" go={go} />
-          <Trunk delay={0} />
-          <TreeNode label="Pipeline" desc="AI spec → dry-run → mart.*" to="/pipeline" go={go} />
-          <Trunk delay={0.8} />
-          <div style={{ display: "flex", width: "100%", maxWidth: 560 }}>
-            <div style={{ position: "relative", flex: 1, borderTop: "2px solid var(--border-strong)", borderRight: "1px solid var(--border-strong)", height: 22, marginRight: -1 }}>
-              <span className="flow-dot" style={{ top: -5, animation: "flow-x-l 1.8s linear infinite" }} />
-            </div>
-            <div style={{ position: "relative", flex: 1, borderTop: "2px solid var(--border-strong)", borderLeft: "1px solid var(--border-strong)", height: 22, marginLeft: -1 }}>
-              <span className="flow-dot" style={{ top: -5, animation: "flow-x-r 1.8s linear infinite" }} />
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 32, flexWrap: "wrap", justifyContent: "center" }}>
-            <TreeNode label="Brief" desc="narrative tiếng Việt" to="/brief" go={go} />
-            <TreeNode label="Dashboard" desc="4-6 charts real-data" to="/dashboard" go={go} />
-          </div>
+      {/* activity + runs */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(300px, 7fr) minmax(280px, 5fr)", gap: 20 }}>
+        <div>
+          <h4 style={{ marginBottom: 8 }}>Pipeline activity</h4>
+          {loading ? <Skeleton height={120} /> : recentRuns.length === 0
+            ? <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "12px 0" }}>Chưa có run — vào Pipeline tạo và chạy pipeline đầu tiên.</div>
+            : recentRuns.map((r: any) => (
+              <div key={r.run_id} onClick={() => nav("/runs")} style={{ display: "flex", gap: 10, alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--border)", fontSize: 12, cursor: "pointer" }}>
+                <StatusDot status={r.status} />
+                <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)" }}>{r.run_id}</span>
+                <span style={{ color: "var(--text-muted)" }}>→ {r.pipeline_id}</span>
+              </div>
+            ))}
         </div>
-      </Card>
+        <div>
+          <h4 style={{ marginBottom: 8 }}>Datasets</h4>
+          {loading ? <Skeleton height={120} /> : recentDs.length === 0
+            ? <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "12px 0" }}>Chưa có dataset.</div>
+            : recentDs.map((d: any) => (
+              <div key={d.id ?? d.dataset_name} onClick={() => nav("/ingest")} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--border)", fontSize: 12, cursor: "pointer" }}>
+                <span style={{ fontWeight: 600 }}>{d.dataset_name}</span>
+                <span style={{ color: "var(--text-muted)" }}>{d.rows}×{d.cols}</span>
+              </div>
+            ))}
+        </div>
+      </div>
 
-      {/* recent runs */}
-      <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h4>Runs gần đây</h4>
-          <Button variant="ghost" size="sm" onClick={() => nav("/pipeline")}>Mở Pipeline</Button>
-        </div>
-        {loading ? <Skeleton height={30} /> : recentRuns.length === 0
-          ? <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Chưa có run — vào Pipeline tạo và chạy pipeline đầu tiên.</div>
-          : recentRuns.map((r: any) => (
-            <div key={r.run_id} style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
-              <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)" }}>{r.run_id}</span>
-              <Badge variant={r.status === "done" ? "success" : r.status === "failed" ? "danger" : "warn"}>{r.status}</Badge>
-              <span style={{ color: "var(--text-muted)" }}>→ {r.pipeline_id}</span>
+      {/* flow strip */}
+      <div>
+        <h4 style={{ marginBottom: 8 }}>Workflow</h4>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {FLOW.map((f, i) => (
+            <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={() => nav(f.to)}
+                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-pill)", color: "var(--text)", fontSize: 12, padding: "7px 16px", cursor: "pointer" }}>
+                <span style={{ color: "var(--text-muted)", marginRight: 6 }}>0{i + 1}</span>{f.label}
+              </button>
+              {i < FLOW.length - 1 && <span style={{ color: "var(--accent)" }}>→</span>}
             </div>
           ))}
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
