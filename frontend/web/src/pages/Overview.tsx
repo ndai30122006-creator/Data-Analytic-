@@ -115,16 +115,44 @@ export default function Overview() {
       )}
       {outputErr && <div style={{ fontSize: 12, color: "var(--danger)" }}>{outputErr}</div>}
 
-      {/* stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 20 }}>
-        {loading ? [0, 1, 2, 3].map((i) => <Skeleton key={i} height={86} />) : cards.map((c) => (
-          <Card key={c.label} hover style={{ cursor: "pointer", textAlign: "center", padding: 20 }} >
+      {/* bento grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        {loading ? [0, 1, 2, 3].map((i) => <Skeleton key={i} height={120} />) : cards.map((c, i) => (
+          <Card key={c.label} hover
+            style={{
+              cursor: "pointer", padding: 18, gridColumn: i === 0 ? "span 2" : "span 1",
+              background: i === 0 ? "linear-gradient(135deg, rgba(45,212,191,0.12), rgba(34,211,238,0.04)), var(--bg-card)" : undefined,
+            }}>
             <div onClick={() => nav(c.to)}>
-              <div style={{ fontSize: 34, fontWeight: 800, fontFamily: "var(--font-mono)", color: "var(--accent)", textShadow: "0 0 18px rgba(45,212,191,0.35)" }}>{c.value}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>{c.label}</div>
+              <div style={{ fontSize: i === 0 ? 44 : 32, fontWeight: 800, fontFamily: "var(--font-mono)", color: "var(--accent)", textShadow: "0 0 18px rgba(45,212,191,0.35)", lineHeight: 1 }}>{c.value}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 6 }}>{c.label}</div>
+              {i === 0 && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>bấm để mở Ingest →</div>}
             </div>
           </Card>
         ))}
+        <div style={{ gridColumn: "span 3", display: "flex", gap: 16 }}>
+          <Card hover style={{ cursor: "pointer", padding: 18, flex: 1 }} >
+            <div onClick={() => nav("/pipeline")}>
+              <h4>AI Generate</h4>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Mô tả tiếng Việt → spec → approve → run</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginTop: 8 }}>Mở Pipeline →</div>
+            </div>
+          </Card>
+          <Card hover style={{ cursor: "pointer", padding: 18, flex: 1 }}>
+            <div onClick={() => nav("/dashboard")}>
+              <h4>Dashboard Pro</h4>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Layout, export PNG, auto-refresh</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginTop: 8 }}>Xem charts →</div>
+            </div>
+          </Card>
+          <Card hover style={{ cursor: "pointer", padding: 18, flex: 1 }}>
+            <div onClick={() => nav("/brief")}>
+              <h4>Brief AI</h4>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Narrative tiếng Việt, version</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginTop: 8 }}>Sinh brief →</div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* cay luồng du lieu */}
