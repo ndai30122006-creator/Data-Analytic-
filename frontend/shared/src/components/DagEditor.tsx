@@ -13,7 +13,7 @@ const OP_HINT: Record<string, string> = {
   drop_duplicates: '{}',
   type_cast: '{"column":"diem","dtype":"float"}',
   standardize_columns: '{}',
-  derive_column: '{"new_column":"pass","formula":"diem>=5"}',
+  derive_column: '{"name":"pass","expr":"diem>=5"}',
   filter: '{"query":"diem>=0"}',
   aggregate: '{"group_by":"lop","agg":{"diem":"mean"}}',
   merge: '{"how":"concat"}',

@@ -5,7 +5,7 @@ export interface DatasetMeta { dataset_name: string; rows: number; cols: number;
 export interface DatasetListResponse { datasets: DatasetMeta[]; username: string; count: number }
 export interface ProfileResponse { dataset_id: number; dataset_name: string; profile: Record<string, unknown> }
 export interface IngestResponse { message: string; dataset_id?: number; profile?: Record<string, unknown>; quality?: unknown }
-export interface PipelineSpec { name: string; source: string; target: string; steps: PipelineStep[] }
+export interface PipelineSpec { name: string; source: string; target: string; steps: PipelineStep[]; engine?: "pandas" | "duckdb" }
 export interface PipelineStep { id: string; op: string; params?: Record<string, unknown>; depends_on?: string[] }
 export interface RunStarted { run_id: string; status: string }
 export interface RunInfo { run_id: string; pipeline_id: string; status: string; result: Record<string, unknown>; created_at: string | null }

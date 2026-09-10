@@ -35,6 +35,26 @@ flowchart LR
 ```mermaid
 flowchart TD
   UP["CSV/Excel upload\n(<=50MB, validated)"] --> ING["warehouse/ingest.py\nsanitize table name"]
+```
+
+### 2b. Execution engines (scalability)
+
+```mermaid
+flowchart TD
+  SPEC["PipelineSpec\n(engine: pandas | duckdb)"] --> PLAN["planner.plan()\nvalidate + topo + levels + sink"]
+  PLAN --> CTX["ExecutionContext\nnamed frames, explicit inputs"]
+  CTX -->|engine=pandas| PE["Pandas Engine\nsmall data, full op catalog"]
+  CTX -->|engine=duckdb| DE["DuckDB SQL Engine\nviews chuoi, SQL push-down"]
+  DE --> FB{"op dich duoc?"}
+  FB -->|co| SQL["SQL view"]
+  FB -->|khong| HYB["hybrid fallback\nmaterialize step do"]
+```
+
+- Pandas: `fetchdf()` toàn bộ source — ok tới ~100K rows.
+- DuckDB: không fetch toàn bộ (chỉ preview LIMIT 5 + COUNT); mỗi op có bản dịch SQL
+  (`fill_missing`→COALESCE, `drop_duplicates`→DISTINCT, `aggregate`→GROUP BY...);
+  op không dịch được (`derive`/`filter` lạ) fallback hybrid từng step, liệt kê trong `fallbacks`.
+- Kết quả trả `engine_used` + `sink` + `levels`.
   ING --> RAW[("raw.table\nDuckDB")]
   RAW --> PROF["profile JSON\n(never raw rows to LLM)"]
   PROF --> SPEC["PipelineSpec\n(DAG validate, 7 pandas ops + sql)"]

@@ -17,9 +17,12 @@ class PipelineSpec(BaseModel):
     source: str  # raw.<dataset>
     target: str  # mart.<dataset>
     steps: List[PipelineStep]
+    engine: str = "pandas"  # pandas (small data) | duckdb (large data, SQL push-down)
 
     def validate_dag(self) -> None:
-        """Validate DAG: no cycle, depends_on exists, op in catalog."""
+        """Validate DAG: engine, no cycle, depends_on exists, op in catalog."""
+        if self.engine not in ("pandas", "duckdb"):
+            raise ValueError(f"Unknown engine {self.engine!r} (allowed: pandas, duckdb)")
         ids = {s.id for s in self.steps}
         # Check depends_on exists
         for s in self.steps:

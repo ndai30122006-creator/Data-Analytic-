@@ -61,9 +61,9 @@ export default function Pipeline() {
   const setSteps = (steps: import("@app/shared/src/components/DagEditor").DagStep[]) => {
     try {
       const s = JSON.parse(specText || "{}");
-      setSpecText(JSON.stringify({ name: s.name ?? "demo-pipeline", source: s.source ?? "raw.demo", target: s.target ?? "mart.demo", steps }, null, 2));
+      setSpecText(JSON.stringify({ engine: "pandas", name: "demo-pipeline", source: "raw.demo", target: "mart.demo", ...s, steps }, null, 2));
     } catch {
-      setSpecText(JSON.stringify({ name: "demo-pipeline", source: "raw.demo", target: "mart.demo", steps }, null, 2));
+      setSpecText(JSON.stringify({ name: "demo-pipeline", source: "raw.demo", target: "mart.demo", engine: "pandas", steps }, null, 2));
     }
   };
 
@@ -166,9 +166,19 @@ export default function Pipeline() {
         </Card>
 
         <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <h4>STEP 2 · Spec → dry-run → create</h4>
-            <div style={{ display: "flex", gap: 4 }}>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <select value={parseSpec()?.engine ?? "pandas"} onChange={(e) => {
+                try {
+                  const s = JSON.parse(specText || "{}");
+                  setSpecText(JSON.stringify({ ...s, engine: e.target.value }, null, 2));
+                } catch { /* ignore */ }
+              }} title="Engine: pandas (small) | duckdb (large, SQL push-down)"
+                style={{ padding: 6, background: "var(--bg)", color: "var(--accent)", border: "1px solid var(--border)", borderRadius: "var(--radius-input)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+                <option value="pandas">pandas engine</option>
+                <option value="duckdb">duckdb engine</option>
+              </select>
               <Button variant={mode === "visual" ? "primary" : "ghost"} size="sm" onClick={() => setMode("visual")}>Visual</Button>
               <Button variant={mode === "json" ? "primary" : "ghost"} size="sm" onClick={() => setMode("json")}>JSON</Button>
             </div>

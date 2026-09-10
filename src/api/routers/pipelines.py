@@ -64,6 +64,7 @@ class PipelineCreateRequest(BaseModel):
     source: str
     target: str
     steps: list = []
+    engine: str = "pandas"
 
 
 @router.post("/pipelines", dependencies=[Depends(check_rate_limit)])

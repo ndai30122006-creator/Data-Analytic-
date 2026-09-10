@@ -66,7 +66,16 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
     try:
         conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
         conn.execute("CREATE SCHEMA IF NOT EXISTS mart")
-        # Load source
+        # DuckDB SQL engine: khong fetchdf toan bo table (scalability)
+        if (spec.engine or "pandas") == "duckdb":
+            try:
+                conn.execute(f"SELECT * FROM {src_q} LIMIT 0")
+            except Exception as e:
+                return {"status": "failed", "error": f"source {spec.source} not found: {e}"}
+            from src.pipeline.duckdb_engine import execute_duckdb
+
+            return execute_duckdb(spec, dag, src_q, tgt_q, conn, sample)
+        # Pandas engine: load source vao memory
         try:
             df = conn.execute(f"SELECT * FROM {src_q}").fetchdf()
         except Exception as e:
@@ -161,6 +170,8 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
             "cols": len(current.columns),
             "sink": dag.sink,
             "levels": dag.levels,
+            "engine_used": "pandas",
+            "fallbacks": [],
             "preview": sanitize_for_json(current.head(5).to_dict(orient="records")),
         }
     finally:
