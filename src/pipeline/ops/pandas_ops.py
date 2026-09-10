@@ -63,6 +63,26 @@ def aggregate(df: pd.DataFrame, by: str, agg: str = "mean") -> pd.DataFrame:
     return df
 
 
+def merge(frames, how: str = "concat", on=None) -> pd.DataFrame:
+    """Combine explicit multi-inputs (P1) — receives dict {step_id: df} from ExecutionContext.
+
+    - how="concat" (default): stack frames vertically (ignore_index).
+    - how="merge": sequential join on column(s) `on` (str or list).
+    """
+    import functools
+
+    if isinstance(frames, pd.DataFrame):
+        return frames
+    if not isinstance(frames, dict) or not frames:
+        raise ValueError("merge needs a non-empty dict {step_id: dataframe}")
+    dfs = list(frames.values())
+    if how == "merge":
+        if not on:
+            raise ValueError("merge how='merge' needs params 'on' (join column)")
+        return functools.reduce(lambda l, r: pd.merge(l, r, on=on), dfs)
+    return pd.concat(dfs, ignore_index=True)
+
+
 OPS = {
     "fill_missing": fill_missing,
     "drop_duplicates": drop_duplicates,
@@ -71,4 +91,5 @@ OPS = {
     "derive_column": derive_column,
     "filter": filter_rows,
     "aggregate": aggregate,
+    "merge": merge,
 }

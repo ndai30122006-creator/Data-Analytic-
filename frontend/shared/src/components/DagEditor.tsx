@@ -6,7 +6,7 @@ import { Textarea } from "./ui/Input";
 
 export interface DagStep { id: string; op: string; params?: Record<string, any>; depends_on?: string[]; }
 
-export const OPS = ["fill_missing", "drop_duplicates", "type_cast", "standardize_columns", "derive_column", "filter", "aggregate", "sql"];
+export const OPS = ["fill_missing", "drop_duplicates", "type_cast", "standardize_columns", "derive_column", "filter", "aggregate", "merge", "sql"];
 
 const OP_HINT: Record<string, string> = {
   fill_missing: '{"column":"diem","method":"mean"}',
@@ -16,6 +16,7 @@ const OP_HINT: Record<string, string> = {
   derive_column: '{"new_column":"pass","formula":"diem>=5"}',
   filter: '{"query":"diem>=0"}',
   aggregate: '{"group_by":"lop","agg":{"diem":"mean"}}',
+  merge: '{"how":"concat"}',
   sql: '{"query":"SELECT * FROM {{prev}}"}',
 };
 

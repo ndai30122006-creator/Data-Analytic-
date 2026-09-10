@@ -1,10 +1,17 @@
-"""Executor — topological DAG run with checkpoint (Plan 04)."""
+"""Executor — DAG run with checkpoint (Plan 04, P0/P1 real DAG semantics).
+
+PipelineSpec -> planner.plan() -> ExecutionContext (named frames) -> ops.
+Moi step doc inputs tuong minh theo depends_on (xem context.ExecutionContext);
+target = output cua sink (step cuoi topo order).
+"""
 
 import re
 from typing import Dict
 
 import pandas as pd
 
+from src.pipeline.context import ExecutionContext
+from src.pipeline.planner import plan as plan_dag
 from src.pipeline.spec_schema import PipelineSpec
 from src.warehouse.connection import get_conn, warehouse_write_lock
 
@@ -45,8 +52,8 @@ def sanitize_for_json(obj):
 
 def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
     """Execute spec DAG; sample=True limits 100 rows, no overwrite mart."""
-    spec.validate_dag()
-    order = spec.topo_order()
+    dag = plan_dag(spec)
+    order = dag.order
 
     # Validate identifiers before any SQL
     try:
@@ -68,7 +75,8 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
         if sample:
             df = df.head(100)
 
-        # Track intermediate results per step id
+        # Execution context: named frames + explicit inputs (P0/P1)
+        ctx = ExecutionContext(df)
         results = {"source": df}
         current = df
 
@@ -79,35 +87,55 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
         for step in order:
             op = step.op
             params = step.params or {}
-            # Resolve prev: if depends_on, use last dependency's result, else current
-            if step.depends_on:
-                # For simplicity, use most recent dependency's df
-                prev_id = step.depends_on[-1]
-                prev_df = results.get(prev_id, current)
-            else:
-                prev_df = current
+            try:
+                inputs = ctx.resolve(step)
+            except ValueError as e:
+                return {"status": "failed", "error": str(e)}
 
             try:
                 if op in PANDAS_OPS:
-                    # Call pandas op
-                    # Pass df as first arg
                     func = PANDAS_OPS[op]
-                    # Handle special case where op expects column param
-                    res_df = func(prev_df.copy(), **params)
+                    if isinstance(inputs, dict):
+                        # Multi-input chi op 'merge' duoc nhan dict tuong minh
+                        if op != "merge":
+                            return {
+                                "status": "failed",
+                                "error": f"Step {step.id} ({op}) has multiple inputs {list(inputs)}; use op 'merge' (or single depends_on)",
+                            }
+                        res_df = func(inputs, **params)
+                    else:
+                        res_df = func(inputs.copy(), **params)
                     if isinstance(res_df, pd.DataFrame):
                         current = res_df
                     else:
-                        current = prev_df
+                        current = inputs if isinstance(inputs, pd.DataFrame) else current
                 elif op == "sql":
-                    # ELT mode: run SQL on DuckDB view of prev_df
-                    conn.register("prev_view", prev_df)
-                    q = params.get("query", f"SELECT * FROM prev_view")
-                    # Replace {{prev}} with prev_view
-                    res_df = run_sql(conn, q, "prev_view")
-                    conn.unregister("prev_view")
-                    current = res_df
+                    # ELT mode: dict inputs -> moi dep la 1 view theo ten step;
+                    # single input -> prev_view nhu cu ({{prev}} tuong thich nguoc)
+                    registered = []
+                    try:
+                        if isinstance(inputs, dict):
+                            for dep_id, dep_df in inputs.items():
+                                conn.register(dep_id, dep_df)
+                                registered.append(dep_id)
+                            default_view = (step.depends_on or ["prev_view"])[-1]
+                        else:
+                            conn.register("prev_view", inputs)
+                            registered.append("prev_view")
+                            default_view = "prev_view"
+                        q = params.get("query", f"SELECT * FROM {default_view}")
+                        q = q.replace("{{prev}}", default_view)
+                        res_df = run_sql(conn, q, default_view)
+                        current = res_df
+                    finally:
+                        for v in registered:
+                            try:
+                                conn.unregister(v)
+                            except Exception:
+                                pass
                 else:
                     return {"status": "failed", "error": f"Unknown op {op}"}
+                ctx.put(step.id, current.copy())
                 results[step.id] = current.copy()
             except Exception as e:
                 return {"status": "failed", "error": f"Step {step.id} ({op}) failed: {e}"}
@@ -131,6 +159,8 @@ def execute(spec: PipelineSpec, sample: bool = False) -> Dict:
             "target": spec.target,
             "rows": len(current),
             "cols": len(current.columns),
+            "sink": dag.sink,
+            "levels": dag.levels,
             "preview": sanitize_for_json(current.head(5).to_dict(orient="records")),
         }
     finally:
