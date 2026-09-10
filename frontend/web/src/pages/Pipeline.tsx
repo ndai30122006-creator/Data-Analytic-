@@ -35,6 +35,9 @@ export default function Pipeline() {
   const [loading, setLoading] = useState(false);
   const [nl, setNl] = useState("xóa dòng trùng, điền missing cột diem bằng median");
   const [proposal, setProposal] = useState<any | null>(null);
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+  const [lastRun, setLastRun] = useState<any | null>(null);
+  const [consoleOpen, setConsoleOpen] = useState(true);
 
   const { error: apiError, handleError, clearError } = useErrorHandler();
 
@@ -192,6 +195,7 @@ export default function Pipeline() {
             later(poll, delay);
           } else {
             setLoading(false);
+            setLastRun(info);
             refresh();
           }
         } catch (e: any) {
@@ -213,7 +217,12 @@ export default function Pipeline() {
         path="pipeline"
         title="Pipeline"
         desc="AI sinh spec từ tiếng Việt → dry-run 100 rows → run ra mart.*. Mỗi run ghi steps log."
-        actions={<><Button variant="ghost" onClick={refresh} disabled={loading}>Refresh</Button></>}
+        actions={<>
+          <Button variant="ghost" onClick={handleGenerate} disabled={loading || !nl.trim()}>AI</Button>
+          <Button variant="ghost" onClick={handlePreview} disabled={loading}>Dry-run</Button>
+          <Button onClick={handleCreate} disabled={loading}>Create</Button>
+          <Button variant="ghost" onClick={refresh} disabled={loading}>Refresh</Button>
+        </>}
       />
       {apiError && (
         <Card style={{ background: "rgba(255,51,102,0.07)", borderColor: "rgba(255,51,102,0.35)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -248,7 +257,7 @@ export default function Pipeline() {
         </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 4fr) minmax(320px, 6fr)", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: selectedStepId ? "minmax(240px, 3fr) minmax(320px, 6fr) minmax(260px, 3fr)" : "minmax(280px, 4fr) minmax(320px, 8fr)", gap: 20 }}>
         <Card style={{ background: "rgba(45,212,191,0.04)", borderColor: "rgba(45,212,191,0.25)" }}>
           <h4>STEP 1 · Mô tả → proposal</h4>
           <Textarea value={nl} onChange={(e) => setNl(e.target.value)} rows={4} style={{ marginTop: 8 }} placeholder="VD: điền missing diem bằng median, xóa trùng ma_sv" />
@@ -278,16 +287,37 @@ export default function Pipeline() {
           </div>
           {mode === "visual" ? (
             <div style={{ marginTop: 8 }}>
-              <DagEditor steps={getSteps()} onChange={setSteps} />
+              <DagEditor steps={getSteps()} onChange={setSteps} selectedId={selectedStepId} onSelect={setSelectedStepId} />
             </div>
           ) : (
             <Textarea value={specText} onChange={(e) => setSpecText(e.target.value)} rows={8} className="mono" style={{ marginTop: 8, fontSize: 12 }} />
           )}
-          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-            <Button onClick={handlePreview} disabled={loading}>Dry-run Preview</Button>
-            <Button onClick={handleCreate} disabled={loading}>Create Pipeline</Button>
-          </div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>Bấm node để xem Inspector → · Dry-run/Create ở toolbar trên.</div>
         </Card>
+        {selectedStepId && (
+          <Card style={{ borderColor: "var(--accent)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h4>Inspector · {selectedStepId}</h4>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedStepId(null)}>✕</Button>
+            </div>
+            {(() => {
+              const s = getSteps().find((x) => x.id === selectedStepId);
+              if (!s) return <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Node không còn trong spec.</div>;
+              const runStep = (lastRun?.steps ?? []).find((x: any) => x.step_id === s.id);
+              const timing = lastRun?.result?.step_timings?.[s.id];
+              return (
+                <div style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                  <div><span style={{ color: "var(--text-muted)" }}>operation </span><Badge variant="neutral">{s.op}</Badge></div>
+                  <div><span style={{ color: "var(--text-muted)" }}>status </span>{runStep ? <Badge variant={runStep.status === "done" ? "success" : runStep.status === "failed" ? "danger" : "warn"}>{runStep.status}</Badge> : <span style={{ opacity: 0.6 }}>— (chưa chạy)</span>}</div>
+                  <div><span style={{ color: "var(--text-muted)" }}>input </span><span style={{ fontFamily: "var(--font-mono)" }}>{(s.depends_on ?? []).length ? (s.depends_on ?? []).join(", ") : "source"}</span></div>
+                  <div><span style={{ color: "var(--text-muted)" }}>duration </span>{timing !== undefined ? `${timing} ms` : "—"}</div>
+                  <div><span style={{ color: "var(--text-muted)" }}>params</span><pre style={{ fontFamily: "var(--font-mono)", fontSize: 11, background: "#000", border: "1px solid var(--border)", borderRadius: "var(--radius-input)", padding: 8, overflow: "auto", margin: "4px 0 0" }}>{JSON.stringify(s.params ?? {}, null, 2)}</pre></div>
+                  {runStep?.log && <div><span style={{ color: "var(--text-muted)" }}>log</span><pre style={{ fontSize: 11, whiteSpace: "pre-wrap", color: "var(--danger)" }}>{runStep.log}</pre></div>}
+                </div>
+              );
+            })()}
+          </Card>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
@@ -330,11 +360,32 @@ export default function Pipeline() {
       </div>
 
       <Card style={{ background: "#000" }}>
-        <h4 style={{ marginBottom: 8 }}>Output</h4>
-        <pre style={{ fontFamily: "var(--font-mono)", fontSize: 12, overflow: "auto", maxHeight: 300, margin: 0, whiteSpace: "pre-wrap" }}>{output || "Output sẽ hiện ở đây (preview/run)"}</pre>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h4>Run Console {lastRun && <span style={{ color: "var(--text-muted)" }}>· {lastRun.run_id} [{lastRun.status}]</span>}</h4>
+          <Button variant="ghost" size="sm" onClick={() => setConsoleOpen((o) => !o)}>{consoleOpen ? "▾" : "▸"}</Button>
+        </div>
+        {consoleOpen && (
+          lastRun ? (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>
+              {(lastRun.steps ?? []).length === 0 && <div style={{ opacity: 0.6 }}>run {lastRun.status} — chi tiết ở Runs.</div>}
+              {(lastRun.steps ?? []).map((s: any, i: number) => (
+                <div key={i} style={{ display: "flex", gap: 8, padding: "3px 0" }}>
+                  <span style={{ color: s.status === "done" ? "var(--success)" : s.status === "failed" ? "var(--danger)" : "var(--warn)" }}>
+                    {s.status === "done" ? "✓" : s.status === "failed" ? "✗" : "○"}
+                  </span>
+                  <span>{s.step_id}</span>
+                  <span style={{ marginLeft: "auto", color: "var(--text-muted)" }}>{lastRun.result?.step_timings?.[s.step_id] !== undefined ? `${lastRun.result.step_timings[s.step_id]} ms` : ""}</span>
+                </div>
+              ))}
+              {lastRun.result?.error && <div style={{ color: "var(--danger)", marginTop: 6, whiteSpace: "pre-wrap" }}>{lastRun.result.error}</div>}
+            </div>
+          ) : (
+            <pre style={{ fontFamily: "var(--font-mono)", fontSize: 12, overflow: "auto", maxHeight: 200, margin: 0, whiteSpace: "pre-wrap" }}>{output || "Chạy pipeline để xem console."}</pre>
+          )
+        )}
       </Card>
 
-      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>7 ops: fill_missing, drop_duplicates, type_cast, standardize_columns, derive_column, filter, aggregate + sql {'{{prev}}'} — executor warehouse_write_lock 30s.</div>
+      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>8 ops: fill_missing, drop_duplicates, type_cast, standardize_columns, derive_column, filter, aggregate, merge + sql {'{{prev}}'} — engines pandas/duckdb.</div>
     </div>
   );
 }

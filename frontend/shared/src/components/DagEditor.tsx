@@ -54,7 +54,12 @@ export function validateSteps(steps: DagStep[]): string[] {
 }
 
 /** Editor DAG: kéo-thả sắp xếp + sửa op/params/depends_on + validate live. */
-export function DagEditor({ steps, onChange }: { steps: DagStep[]; onChange: (s: DagStep[]) => void }) {
+export function DagEditor({ steps, onChange, selectedId, onSelect }: {
+  steps: DagStep[];
+  onChange: (s: DagStep[]) => void;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
+}) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [paramsText, setParamsText] = useState<Record<string, string>>({});
   const errs = useMemo(() => validateSteps(steps), [steps]);
@@ -93,7 +98,14 @@ export function DagEditor({ steps, onChange }: { steps: DagStep[]; onChange: (s:
               onDragStart={() => setDragId(s.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => { if (dragId) { move(dragId, s.id); setDragId(null); } }}
-              style={{ padding: 12, opacity: dragId === s.id ? 0.5 : 1, borderColor: errs.some((e) => e.startsWith(s.id + ":")) ? "rgba(248,113,113,0.5)" : undefined }}
+              onClick={() => onSelect?.(s.id)}
+              style={{
+                padding: 12, opacity: dragId === s.id ? 0.5 : 1, cursor: onSelect ? "pointer" : undefined,
+                borderColor: errs.some((e) => e.startsWith(s.id + ":"))
+                  ? "rgba(248,113,113,0.5)"
+                  : selectedId === s.id ? "var(--accent)" : undefined,
+                boxShadow: selectedId === s.id ? "0 0 14px rgba(45,212,191,0.25)" : undefined,
+              }}
             >
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ cursor: "grab", color: "var(--text-muted)" }} title="Kéo để sắp xếp">⠿</span>
