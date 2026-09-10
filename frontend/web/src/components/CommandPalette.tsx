@@ -82,11 +82,13 @@ export default function CommandPalette() {
             style={{ flex: 1, background: "transparent", border: 0, outline: "none", color: "var(--text)", padding: 10, fontFamily: "var(--font-mono)", fontSize: 13 }}
           />
         </div>
-        <div style={{ maxHeight: 280, overflow: "auto" }}>
+        <div role="listbox" aria-label="Commands" style={{ maxHeight: 280, overflow: "auto" }}>
           {list.length === 0 && <div style={{ padding: 12, fontSize: 12, color: "var(--text-muted)" }}>no match</div>}
           {list.map((c, i) => (
             <div
               key={c.name}
+              role="option"
+              aria-selected={i === idx}
               onClick={() => go(i)}
               onMouseEnter={() => setIdx(i)}
               style={{ padding: "8px 12px", fontSize: 12, cursor: "pointer", background: i === idx ? "rgba(45,212,191,0.12)" : "transparent", color: i === idx ? "var(--accent)" : "var(--text)" }}

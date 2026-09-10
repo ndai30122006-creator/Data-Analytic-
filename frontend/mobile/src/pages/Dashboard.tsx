@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { dashboards } from "@app/shared/api/dashboards";
 import { datasets } from "@app/shared/api/datasets";
 import { Button } from "@app/shared/components/ui/Button";
@@ -23,6 +23,37 @@ export default function Dashboard() {
   const [realCharts, setRealCharts] = useState<any[]>([]);
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const [refreshSec, setRefreshSec] = useState(0);
+  const [filter, setFilter] = useState("");
+  const [editMode, setEditMode] = useState(false);
+
+  // 12-col hierarchy: kpi nho, line rong, con lai vua
+  const spanFor = (t: string) => {
+    if (t === "kpi") return 3;
+    if (t === "line") return 8;
+    if (t === "scatter") return 4;
+    return 6;
+  };
+  const matchFilter = (c: any) => {
+    const s = filter.trim().toLowerCase();
+    if (!s) return true;
+    return `${c.title ?? ""} ${c.type ?? ""}`.toLowerCase().includes(s);
+  };
+
+  const exportSpec = () => {
+    try {
+      const spec = JSON.parse(specText || "{}");
+      const blob = new Blob([JSON.stringify(spec, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedName || "dashboard"}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    } catch {
+      setOutput("Spec JSON loi — khong export duoc.");
+    }
+  };
 
   const refresh = async () => {
     try {
@@ -122,6 +153,15 @@ export default function Dashboard() {
     }
   };
 
+  // Parse 1 lan/render (tranh JSON.parse lap lai)
+  const specSource: string | null | undefined = useMemo(() => {
+    try {
+      return JSON.parse(specText || "{}").source ?? "";
+    } catch {
+      return null;
+    }
+  }, [specText]);
+
   const toOptions = (c: any) => {
     if (c.type === "kpi" && typeof c.value === "number") return { series: [c.value] } as any;
     const opt: any = {};
@@ -134,9 +174,15 @@ export default function Dashboard() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <PageHead
         path="dashboard"
-        title="Dashboard"
+        title={selectedName || "Dashboard"}
         desc="AI đề xuất 4-6 charts từ profile → lưu → xem real-data (mỗi chart 1 query DuckDB)."
-        actions={<><Button onClick={handleGenerate} disabled={generating}>{generating ? "Đang sinh..." : "Generate"}</Button><Button variant="ghost" onClick={refresh}>Refresh</Button></>}
+        actions={<>
+          <Input placeholder="Filter charts..." value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 150 }} />
+          <Button onClick={handleGenerate} disabled={generating}>{generating ? "Đang sinh..." : "Generate"}</Button>
+          <Button variant="ghost" onClick={() => selectedId && loadData(selectedId)}>Refresh</Button>
+          <Button variant="ghost" onClick={exportSpec}>Export</Button>
+          <Button variant={editMode ? "primary" : "ghost"} onClick={() => setEditMode((e) => !e)}>Edit</Button>
+        </>}
       />
 
       <Card>
@@ -188,28 +234,34 @@ export default function Dashboard() {
         </Card>
       )}
 
-      <div className="rise" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: 20 }}>
-        {realCharts.length > 0 ? realCharts.map((c: any, i: number) => {
+      <div className="rise dash-grid">
+        {realCharts.length > 0 ? realCharts.filter(matchFilter).map((c: any) => {
+          const i = realCharts.indexOf(c);
           const key = `${i}-${c.id ?? c.type}`;
           const isHidden = !!hidden[key];
+          if (isHidden && !editMode) return null;
           return (
-          <Card key={key} style={{ padding: 0, overflow: "hidden", opacity: isHidden ? 0.45 : 1 }}>
+          <Card key={key} style={{ padding: 0, overflow: "hidden", opacity: isHidden ? 0.45 : 1, gridColumn: `span ${spanFor(c.type)}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 12, fontWeight: 600 }}>{c.title ?? c.type}</span>
               <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                 <Badge variant="success">{c.type}</Badge>
-                <Button variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
-                <Button variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === realCharts.length - 1}>↓</Button>
-                <Button variant="ghost" size="sm" onClick={() => setHidden((h) => ({ ...h, [key]: !h[key] }))}>{isHidden ? "show" : "hide"}</Button>
+                {editMode && (
+                  <>
+                <Button variant="ghost" size="sm" aria-label="Move chart up" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
+                <Button variant="ghost" size="sm" aria-label="Move chart down" onClick={() => move(i, 1)} disabled={i === realCharts.length - 1}>↓</Button>
+                <Button variant="ghost" size="sm" aria-label={isHidden ? "Show chart" : "Hide chart"} onClick={() => setHidden((h) => ({ ...h, [key]: !h[key] }))}>{isHidden ? "show" : "hide"}</Button>
+                  </>
+                )}
               </div>
             </div>
             <div style={{ padding: 12 }}>
-              <Chart type={c.type} height={150} options={toOptions(c)} toolbar />
+              <Chart type={c.type} height={c.type === "kpi" ? 120 : 160} options={toOptions(c)} toolbar />
             </div>
           </Card>
           );
-        }) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).map((t) => (
-          <Card key={t} style={{ padding: 0, overflow: "hidden", opacity: 0.75 }}>
+        }) : ((["kpi", "bar", "hist", "box", "line", "scatter"] as const).filter((t) => matchFilter({ title: t, type: t })).map((t) => (
+          <Card key={t} style={{ padding: 0, overflow: "hidden", opacity: 0.75, gridColumn: `span ${spanFor(t)}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t} · mock</span>
               <Badge variant="neutral">preview</Badge>
@@ -224,16 +276,13 @@ export default function Dashboard() {
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <h4>Source data — kiểm chứng mart.*</h4>
-          {(() => { try { const s = JSON.parse(specText || "{}").source; return s ? <Badge variant="neutral">{s}</Badge> : null; } catch { return null; } })()}
+          {specSource ? <Badge variant="neutral">{specSource}</Badge> : null}
         </div>
-        {(() => {
-          try {
-            const s = JSON.parse(specText || "{}").source;
-            return s ? <DataTable key={s} table={s} /> : <EmptyState title="Chưa có source" hint="Generate hoặc load dashboard để xem rows" />;
-          } catch {
-            return <EmptyState title="Spec lỗi" hint="Spec JSON parse không được" />;
-          }
-        })()}
+        {specSource === null
+          ? <EmptyState title="Spec lỗi" hint="Spec JSON parse không được" />
+          : specSource
+            ? <DataTable key={specSource} table={specSource} />
+            : <EmptyState title="Chưa có source" hint="Generate hoặc load dashboard để xem rows" />}
       </Card>
 
       <Card style={{ background: "#000" }}>

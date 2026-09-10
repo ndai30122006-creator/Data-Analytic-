@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { datasets } from "@app/shared/api/datasets";
-import { lineage, type LineageResponse } from "@app/shared/api/lineage";
+import { lineage, type LineageNode, type LineageResponse } from "@app/shared/api/lineage";
 import { Button } from "@app/shared/components/ui/Button";
 import { Card } from "@app/shared/components/ui/Card";
 import { Badge } from "@app/shared/components/ui/Badge";
 import { EmptyState, Skeleton } from "@app/shared/components/ui/Skeleton";
 import { PageHead } from "@app/shared/src/components/PageHead";
+import { Inspector } from "@app/shared/src/components/layout/Inspector";
 
 const KIND_STYLE: Record<string, { bg: string; border: string }> = {
   dataset: { bg: "rgba(45,212,191,0.15)", border: "rgba(45,212,191,0.5)" },
@@ -20,6 +21,7 @@ export default function Lineage() {
   const [detail, setDetail] = useState<LineageResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [node, setNode] = useState<LineageNode | null>(null);
 
   useEffect(() => {
     datasets.list().then((r) => setList(r.datasets ?? [])).catch(() => {});
@@ -73,8 +75,8 @@ export default function Lineage() {
                     <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{k} ({byKind(k).length})</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       {byKind(k).map((n) => (
-                        <div key={n.id} title={(detail.edges ?? []).filter((e) => e.from === n.id || e.to === n.id).map((e) => `${e.from} —${e.label ?? ""}→ ${e.to}`).join("\n")}
-                          style={{ background: KIND_STYLE[k]?.bg, border: `1px solid ${KIND_STYLE[k]?.border}`, borderRadius: "var(--radius-input)", padding: "6px 10px", fontSize: 12 }}>
+                        <div key={n.id} onClick={() => setNode(n)} title="Click để xem Inspector"
+                          style={{ background: KIND_STYLE[k]?.bg, border: `1px solid ${node?.id === n.id ? "var(--accent)" : KIND_STYLE[k]?.border}`, borderRadius: "var(--radius-input)", padding: "6px 10px", fontSize: 12, cursor: "pointer" }}>
                           <div style={{ fontWeight: 600 }}>{n.label}</div>
                           {n.meta && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{n.meta}</div>}
                         </div>
@@ -91,6 +93,25 @@ export default function Lineage() {
         </Card>
       </div>
       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Nguồn: warehouse/lineage.py get_lineage — GET /lineage/{"{id}"} trả nodes/edges.</div>
+      <Inspector open={!!node} title={node ? `${node.kind}: ${node.label}` : ""} subtitle={node?.id} onClose={() => setNode(null)}>
+        {node && detail && (
+          <div style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+            {node.meta && <div><div style={{ color: "var(--text-muted)", fontSize: 11 }}>META</div><div style={{ fontFamily: "var(--font-mono)" }}>{node.meta}</div></div>}
+            <div>
+              <div style={{ color: "var(--text-muted)", fontSize: 11 }}>DEPENDENCIES</div>
+              {(detail.edges ?? []).filter((e) => e.from === node.id || e.to === node.id).length === 0 && (
+                <div style={{ opacity: 0.6, marginTop: 4 }}>no edges</div>
+              )}
+              {(detail.edges ?? []).filter((e) => e.from === node.id || e.to === node.id).map((e, i) => (
+                <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid var(--border)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                  {e.from === node.id ? <span>→ {e.to} <span style={{ color: "var(--text-muted)" }}>({e.label ?? ""})</span></span>
+                    : <span>← {e.from} <span style={{ color: "var(--text-muted)" }}>({e.label ?? ""})</span></span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Inspector>
     </div>
   );
 }
